@@ -3,10 +3,10 @@ const express = require('express');
 const { createTradeApp } = require('./create-trade-app');
 
 const PORT = process.env.PORT || 3000;
-const ROOT_DIR = __dirname;
+const PUBLIC_DIR = path.join(__dirname, 'public');
 const app = createTradeApp();
 
-app.use(express.static(ROOT_DIR));
+app.use(express.static(PUBLIC_DIR));
 
 app.listen(PORT, () => {
   console.log(`demand.gg running at http://localhost:${PORT}`);
