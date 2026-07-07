@@ -1,0 +1,30 @@
+{
+  "posted": [
+    {
+      "id": 1783462349826,
+      "postedAt": 1783462349301,
+      "postedBy": "user-test-1",
+      "offerer": "User1",
+      "yourSide": [
+        {
+          "name": "Test Pet",
+          "image": "x",
+          "potions": {
+            "fly": true,
+            "ride": true
+          },
+          "isSign": false
+        }
+      ],
+      "theirSide": [
+        {
+          "name": "Other Pet",
+          "image": "y",
+          "potions": {},
+          "isSign": false
+        }
+      ]
+    }
+  ],
+  "accepted": []
+}
