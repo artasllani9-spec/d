@@ -8,12 +8,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="responsive.css">
 </head>
 <body class="credits-page">
   <div class="credits-background" aria-hidden="true"></div>
   <div class="credits-overlay" aria-hidden="true"></div>
 
   <header class="top-line">
+    <div class="top-line-nav">
+      <button type="button" class="nav-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-menu-btn__line" aria-hidden="true"></span>
+        <span class="nav-menu-btn__line" aria-hidden="true"></span>
+        <span class="nav-menu-btn__line" aria-hidden="true"></span>
+      </button>
+      <nav class="sectors" id="site-nav" hidden>
+        <a href="trading.html" class="sector sector--active">Trading</a>
+        <a href="demand-check.html" class="sector">Demand Check</a>
+        <a href="credits.html" class="sector">Credits</a>
+        <a href="info.html" class="sector">Info</a>
+      </nav>
+    </div>
     <div class="top-line-brand">
       <a href="index.html" class="logo">demand.gg</a>
       <a href="https://discord.gg/GJQ9PPgKQp" class="discord-link" target="_blank" rel="noopener noreferrer" aria-label="Join our Discord server">
@@ -22,12 +36,6 @@
         </svg>
       </a>
     </div>
-    <nav class="sectors">
-      <a href="trading.html" class="sector sector--active">Trading</a>
-      <a href="demand-check.html" class="sector">Demand Check</a>
-      <a href="credits.html" class="sector">Credits</a>
-      <a href="info.html" class="sector">Info</a>
-    </nav>
     <a href="#" class="login-btn">Log In</a>
   </header>
 
@@ -74,6 +82,7 @@
     </div>
   </main>
 
+  <script src="nav.js"></script>
   <script src="trades.js"></script>
   <script src="trading-feed.js"></script>
 </body>
