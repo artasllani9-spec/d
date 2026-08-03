@@ -320,6 +320,11 @@ video {
   color: #333;
 }
 
+.login-btn--user {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .credits-page {
   background: #333;
 }

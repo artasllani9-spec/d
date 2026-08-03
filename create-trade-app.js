@@ -1,4 +1,5 @@
 const express = require('express');
+const { registerRobloxAuth } = require('./roblox-auth');
 const {
   MAX_STORED_TRADES,
   readStore,
@@ -10,6 +11,8 @@ const {
 function createTradeApp() {
   const app = express();
   app.use(express.json({ limit: '2mb' }));
+
+  registerRobloxAuth(app);
 
   app.get('/api/trades/posted', (req, res) => {
     const store = readStore();
