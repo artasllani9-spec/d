@@ -168,7 +168,7 @@ video {
   bottom: calc(0.55rem + var(--safe-bottom));
   z-index: 40;
   font-family: "Outfit", system-ui, sans-serif;
-  font-size: 1.16rem;
+  font-size: 0.773rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.42);
