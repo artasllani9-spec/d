@@ -2860,10 +2860,10 @@ a.trade-action-btn {
   justify-content: center;
   max-width: none;
   padding: 1.25rem 2.5rem;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(25, 25, 25, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
