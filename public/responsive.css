@@ -254,10 +254,16 @@
   .credits-bar {
     width: min(100%, 40rem);
     height: auto;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 1.15rem 1.15rem;
+  }
+
+  .credits-bar__people {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
-    padding: 1.15rem;
+    min-height: 0;
   }
 
   .credits-slot {
@@ -388,12 +394,24 @@
   }
 
   .credits-bar {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: auto;
+    gap: 0.55rem;
+    padding: 0.75rem 0.85rem 0.85rem;
+  }
+
+  .credits-bar__title {
+    font-size: clamp(0.8rem, 3.4vw, 1rem);
+    letter-spacing: 0.1em;
+  }
+
+  .credits-bar__people {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
-    padding: 0.85rem;
+    min-height: 0;
   }
 
   .credits-slot {
@@ -1168,8 +1186,12 @@
   }
 
   .credits-bar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
+    gap: 0.55rem;
+  }
+
+  .credits-bar__people {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
   }
 
