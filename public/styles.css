@@ -4314,29 +4314,33 @@ a.trade-action-btn {
   }
 
   .credits-bar {
-    width: 93vw;
-    height: 18rem;
-    padding: 1rem;
+    width: 100%;
+    height: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0.85rem;
     gap: 0.75rem;
   }
 
   .credits-avatar {
-    width: 6rem;
-    height: 6rem;
+    width: 4.75rem;
+    height: 4.75rem;
   }
 
   .credits-slot {
+    height: auto;
+    min-height: 11rem;
     padding-top: 0.85rem;
   }
 
   .credits-name-row {
-    font-size: 1.45rem;
+    font-size: clamp(0.95rem, 3.8vw, 1.2rem);
   }
 
   .credits-role {
-    width: 10.5rem;
-    min-height: 2.45rem;
-    font-size: 0.88rem;
+    width: min(100%, 8.5rem);
+    min-height: 2.15rem;
+    font-size: 0.78rem;
     padding: 0.28rem 0.45rem;
   }
 
