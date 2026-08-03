@@ -1019,7 +1019,7 @@
   }
 
   .tos-content {
-    padding: calc(var(--header-h) + 1rem) 0.85rem calc(1.25rem + var(--safe-bottom));
+    padding: 1rem 0.85rem calc(1.25rem + var(--safe-bottom));
   }
 
   .tos-panel {

@@ -340,12 +340,41 @@ video {
 }
 
 .tos-content {
-  position: relative;
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 2;
   display: flex;
   justify-content: center;
-  padding: calc(var(--header-h) + 1.5rem) var(--shell-pad-x) calc(2rem + var(--safe-bottom));
+  align-items: flex-start;
+  padding: var(--shell-pad-y) var(--shell-pad-x) calc(2rem + var(--safe-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 180, 200, 0.7) rgba(10, 20, 35, 0.55);
+}
+
+.tos-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.tos-content::-webkit-scrollbar-track {
+  background: rgba(10, 20, 35, 0.55);
+  border-radius: 999px;
+}
+
+.tos-content::-webkit-scrollbar-thumb {
+  background: rgba(140, 165, 190, 0.75);
+  border-radius: 999px;
+  border: 2px solid rgba(10, 20, 35, 0.55);
+}
+
+.tos-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(170, 195, 220, 0.9);
 }
 
 .tos-panel {
