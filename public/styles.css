@@ -313,6 +313,127 @@ video {
   background: #333;
 }
 
+.tos-page {
+  background: #0a2a4a;
+  min-height: 100vh;
+}
+
+.tos-background {
+  position: fixed;
+  inset: -20px;
+  background: url("tos-background.png") center / cover no-repeat;
+  filter: blur(4px);
+  transform: scale(1.05);
+  z-index: 0;
+}
+
+.tos-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(6, 28, 52, 0.45) 0%,
+    rgba(6, 28, 52, 0.28) 40%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  z-index: 1;
+}
+
+.tos-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: calc(var(--header-h) + 1.5rem) var(--shell-pad-x) calc(2rem + var(--safe-bottom));
+  box-sizing: border-box;
+}
+
+.tos-panel {
+  width: min(100%, 46rem);
+  padding: 1.75rem 1.85rem 2rem;
+  background: rgba(12, 24, 40, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "Outfit", system-ui, sans-serif;
+}
+
+.tos-heading {
+  margin: 0 0 0.45rem;
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: clamp(1.45rem, 4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.tos-effective {
+  margin: 0 0 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(200, 228, 255, 0.82);
+}
+
+.tos-intro {
+  margin: 0 0 1.35rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tos-section {
+  margin: 0 0 1.25rem;
+}
+
+.tos-section:last-child {
+  margin-bottom: 0;
+}
+
+.tos-section h2 {
+  margin: 0 0 0.45rem;
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.tos-section p,
+.tos-section li {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(235, 245, 255, 0.9);
+}
+
+.tos-section p + p {
+  margin-top: 0.65rem;
+}
+
+.tos-section ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.tos-section li {
+  margin-bottom: 0.35rem;
+}
+
+.tos-section a {
+  color: #7ec8ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-word;
+}
+
+.tos-section a:hover {
+  color: #b7e1ff;
+}
+
 .credits-background {
   position: fixed;
   inset: -20px;

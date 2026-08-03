@@ -1018,6 +1018,25 @@
     padding: 1rem;
   }
 
+  .tos-content {
+    padding: calc(var(--header-h) + 1rem) 0.85rem calc(1.25rem + var(--safe-bottom));
+  }
+
+  .tos-panel {
+    padding: 1.25rem 1.1rem 1.45rem;
+    border-radius: 14px;
+  }
+
+  .tos-section h2 {
+    font-size: 0.95rem;
+  }
+
+  .tos-section p,
+  .tos-section li,
+  .tos-intro {
+    font-size: 0.88rem;
+  }
+
   .info-stack,
   .info-stack--faq {
     width: 100%;
