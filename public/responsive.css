@@ -542,31 +542,27 @@
     border-width: 1.5px;
   }
 
-  /* Trade board potion badges: half size on mobile */
-  body.post-trade-page .trade-slot__badges,
-  body.trade-calculator-page .trade-slot__badges,
-  .posted-trades-feed .trade-slot__badges {
-    gap: 0.07rem;
+  /* Trade table badges only — half size on mobile */
+  body.post-trade-page .trade-board .trade-slot__badges,
+  body.trade-calculator-page .trade-board .trade-slot__badges {
     right: 1px;
     bottom: 1px;
+    gap: 0.07rem;
   }
 
-  body.post-trade-page .trade-slot__badge,
-  body.trade-calculator-page .trade-slot__badge,
-  .posted-trades-feed .trade-slot__badge {
+  body.post-trade-page .trade-board .trade-slot__badge,
+  body.trade-calculator-page .trade-board .trade-slot__badge {
     width: 0.59rem;
     height: 0.59rem;
     font-size: 0.36rem;
     border-width: 0.5px;
-    box-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4);
   }
 
-  body.post-trade-page .trade-slot__badge--mega,
-  body.trade-calculator-page .trade-slot__badge--mega,
-  .posted-trades-feed .trade-slot__badge--mega {
+  body.post-trade-page .trade-board .trade-slot__badge--mega,
+  body.trade-calculator-page .trade-board .trade-slot__badge--mega {
     width: 0.62rem;
     height: 0.62rem;
-    font-size: 0.375rem;
+    font-size: 0.38rem;
     border-radius: 1.5px;
   }
 
