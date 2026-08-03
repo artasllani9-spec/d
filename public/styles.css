@@ -4101,36 +4101,36 @@ a.trade-action-btn {
   }
 
   .demand-check-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .demand-check-pet-card.trade-picker__pet-popout-card {
-    padding: 1.15rem 1.2rem 1rem;
+    padding: 0.55rem 0.45rem 0.5rem;
   }
 
   .demand-check-pet-card__media {
-    width: 8.5rem;
-    min-width: 8.5rem;
+    width: clamp(4.1rem, 22vw, 5rem);
+    min-width: clamp(4.1rem, 22vw, 5rem);
   }
 
   .demand-check-pet-card .trade-picker__pet-bar-preview {
-    width: 6.5rem;
-    height: 6.5rem;
+    width: clamp(3.4rem, 18vw, 4.15rem);
+    height: clamp(3.4rem, 18vw, 4.15rem);
   }
 
   .demand-check-pet-card .trade-picker__potion {
-    width: 2.35rem;
-    height: 2.35rem;
-    min-width: 2.35rem;
-    font-size: 1rem;
+    width: clamp(0.95rem, 4.8vw, 1.15rem);
+    height: clamp(0.95rem, 4.8vw, 1.15rem);
+    min-width: clamp(0.95rem, 4.8vw, 1.15rem);
+    font-size: clamp(0.48rem, 2.3vw, 0.58rem);
   }
 
   .demand-check-pet-card__stat {
-    font-size: 1rem;
+    font-size: clamp(0.58rem, 2.6vw, 0.7rem);
   }
 
   .demand-check-pet-card .trade-picker__pet-bar-name {
-    font-size: 1.2rem;
+    font-size: clamp(0.68rem, 3.1vw, 0.82rem);
   }
 
   .trading-btn {
@@ -4185,8 +4185,32 @@ a.trade-action-btn {
     transform: rotate(90deg) translateY(-1.25rem);
   }
 
+  body.post-trade-page .trade-center__icon,
   body.trade-calculator-page .trade-center__icon {
-    transform: rotate(90deg) translateY(-4.45rem);
+    width: clamp(2.35rem, 10vw, 3.25rem);
+    transform: translateY(-0.5rem);
+  }
+
+  body.post-trade-page .trade-board,
+  body.trade-calculator-page .trade-board {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: clamp(0.3rem, 1.4vw, 0.55rem);
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.post-trade-page .trade-side,
+  body.trade-calculator-page .trade-side {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+  }
+
+  body.post-trade-page .trade-center,
+  body.trade-calculator-page .trade-center {
+    flex: 0 0 clamp(4.25rem, 17vw, 5.5rem);
+    width: clamp(4.25rem, 17vw, 5.5rem);
   }
 
   .trade-panel {
