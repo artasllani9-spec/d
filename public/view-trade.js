@@ -26,6 +26,16 @@
 
   if (offererEl) {
     offererEl.textContent = viewTrade.offerer || '—';
+    const profileUrl = viewTrade.offererProfile || getOffererProfileUrl(viewTrade);
+    if (profileUrl) {
+      offererEl.href = profileUrl;
+      offererEl.removeAttribute('aria-disabled');
+    } else {
+      offererEl.removeAttribute('href');
+      offererEl.setAttribute('aria-disabled', 'true');
+      offererEl.style.pointerEvents = 'none';
+      offererEl.style.textDecoration = 'none';
+    }
   }
 
   if (offererAvatarEl) {

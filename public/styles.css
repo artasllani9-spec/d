@@ -333,15 +333,17 @@ video {
   height: 2.85rem;
   padding: 0.18rem;
   border-radius: 50%;
-  background: #8a8a8a;
+  background: transparent;
+  border: 2px solid #000;
   overflow: hidden;
   box-shadow: none;
 }
 
 .login-btn--avatar:hover {
-  background: #9a9a9a;
+  background: transparent;
   opacity: 1;
   box-shadow: none;
+  border-color: #000;
 }
 
 .login-btn__avatar {
@@ -454,8 +456,9 @@ video {
   height: 5.5rem;
   border-radius: 50%;
   object-fit: cover;
-  background: #8a8a8a;
-  padding: 0.2rem;
+  background: transparent;
+  border: 2px solid #000;
+  padding: 0.15rem;
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -916,8 +919,9 @@ video {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  background: #8a8a8a;
-  padding: 0.12rem;
+  background: transparent;
+  border: 2px solid #000;
+  padding: 0.1rem;
   box-sizing: border-box;
 }
 
@@ -938,6 +942,13 @@ video {
   font-weight: 700;
   color: #fff;
   word-break: break-word;
+  text-decoration: none;
+}
+
+a.posted-trade__offerer-name:hover,
+a.posted-trade-modal__offerer-name:hover {
+  text-decoration: underline;
+  color: #dff0ff;
 }
 
 .posted-trade__side {
@@ -1529,8 +1540,9 @@ body.view-trade-page .trade-center__actions {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  background: #8a8a8a;
-  padding: 0.12rem;
+  background: transparent;
+  border: 2px solid #000;
+  padding: 0.1rem;
   box-sizing: border-box;
 }
 
@@ -1548,6 +1560,12 @@ body.view-trade-page .trade-center__actions {
   font-size: 1rem;
   font-weight: 700;
   color: #fff;
+  text-decoration: none;
+}
+
+a.view-trade-offerer__name:hover {
+  text-decoration: underline;
+  color: #dff0ff;
 }
 
 .view-trade-timer {
