@@ -26,10 +26,14 @@
 
   if (offererEl) {
     offererEl.textContent = viewTrade.offerer || '—';
-    const profileUrl = viewTrade.offererProfile || getOffererProfileUrl(viewTrade);
+    const profileUrl = getOffererProfileUrl(viewTrade);
     if (profileUrl) {
       offererEl.href = profileUrl;
+      offererEl.removeAttribute('target');
+      offererEl.removeAttribute('rel');
       offererEl.removeAttribute('aria-disabled');
+      offererEl.style.pointerEvents = '';
+      offererEl.style.textDecoration = '';
     } else {
       offererEl.removeAttribute('href');
       offererEl.setAttribute('aria-disabled', 'true');

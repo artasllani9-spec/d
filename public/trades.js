@@ -51,10 +51,9 @@ function getOffererAvatarUrl(trade) {
 }
 
 function getOffererProfileUrl(trade) {
-  if (trade?.offererProfile) return trade.offererProfile;
   const postedBy = trade?.postedBy;
-  if (postedBy && !String(postedBy).startsWith('user-')) {
-    return `https://www.roblox.com/users/${encodeURIComponent(postedBy)}/profile`;
+  if (postedBy && !String(postedBy).startsWith('user-') && /^\d+$/.test(String(postedBy))) {
+    return `profile.html?id=${encodeURIComponent(postedBy)}`;
   }
   return '';
 }
@@ -625,7 +624,7 @@ function buildPostedTradeHTML(trade, options = {}) {
     ? `<img class="posted-trade__offerer-avatar" src="${escapeHtml(offererAvatar)}" alt="" width="36" height="36" loading="lazy" referrerpolicy="no-referrer">`
     : '';
   const offererNameHtml = offererProfileUrl
-    ? `<a class="posted-trade__offerer-name" href="${escapeHtml(offererProfileUrl)}" target="_blank" rel="noopener noreferrer">${offerer}</a>`
+    ? `<a class="posted-trade__offerer-name" href="${escapeHtml(offererProfileUrl)}">${offerer}</a>`
     : `<span class="posted-trade__offerer-name">${offerer}</span>`;
   const userId = getCurrentUserId();
   const isAccepter = Boolean(userId && trade.acceptedBy === userId);

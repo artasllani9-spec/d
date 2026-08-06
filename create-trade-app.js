@@ -196,6 +196,49 @@ function createTradeApp() {
     res.json(store.accepted[tradeIndex]);
   });
 
+  app.get('/api/users/:id', async (req, res) => {
+    const id = String(req.params.id || '').trim();
+    if (!id || !/^\d+$/.test(id)) {
+      res.status(400).json({ message: 'Invalid user id.' });
+      return;
+    }
+
+    const store = readStore();
+    const relatedTrades = [...store.posted, ...store.accepted].filter(
+      (trade) => String(trade.postedBy) === id,
+    );
+    relatedTrades.sort((a, b) => (b.postedAt || 0) - (a.postedAt || 0));
+    const latest = relatedTrades[0] || null;
+
+    let username = latest?.offerer || null;
+    let avatarUrl = latest?.offererAvatar || null;
+
+    try {
+      const robloxResponse = await fetch(`https://users.roblox.com/v1/users/${id}`);
+      if (robloxResponse.ok) {
+        const data = await robloxResponse.json();
+        username = data.name || data.displayName || username;
+      }
+    } catch {
+      // Keep trade-derived username if Roblox lookup fails.
+    }
+
+    if (!avatarUrl) {
+      avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(id)}&width=150&height=150&format=png`;
+    }
+
+    res.json({
+      user: {
+        id,
+        username: username || 'Player',
+        name: username || 'Player',
+        avatarUrl,
+        picture: avatarUrl,
+        profile: `https://www.roblox.com/users/${encodeURIComponent(id)}/profile`,
+      },
+    });
+  });
+
   return app;
 }
 
