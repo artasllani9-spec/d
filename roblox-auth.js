@@ -4,6 +4,8 @@ const ROBLOX_AUTHORIZE_URL = 'https://apis.roblox.com/oauth/v1/authorize';
 const ROBLOX_TOKEN_URL = 'https://apis.roblox.com/oauth/v1/token';
 const ROBLOX_USERINFO_URL = 'https://apis.roblox.com/oauth/v1/userinfo';
 const DEFAULT_CLIENT_ID = '1467861509529011675';
+const DEFAULT_SITE_URL = 'https://d-seven-chi.vercel.app';
+const OAUTH_APP_NAME = 'DemandGG';
 const OAUTH_SCOPES = 'openid profile';
 const COOKIE_OAUTH_STATE = 'dgg_oauth_state';
 const COOKIE_OAUTH_VERIFIER = 'dgg_oauth_verifier';
@@ -138,11 +140,25 @@ function getRequestOrigin(req) {
   const configured = process.env.SITE_URL || process.env.ROBLOX_REDIRECT_ORIGIN;
   if (configured) return configured.replace(/\/$/, '');
 
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '')
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+
+  // Keep production redirects stable even if a preview host is used.
+  if (host.includes('vercel.app') || host === 'demand.gg' || host === 'www.demand.gg') {
+    return DEFAULT_SITE_URL;
+  }
+
   const protoHeader = req.headers['x-forwarded-proto'];
   const proto = (Array.isArray(protoHeader) ? protoHeader[0] : protoHeader) ||
     (req.secure ? 'https' : 'http');
-  return `${proto}://${host}`;
+
+  if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
+    return `${proto}://${host}`;
+  }
+
+  return DEFAULT_SITE_URL;
 }
 
 function getRedirectUri(req) {
@@ -152,32 +168,68 @@ function getRedirectUri(req) {
   return `${getRequestOrigin(req)}/api/auth/roblox/callback`;
 }
 
+function getRequiredRedirectUris() {
+  return [
+    `${DEFAULT_SITE_URL}/api/auth/roblox/callback`,
+    'http://localhost:3000/api/auth/roblox/callback',
+  ];
+}
+
+function getAvatarFallbackUrl(userId) {
+  return `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(userId)}&width=150&height=150&format=png`;
+}
+
+async function fetchAvatarHeadshotUrl(userId) {
+  if (!userId) return null;
+  try {
+    const url = new URL('https://thumbnails.roblox.com/v1/users/avatar-headshot');
+    url.searchParams.set('userIds', String(userId));
+    url.searchParams.set('size', '150x150');
+    url.searchParams.set('format', 'Png');
+    url.searchParams.set('isCircular', 'true');
+
+    const response = await fetch(url);
+    const data = await response.json().catch(() => ({}));
+    const imageUrl = data && data.data && data.data[0] && data.data[0].imageUrl;
+    return imageUrl || getAvatarFallbackUrl(userId);
+  } catch {
+    return getAvatarFallbackUrl(userId);
+  }
+}
+
 function getSessionUser(req) {
   const cookies = parseCookies(req.headers.cookie);
   const payload = verifySession(cookies[COOKIE_SESSION]);
   if (!payload || !payload.sub) return null;
+  const id = String(payload.sub);
   return {
-    id: String(payload.sub),
+    id,
     username: payload.preferred_username || payload.nickname || payload.name || 'Player',
     name: payload.name || payload.preferred_username || payload.nickname || 'Player',
     profile: payload.profile || null,
-    picture: payload.picture || null,
+    picture: payload.picture || payload.avatarUrl || getAvatarFallbackUrl(id),
+    avatarUrl: payload.avatarUrl || payload.picture || getAvatarFallbackUrl(id),
   };
 }
 
 async function exchangeCodeForTokens({ code, codeVerifier, redirectUri }) {
+  const secret = getClientSecret();
+  if (!secret) {
+    const error = new Error(
+      'ROBLOX_CLIENT_SECRET is not set. Add it in Vercel Environment Variables (and local .env), then redeploy.',
+    );
+    error.status = 500;
+    throw error;
+  }
+
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
     redirect_uri: redirectUri,
     client_id: getClientId(),
+    client_secret: secret,
     code_verifier: codeVerifier,
   });
-
-  const secret = getClientSecret();
-  if (secret) {
-    body.set('client_secret', secret);
-  }
 
   const response = await fetch(ROBLOX_TOKEN_URL, {
     method: 'POST',
@@ -243,7 +295,37 @@ function htmlErrorPage(title, message) {
 }
 
 function registerRobloxAuth(app) {
+  app.get('/api/auth/setup', (req, res) => {
+    const redirectUri = getRedirectUri(req);
+    res.json({
+      appName: OAUTH_APP_NAME,
+      clientId: getClientId(),
+      redirectUri,
+      requiredRedirectUris: getRequiredRedirectUris(),
+      instructions: [
+        'Open https://create.roblox.com/dashboard/credentials?activeTab=OAuthTab',
+        `Edit the OAuth app named ${OAUTH_APP_NAME} (client ID ${getClientId()}).`,
+        'Set Application Name to DemandGG if it is not already.',
+        'Under Redirect URLs, add every URL in requiredRedirectUris exactly.',
+        'Save changes, then try Log In again on the site.',
+      ],
+      hasClientSecret: Boolean(getClientSecret()),
+    });
+  });
+
   app.get('/api/auth/roblox', (req, res) => {
+    if (!getClientSecret()) {
+      res
+        .status(500)
+        .send(
+          htmlErrorPage(
+            'Login not configured',
+            'Add ROBLOX_CLIENT_SECRET for the DemandGG OAuth app in Vercel Environment Variables, then redeploy. Find it under Creator Dashboard → Credentials → OAuth → DemandGG.',
+          ),
+        );
+      return;
+    }
+
     const state = createState();
     const codeVerifier = createCodeVerifier();
     const codeChallenge = createCodeChallenge(codeVerifier);
@@ -304,25 +386,25 @@ function registerRobloxAuth(app) {
       });
 
       const profile = await fetchUserInfo(tokens.access_token);
+      const avatarUrl =
+        profile.picture || (await fetchAvatarHeadshotUrl(profile.sub)) || getAvatarFallbackUrl(profile.sub);
       const session = {
         sub: profile.sub,
         name: profile.name,
         nickname: profile.nickname,
         preferred_username: profile.preferred_username,
         profile: profile.profile,
-        picture: profile.picture,
+        picture: avatarUrl,
+        avatarUrl,
         exp: Date.now() + SESSION_MAX_AGE_MS,
       };
 
       setCookie(res, COOKIE_SESSION, signSession(session), { maxAgeMs: SESSION_MAX_AGE_MS });
       res.redirect('/');
     } catch (err) {
-      const hint = !getClientSecret()
-        ? ' Set ROBLOX_CLIENT_SECRET in your environment if your Roblox app is a confidential client.'
-        : '';
       res
         .status(err.status || 500)
-        .send(htmlErrorPage('Login failed', `${err.message || 'Could not finish Roblox login.'}${hint}`));
+        .send(htmlErrorPage('Login failed', err.message || 'Could not finish Roblox login.'));
     }
   });
 
