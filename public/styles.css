@@ -478,13 +478,52 @@ video {
 }
 
 .profile-card__roblox {
-  color: #7dd3fc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  margin-top: 0.15rem;
+  padding: 0.62rem 1rem 0.62rem 1.05rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(180deg, #2f333a 0%, #1b1e24 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 8px 18px rgba(0, 0, 0, 0.28);
+  color: #fff;
   text-decoration: none;
-  font-weight: 600;
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .profile-card__roblox:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: linear-gradient(180deg, #3a3f48 0%, #22262d 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 10px 22px rgba(0, 0, 0, 0.34);
+  color: #fff;
+}
+
+.profile-card__roblox:active {
+  transform: translateY(0);
+}
+
+.profile-card__roblox-label {
+  white-space: nowrap;
+}
+
+.profile-card__roblox-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  opacity: 0.95;
 }
 
 .profile-trades {
