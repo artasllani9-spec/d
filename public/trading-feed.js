@@ -90,6 +90,12 @@
           setAcceptedMode(true);
           renderFeed();
         }
+      }).catch((error) => {
+        if (error && error.code === 'AUTH_REQUIRED') {
+          window.location.href = '/api/auth/roblox';
+          return;
+        }
+        window.alert((error && error.message) || 'Could not accept trade.');
       });
     }
   });

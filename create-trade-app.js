@@ -23,7 +23,11 @@ function createTradeApp() {
 
   app.get('/api/trades/posted', (req, res) => {
     const store = readStore();
-    const posted = [...store.posted].sort((a, b) => (b.postedAt || 0) - (a.postedAt || 0));
+    let posted = [...store.posted].sort((a, b) => (b.postedAt || 0) - (a.postedAt || 0));
+    const userId = req.query.userId ? String(req.query.userId) : '';
+    if (userId) {
+      posted = posted.filter((trade) => String(trade.postedBy) === userId);
+    }
     res.json(posted);
   });
 
@@ -87,12 +91,13 @@ function createTradeApp() {
 
   app.post('/api/trades/posted/:id/accept', (req, res) => {
     const tradeId = Number(req.params.id);
-    const userId = resolveUserId(req, req.body && req.body.userId);
-
-    if (!userId) {
-      res.status(400).json({ message: 'Missing user id.' });
+    const sessionUser = getSessionUser(req);
+    if (!sessionUser) {
+      res.status(401).json({ message: 'Log in with Roblox to accept a trade.' });
       return;
     }
+
+    const userId = String(sessionUser.id);
 
     const store = readStore();
     const tradeIndex = store.posted.findIndex((item) => item.id === tradeId);
@@ -102,7 +107,7 @@ function createTradeApp() {
     }
 
     const trade = store.posted[tradeIndex];
-    if (trade.postedBy === userId) {
+    if (String(trade.postedBy) === userId) {
       res.status(403).json({ message: 'You cannot accept your own trade.' });
       return;
     }

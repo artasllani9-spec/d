@@ -206,10 +206,23 @@ function migrateFailedTradesIntoAccepted() {
 }
 
 function canUserAcceptTrade(trade) {
-  const userId = getCurrentUserId();
-  if (!userId || !trade) return false;
-  if (trade.postedBy && trade.postedBy === userId) return false;
+  if (!trade) return false;
+  const authUser = getAuthUser();
+  if (authUser && authUser.id && String(trade.postedBy) === String(authUser.id)) {
+    return false;
+  }
   return true;
+}
+
+function isOwnPostedTrade(trade) {
+  const authUser = getAuthUser();
+  return Boolean(
+    authUser &&
+    authUser.id &&
+    trade &&
+    trade.postedBy &&
+    String(trade.postedBy) === String(authUser.id),
+  );
 }
 
 function canUserMarkAcceptedTradeFailed(trade) {
@@ -316,22 +329,30 @@ async function markAcceptedTradeCompleted(tradeId) {
 
 async function acceptPostedTrade(tradeId) {
   const trade = getPostedTradeById(tradeId);
-  if (!trade || !canUserAcceptTrade(trade)) return false;
+  if (!trade) return false;
 
-  const accepterId = getCurrentUserId();
-  if (!accepterId) return false;
+  const authUser = await ensureAuthUser();
+  if (!authUser || !authUser.id) {
+    const error = new Error('Log in with Roblox to accept a trade.');
+    error.code = 'AUTH_REQUIRED';
+    throw error;
+  }
+
+  if (String(trade.postedBy) === String(authUser.id)) return false;
+
+  const accepterId = String(authUser.id);
 
   if (usesTradeApi()) {
     try {
       const acceptedTrade = await tradeApiRequest(`/posted/${tradeId}/accept`, {
         method: 'POST',
-        body: JSON.stringify({ userId: accepterId }),
+        body: JSON.stringify({}),
       });
       postedTradesCache = postedTradesCache.filter((item) => item.id !== tradeId);
       acceptedTradesCache = [acceptedTrade, ...acceptedTradesCache.filter((item) => item.id !== tradeId)];
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      throw error;
     }
   }
 

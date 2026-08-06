@@ -67,6 +67,12 @@
           if (accepted) {
             window.location.href = 'trading.html?accepted=1';
           }
+        }).catch((error) => {
+          if (error && error.code === 'AUTH_REQUIRED') {
+            window.location.href = '/api/auth/roblox';
+            return;
+          }
+          window.alert((error && error.message) || 'Could not accept trade.');
         });
       });
     }

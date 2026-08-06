@@ -2,6 +2,9 @@
   const loading = document.querySelector('.profile-loading');
   const card = document.querySelector('.profile-card');
   const heading = document.querySelector('.tos-heading');
+  const tradesSection = document.querySelector('.profile-trades');
+  const tradesFeed = document.getElementById('profile-trades-feed');
+  const tradesEmpty = document.getElementById('profile-trades-empty');
   if (!loading || !card) return;
 
   const avatar = card.querySelector('.profile-card__avatar');
@@ -42,16 +45,80 @@
     }
   }
 
+  async function renderPublishedTrades(userId) {
+    if (!tradesSection || !tradesFeed || !tradesEmpty || !userId) return;
+
+    tradesSection.hidden = false;
+    tradesFeed.innerHTML = '';
+    tradesEmpty.hidden = true;
+
+    try {
+      await ensureAuthUser();
+      const response = await fetch(`/api/trades/posted?userId=${encodeURIComponent(userId)}`, {
+        credentials: 'same-origin',
+      });
+      if (!response.ok) throw new Error('Could not load trades.');
+      const trades = await response.json();
+      const list = Array.isArray(trades) ? trades : [];
+
+      if (!list.length) {
+        tradesEmpty.hidden = false;
+        return;
+      }
+
+      tradesFeed.innerHTML = list.map((trade) => buildPostedTradeHTML(trade)).join('');
+    } catch {
+      tradesEmpty.hidden = false;
+      tradesEmpty.textContent = 'Could not load published trades.';
+    }
+  }
+
+  if (tradesFeed) {
+    tradesFeed.addEventListener('click', (event) => {
+      const article = event.target.closest('.posted-trade');
+      if (!article) return;
+      const tradeId = Number(article.dataset.tradeId);
+
+      if (event.target.closest('.posted-trade__btn--view')) {
+        if (setViewTradeSession(tradeId, 'posted')) {
+          window.location.href = 'view-trade.html';
+        }
+        return;
+      }
+
+      if (event.target.closest('.posted-trade__btn--accept')) {
+        acceptPostedTrade(tradeId).then((ok) => {
+          if (ok) window.location.href = 'trading.html?accepted=1';
+        }).catch((error) => {
+          if (error && error.code === 'AUTH_REQUIRED') {
+            window.location.href = '/api/auth/roblox';
+            return;
+          }
+          window.alert((error && error.message) || 'Could not accept trade.');
+        });
+        return;
+      }
+
+      if (event.target.closest('.posted-trade__btn--delete')) {
+        deletePostedTrade(tradeId).then((ok) => {
+          if (ok && profileId) renderPublishedTrades(profileId);
+          else if (ok) ensureAuthUser().then((user) => user && renderPublishedTrades(user.id));
+        });
+      }
+    });
+  }
+
   function loadOwnProfile() {
     loading.textContent = 'Loading your account…';
     return fetch('/api/auth/me', { credentials: 'same-origin' })
       .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
+      .then(async (data) => {
         if (!data || !data.user) {
           window.location.replace('/api/auth/roblox');
           return;
         }
         renderUser(data.user);
+        await renderPublishedTrades(data.user.id);
       });
   }
 
@@ -64,11 +131,12 @@
         }
         return response.json();
       })
-      .then((data) => {
+      .then(async (data) => {
         if (!data || !data.user) {
           throw new Error('Profile not found.');
         }
         renderUser(data.user);
+        await renderPublishedTrades(data.user.id);
       });
   }
 
@@ -79,6 +147,7 @@
   loadPromise.catch(() => {
     loading.hidden = false;
     card.hidden = true;
+    if (tradesSection) tradesSection.hidden = true;
     loading.textContent = profileId
       ? 'Could not load this profile.'
       : 'Could not load your profile. Try signing in again.';
