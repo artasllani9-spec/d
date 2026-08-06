@@ -118,15 +118,16 @@ async function refreshTradesFromServer() {
     return;
   }
 
-  const userId = getCurrentUserId();
+  const authUser = getAuthUser();
+  const authId = authUser && authUser.id ? String(authUser.id) : null;
   const requests = [tradeApiRequest('/posted')];
-  if (userId) {
-    requests.push(tradeApiRequest(`/accepted?userId=${encodeURIComponent(userId)}`));
+  if (authId) {
+    requests.push(tradeApiRequest(`/accepted?userId=${encodeURIComponent(authId)}`));
   }
 
-  const [posted, accepted] = await Promise.all(requests);
-  postedTradesCache = Array.isArray(posted) ? posted : [];
-  acceptedTradesCache = Array.isArray(accepted) ? accepted : [];
+  const results = await Promise.all(requests);
+  postedTradesCache = Array.isArray(results[0]) ? results[0] : [];
+  acceptedTradesCache = authId && Array.isArray(results[1]) ? results[1] : [];
 }
 
 function ensureTradesSynced() {
@@ -159,13 +160,14 @@ function getAcceptedTradeById(id) {
 }
 
 function getAcceptedTradesForUser() {
-  const userId = getCurrentUserId();
+  const authUser = getAuthUser();
+  const userId = authUser && authUser.id ? String(authUser.id) : null;
   if (!userId) return [];
 
   migrateFailedTradesIntoAccepted();
 
   const trades = getAcceptedTrades().filter(
-    (trade) => trade.postedBy === userId || trade.acceptedBy === userId,
+    (trade) => String(trade.postedBy) === userId || String(trade.acceptedBy) === userId,
   );
 
   return trades.sort((a, b) => {
@@ -226,15 +228,17 @@ function isOwnPostedTrade(trade) {
 }
 
 function canUserMarkAcceptedTradeFailed(trade) {
-  const userId = getCurrentUserId();
+  const authUser = getAuthUser();
+  const userId = authUser && authUser.id ? String(authUser.id) : null;
   if (!userId || !trade || trade.failedAt || trade.completedAt) return false;
-  return trade.postedBy === userId || trade.acceptedBy === userId;
+  return String(trade.postedBy) === userId || String(trade.acceptedBy) === userId;
 }
 
 function canUserMarkAcceptedTradeCompleted(trade) {
-  const userId = getCurrentUserId();
+  const authUser = getAuthUser();
+  const userId = authUser && authUser.id ? String(authUser.id) : null;
   if (!userId || !trade || trade.failedAt || trade.completedAt) return false;
-  return trade.postedBy === userId || trade.acceptedBy === userId;
+  return String(trade.postedBy) === userId || String(trade.acceptedBy) === userId;
 }
 
 function getFailedTrades() {
@@ -390,8 +394,9 @@ function getCurrentUserId() {
 }
 
 function canUserDeleteTrade(trade) {
-  const userId = getCurrentUserId();
-  return Boolean(userId && trade?.postedBy && trade.postedBy === userId);
+  const authUser = getAuthUser();
+  const userId = authUser && authUser.id ? String(authUser.id) : getCurrentUserId();
+  return Boolean(userId && trade?.postedBy && String(trade.postedBy) === String(userId));
 }
 
 async function deletePostedTrade(tradeId) {
