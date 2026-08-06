@@ -441,9 +441,14 @@ video {
 }
 
 .profile-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "avatar meta"
+    "button button";
   align-items: center;
-  gap: 1.25rem;
+  column-gap: 1.25rem;
+  row-gap: 1rem;
   margin-top: 1.25rem;
   padding: 1.1rem 1.15rem;
   border-radius: 14px;
@@ -452,6 +457,7 @@ video {
 }
 
 .profile-card__avatar {
+  grid-area: avatar;
   width: 5.5rem;
   height: 5.5rem;
   border-radius: 50%;
@@ -463,6 +469,11 @@ video {
   flex-shrink: 0;
 }
 
+.profile-card__meta {
+  grid-area: meta;
+  min-width: 0;
+}
+
 .profile-card__username {
   margin: 0;
   font-family: "Montserrat", system-ui, sans-serif;
@@ -472,17 +483,19 @@ video {
 }
 
 .profile-card__id {
-  margin: 0.35rem 0 0.85rem;
+  margin: 0.35rem 0 0;
   color: rgba(255, 255, 255, 0.62);
   font-size: 0.92rem;
 }
 
 .profile-card__roblox {
+  grid-area: button;
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  margin-top: 0.15rem;
+  margin: 0;
   padding: 0.62rem 1rem 0.62rem 1.05rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.18);

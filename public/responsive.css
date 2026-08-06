@@ -1303,8 +1303,17 @@
   }
 
   .profile-card {
-    flex-direction: column;
-    text-align: center;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "avatar"
+      "meta"
+      "button";
+    justify-items: start;
+    text-align: left;
+  }
+
+  .profile-card__roblox {
+    justify-self: start;
   }
 
   .account-dropdown {
