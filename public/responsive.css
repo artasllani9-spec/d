@@ -234,10 +234,10 @@
   }
 
   .login-btn--avatar {
-    width: 2.35rem;
-    height: 2.35rem;
-    min-height: 2.35rem;
-    padding: 0;
+    width: 2.55rem;
+    height: 2.55rem;
+    min-height: 2.55rem;
+    padding: 0.16rem;
   }
 
   .discord-link {
@@ -1296,10 +1296,19 @@
   }
 
   .login-btn--avatar {
-    width: 2.2rem;
-    height: 2.2rem;
-    min-height: 2.2rem;
-    padding: 0;
+    width: 2.4rem;
+    height: 2.4rem;
+    min-height: 2.4rem;
+    padding: 0.14rem;
+  }
+
+  .profile-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .account-dropdown {
+    min-width: 12.5rem;
   }
 
   .logo {

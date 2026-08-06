@@ -329,19 +329,19 @@ video {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.6rem;
-  height: 2.6rem;
-  padding: 0;
+  width: 2.85rem;
+  height: 2.85rem;
+  padding: 0.18rem;
   border-radius: 50%;
-  background: transparent;
+  background: #8a8a8a;
   overflow: hidden;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+  box-shadow: none;
 }
 
 .login-btn--avatar:hover {
-  background: transparent;
-  opacity: 0.92;
-  box-shadow: 0 0 0 2px #fff;
+  background: #9a9a9a;
+  opacity: 1;
+  box-shadow: none;
 }
 
 .login-btn__avatar {
@@ -350,6 +350,138 @@ video {
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+}
+
+.account-menu {
+  position: relative;
+  margin-left: auto;
+  flex-shrink: 0;
+  z-index: 40;
+}
+
+.account-menu .login-btn {
+  margin-left: 0;
+}
+
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  min-width: 13.5rem;
+  padding: 0.45rem;
+  border-radius: 12px;
+  background: rgba(18, 22, 30, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 50;
+}
+
+.account-dropdown__identity {
+  padding: 0.65rem 0.75rem 0.7rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.35rem;
+  pointer-events: none;
+  user-select: text;
+}
+
+.account-dropdown__name {
+  margin: 0;
+  color: #fff;
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.account-dropdown__id {
+  margin: 0.28rem 0 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.account-dropdown__item {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.account-dropdown__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.account-dropdown__item--danger {
+  color: #ff5c5c;
+  font-weight: 700;
+}
+
+.account-dropdown__item--danger:hover {
+  background: rgba(255, 92, 92, 0.12);
+  color: #ff7575;
+}
+
+.profile-panel {
+  width: min(100%, 36rem);
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-card__avatar {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #8a8a8a;
+  padding: 0.2rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.profile-card__username {
+  margin: 0;
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.profile-card__id {
+  margin: 0.35rem 0 0.85rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.92rem;
+}
+
+.profile-card__roblox {
+  color: #7dd3fc;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.profile-card__roblox:hover {
+  text-decoration: underline;
 }
 
 .credits-page {
