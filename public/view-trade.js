@@ -10,6 +10,7 @@
   const yoursGrid = document.getElementById('view-trade-yours');
   const theirsGrid = document.getElementById('view-trade-theirs');
   const offererEl = document.getElementById('view-trade-offerer');
+  const offererAvatarEl = document.getElementById('view-trade-offerer-avatar');
   const timerEl = document.getElementById('view-trade-timer');
   const acceptBtn = document.getElementById('accept-trade-btn');
 
@@ -25,6 +26,16 @@
 
   if (offererEl) {
     offererEl.textContent = viewTrade.offerer || '—';
+  }
+
+  if (offererAvatarEl) {
+    const avatarUrl = viewTrade.offererAvatar || getOffererAvatarUrl(viewTrade);
+    if (avatarUrl) {
+      offererAvatarEl.src = avatarUrl;
+      offererAvatarEl.hidden = false;
+    } else {
+      offererAvatarEl.hidden = true;
+    }
   }
 
   if (timerEl && viewTrade.postedAt) {

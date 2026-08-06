@@ -9,9 +9,45 @@ const TRADES_API_BASE = '/api/trades';
 let postedTradesCache = [];
 let acceptedTradesCache = [];
 let tradesSyncPromise = null;
+let authUserCache = undefined;
+let authUserPromise = null;
 
 function usesTradeApi() {
   return typeof window !== 'undefined' && window.location.protocol !== 'file:';
+}
+
+async function ensureAuthUser() {
+  if (authUserCache !== undefined) return authUserCache;
+  if (authUserPromise) return authUserPromise;
+
+  authUserPromise = fetch('/api/auth/me', { credentials: 'same-origin' })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      authUserCache = data && data.user ? data.user : null;
+      return authUserCache;
+    })
+    .catch(() => {
+      authUserCache = null;
+      return null;
+    })
+    .finally(() => {
+      authUserPromise = null;
+    });
+
+  return authUserPromise;
+}
+
+function getAuthUser() {
+  return authUserCache || null;
+}
+
+function getOffererAvatarUrl(trade) {
+  if (trade?.offererAvatar) return trade.offererAvatar;
+  const postedBy = trade?.postedBy;
+  if (postedBy && !String(postedBy).startsWith('user-')) {
+    return `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(postedBy)}&width=150&height=150&format=png`;
+  }
+  return '';
 }
 
 function readLocalPostedTrades() {
@@ -42,6 +78,7 @@ function writeLocalAcceptedTrades(trades) {
 
 async function tradeApiRequest(path, options = {}) {
   const response = await fetch(`${TRADES_API_BASE}${path}`, {
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
@@ -65,6 +102,8 @@ async function tradeApiRequest(path, options = {}) {
 }
 
 async function refreshTradesFromServer() {
+  await ensureAuthUser();
+
   if (!usesTradeApi()) {
     postedTradesCache = readLocalPostedTrades();
     acceptedTradesCache = readLocalAcceptedTrades();
@@ -305,6 +344,10 @@ async function acceptPostedTrade(tradeId) {
 }
 
 function getCurrentUserId() {
+  if (authUserCache && authUserCache.id) {
+    return String(authUserCache.id);
+  }
+
   try {
     let id = localStorage.getItem(USER_ID_KEY);
     if (!id) {
@@ -352,8 +395,17 @@ async function savePostedTrade(trade) {
   const theirSide = trade.theirSide || [];
   if (!canPostTrade(yourSide, theirSide)) return false;
 
-  const postedBy = getCurrentUserId();
-  if (!postedBy) return false;
+  const authUser = await ensureAuthUser();
+  if (!authUser || !authUser.id) {
+    const error = new Error('Log in with Roblox to post a trade.');
+    error.code = 'AUTH_REQUIRED';
+    throw error;
+  }
+
+  const postedBy = String(authUser.id);
+  const offerer = authUser.username || authUser.name || 'Player';
+  const offererAvatar = authUser.avatarUrl || authUser.picture || getOffererAvatarUrl({ postedBy });
+  const offererProfile = authUser.profile || null;
 
   if (usesTradeApi()) {
     try {
@@ -362,14 +414,12 @@ async function savePostedTrade(trade) {
         body: JSON.stringify({
           yourSide,
           theirSide,
-          offerer: trade.offerer || '—',
-          postedBy,
         }),
       });
       postedTradesCache = [savedTrade, ...postedTradesCache.filter((item) => item.id !== savedTrade.id)];
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -377,7 +427,9 @@ async function savePostedTrade(trade) {
     id: Date.now(),
     postedAt: Date.now(),
     postedBy,
-    offerer: trade.offerer || '—',
+    offerer,
+    offererAvatar,
+    offererProfile,
     yourSide,
     theirSide,
   };
@@ -414,6 +466,9 @@ function setViewTradeSession(tradeId, source = 'posted') {
     tradeId: trade.id,
     source,
     offerer: trade.offerer || '—',
+    offererAvatar: trade.offererAvatar || getOffererAvatarUrl(trade),
+    offererProfile: trade.offererProfile || null,
+    postedBy: trade.postedBy || null,
     postedAt: trade.postedAt,
     yourSide: trade.theirSide || [],
     theirSide: trade.yourSide || [],
@@ -555,6 +610,10 @@ function buildPostedTradeHTML(trade, options = {}) {
   const viewerYourSide = trade.theirSide || [];
   const viewerTheirSide = trade.yourSide || [];
   const offerer = escapeHtml(trade.offerer || '—');
+  const offererAvatar = getOffererAvatarUrl(trade);
+  const offererAvatarHtml = offererAvatar
+    ? `<img class="posted-trade__offerer-avatar" src="${escapeHtml(offererAvatar)}" alt="" width="36" height="36" loading="lazy" referrerpolicy="no-referrer">`
+    : '';
   const userId = getCurrentUserId();
   const isAccepter = Boolean(userId && trade.acceptedBy === userId);
   const isPoster = Boolean(userId && trade.postedBy === userId);
@@ -628,6 +687,7 @@ function buildPostedTradeHTML(trade, options = {}) {
   return `<article class="posted-trade${articleModifier}" data-trade-id="${trade.id}" data-trade-source="${viewSource}">
     <div class="posted-trade__bar" style="${barStyle}">
       <div class="posted-trade__offerer">
+        ${offererAvatarHtml}
         <span class="posted-trade__offerer-name">${offerer}</span>
       </div>
       ${buildPostedTradeSideHTML(viewerYourSide, 'Your Side', { showLabel: false })}

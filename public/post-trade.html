@@ -1066,7 +1066,7 @@
       });
     });
 
-    document.getElementById('post-trade-btn').addEventListener('click', () => {
+    document.getElementById('post-trade-btn').addEventListener('click', async () => {
       const postError = document.getElementById('post-trade-error');
       const yoursGrid = getTradeGrid('yours');
       const theirsGrid = getTradeGrid('theirs');
@@ -1082,16 +1082,35 @@
         return;
       }
 
+      const authUser = await ensureAuthUser();
+      if (!authUser || !authUser.id) {
+        if (postError) {
+          postError.innerHTML = 'Log in with Roblox to post a trade. <a href="/api/auth/roblox">Log In</a>';
+          postError.hidden = false;
+        }
+        return;
+      }
+
       if (postError) postError.hidden = true;
 
-      savePostedTrade({ yourSide, theirSide }).then((saved) => {
+      try {
+        const saved = await savePostedTrade({ yourSide, theirSide });
         if (saved) {
           window.location.href = 'trading.html';
         } else if (postError) {
           postError.textContent = 'Could not post trade. Try again.';
           postError.hidden = false;
         }
-      });
+      } catch (error) {
+        if (postError) {
+          if (error && error.code === 'AUTH_REQUIRED') {
+            postError.innerHTML = 'Log in with Roblox to post a trade. <a href="/api/auth/roblox">Log In</a>';
+          } else {
+            postError.textContent = (error && error.message) || 'Could not post trade. Try again.';
+          }
+          postError.hidden = false;
+        }
+      }
     });
   </script>
   <script src="nav.js"></script>

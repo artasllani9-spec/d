@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerRobloxAuth } = require('./roblox-auth');
+const { registerRobloxAuth, getSessionUser } = require('./roblox-auth');
 const {
   MAX_STORED_TRADES,
   readStore,
@@ -7,6 +7,13 @@ const {
   canPostTrade,
   createTradeId,
 } = require('./trade-store');
+
+function resolveUserId(req, fallbackId) {
+  const sessionUser = getSessionUser(req);
+  if (sessionUser && sessionUser.id) return String(sessionUser.id);
+  if (fallbackId == null || fallbackId === '') return null;
+  return String(fallbackId);
+}
 
 function createTradeApp() {
   const app = express();
@@ -21,12 +28,13 @@ function createTradeApp() {
   });
 
   app.post('/api/trades/posted', (req, res) => {
-    const { yourSide = [], theirSide = [], offerer, postedBy } = req.body || {};
-
-    if (!postedBy || typeof postedBy !== 'string') {
-      res.status(400).json({ message: 'Missing poster id.' });
+    const sessionUser = getSessionUser(req);
+    if (!sessionUser) {
+      res.status(401).json({ message: 'Log in with Roblox to post a trade.' });
       return;
     }
+
+    const { yourSide = [], theirSide = [] } = req.body || {};
 
     if (!canPostTrade(yourSide, theirSide)) {
       res.status(400).json({ message: 'Invalid trade sides.' });
@@ -36,8 +44,10 @@ function createTradeApp() {
     const trade = {
       id: createTradeId(),
       postedAt: Date.now(),
-      postedBy,
-      offerer: offerer || '—',
+      postedBy: String(sessionUser.id),
+      offerer: sessionUser.username || sessionUser.name || 'Player',
+      offererAvatar: sessionUser.avatarUrl || sessionUser.picture || null,
+      offererProfile: sessionUser.profile || null,
       yourSide,
       theirSide,
     };
@@ -51,7 +61,7 @@ function createTradeApp() {
 
   app.delete('/api/trades/posted/:id', (req, res) => {
     const tradeId = Number(req.params.id);
-    const userId = req.query.userId;
+    const userId = resolveUserId(req, req.query.userId);
 
     if (!userId) {
       res.status(400).json({ message: 'Missing user id.' });
@@ -77,7 +87,7 @@ function createTradeApp() {
 
   app.post('/api/trades/posted/:id/accept', (req, res) => {
     const tradeId = Number(req.params.id);
-    const { userId } = req.body || {};
+    const userId = resolveUserId(req, req.body && req.body.userId);
 
     if (!userId) {
       res.status(400).json({ message: 'Missing user id.' });
@@ -111,7 +121,7 @@ function createTradeApp() {
   });
 
   app.get('/api/trades/accepted', (req, res) => {
-    const userId = req.query.userId;
+    const userId = resolveUserId(req, req.query.userId);
     if (!userId) {
       res.status(400).json({ message: 'Missing user id.' });
       return;
@@ -138,7 +148,8 @@ function createTradeApp() {
 
   app.patch('/api/trades/accepted/:id', (req, res) => {
     const tradeId = Number(req.params.id);
-    const { userId, failedAt, completedAt } = req.body || {};
+    const { failedAt, completedAt } = req.body || {};
+    const userId = resolveUserId(req, req.body && req.body.userId);
 
     if (!userId) {
       res.status(400).json({ message: 'Missing user id.' });
