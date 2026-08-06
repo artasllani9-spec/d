@@ -41,7 +41,8 @@
     if (idEl) idEl.textContent = `Roblox ID: ${user.id || '—'}`;
     if (robloxLink) {
       robloxLink.href = robloxUrl;
-      robloxLink.textContent = 'View on Roblox';
+      const labelEl = robloxLink.querySelector('.profile-card__roblox-label');
+      if (labelEl) labelEl.textContent = 'View on Roblox';
     }
   }
 
