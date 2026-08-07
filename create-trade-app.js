@@ -27,6 +27,31 @@ function normalizeRobloxId(value) {
   return id;
 }
 
+async function fetchRobloxUsername(userId) {
+  try {
+    const response = await fetch(`https://users.roblox.com/v1/users/${encodeURIComponent(userId)}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.name || data.displayName || null;
+  } catch {
+    return null;
+  }
+}
+
+async function enrichModerators(moderatorIds) {
+  const ids = (Array.isArray(moderatorIds) ? moderatorIds : [])
+    .map((id) => String(id))
+    .filter((id) => id && id !== SITE_OWNER_ID);
+
+  return Promise.all(ids.map(async (id) => {
+    const username = await fetchRobloxUsername(id);
+    return {
+      id,
+      username: username || null,
+    };
+  }));
+}
+
 async function rejectIfBanned(req, res) {
   const sessionUser = getSessionUser(req);
   if (!sessionUser) return { sessionUser: null, store: null, banned: false };
@@ -55,7 +80,7 @@ function createTradeApp() {
       const store = await readStore();
       res.json({
         ownerId: SITE_OWNER_ID,
-        moderators: store.moderators.filter((id) => String(id) !== SITE_OWNER_ID),
+        moderators: await enrichModerators(store.moderators),
       });
     } catch (error) {
       res.status(500).json({ message: error.message || 'Could not load moderators.' });
@@ -89,9 +114,11 @@ function createTradeApp() {
 
       store.moderators.push(userId);
       await writeStore(store);
+      const moderators = await enrichModerators(store.moderators);
+      const added = moderators.find((item) => item.id === userId) || { id: userId, username: null };
       res.status(201).json({
-        moderators: store.moderators.filter((id) => String(id) !== SITE_OWNER_ID),
-        added: userId,
+        moderators,
+        added,
       });
     } catch (error) {
       res.status(500).json({ message: error.message || 'Could not add moderator.' });
@@ -116,7 +143,7 @@ function createTradeApp() {
       store.moderators = store.moderators.filter((id) => String(id) !== userId);
       await writeStore(store);
       res.json({
-        moderators: store.moderators.filter((id) => String(id) !== SITE_OWNER_ID),
+        moderators: await enrichModerators(store.moderators),
       });
     } catch (error) {
       res.status(500).json({ message: error.message || 'Could not remove moderator.' });

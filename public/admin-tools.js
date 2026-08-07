@@ -14,20 +14,46 @@
     statusEl.classList.toggle('admin-moderator-status--error', Boolean(isError));
   }
 
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatModeratorLabel(moderator) {
+    const id = typeof moderator === 'object' && moderator
+      ? String(moderator.id || '')
+      : String(moderator || '');
+    const username = typeof moderator === 'object' && moderator && moderator.username
+      ? String(moderator.username)
+      : '';
+    if (!id) return 'Unknown';
+    return username ? `${id} @${username}` : id;
+  }
+
   function renderModerators(moderators) {
     if (!listEl) return;
-    const ids = Array.isArray(moderators) ? moderators : [];
-    if (!ids.length) {
+    const list = Array.isArray(moderators) ? moderators : [];
+    if (!list.length) {
       listEl.innerHTML = '<li class="admin-moderator-list__empty">No site moderators yet.</li>';
       return;
     }
 
-    listEl.innerHTML = ids.map((id) => `
-      <li class="admin-moderator-list__item" data-user-id="${String(id)}">
-        <span class="admin-moderator-list__id">${String(id)}</span>
+    listEl.innerHTML = list.map((moderator) => {
+      const id = typeof moderator === 'object' && moderator
+        ? String(moderator.id || '')
+        : String(moderator || '');
+      const label = formatModeratorLabel(moderator);
+      return `
+      <li class="admin-moderator-list__item" data-user-id="${escapeHtml(id)}">
+        <span class="admin-moderator-list__id">${escapeHtml(label)}</span>
         <button type="button" class="admin-moderator-list__remove">Remove</button>
       </li>
-    `).join('');
+    `;
+    }).join('');
   }
 
   async function loadModerators() {
@@ -79,7 +105,7 @@
       addModerator(userId)
         .then((added) => {
           input.value = '';
-          setStatus(`Added site moderator ${added}.`, false);
+          setStatus(`Added site moderator ${formatModeratorLabel(added)}.`, false);
         })
         .catch((error) => {
           setStatus((error && error.message) || 'Could not add moderator.', true);
