@@ -475,7 +475,7 @@ video {
   max-width: 18rem;
   align-self: center;
   justify-self: start;
-  margin: 0 0 0 0.35rem;
+  margin: 0 0 0 -0.35rem;
   padding: 0;
 }
 
