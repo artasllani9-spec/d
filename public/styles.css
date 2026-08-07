@@ -567,7 +567,7 @@ video {
   background: rgba(190, 55, 55, 0.58);
 }
 
-.profile-card__mod-actions {
+.profile-card__user-actions {
   position: absolute;
   top: 0.7rem;
   right: 0.7rem;
@@ -575,6 +575,60 @@ video {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 1.4rem);
+}
+
+.profile-user-btn {
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  color: #fff;
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.profile-user-btn--report {
+  border: 1px solid rgba(255, 190, 70, 0.55);
+  background: rgba(180, 120, 20, 0.45);
+}
+
+.profile-user-btn--report:hover {
+  background: rgba(210, 145, 30, 0.62);
+  border-color: rgba(255, 200, 90, 0.75);
+  box-shadow: 0 0 16px rgba(255, 170, 40, 0.35);
+}
+
+.profile-user-btn--block {
+  border: 1px solid rgba(255, 120, 120, 0.55);
+  background: rgba(140, 40, 40, 0.5);
+}
+
+.profile-user-btn--block:hover {
+  background: rgba(170, 50, 50, 0.68);
+  border-color: rgba(255, 140, 140, 0.75);
+  box-shadow: 0 0 16px rgba(255, 70, 70, 0.35);
+}
+
+.profile-user-btn--block.profile-user-btn--unblock {
+  border: 1px solid rgba(120, 220, 160, 0.55);
+  background: rgba(40, 140, 90, 0.5);
+}
+
+.profile-user-btn--block.profile-user-btn--unblock:hover {
+  background: rgba(50, 165, 105, 0.68);
+  border-color: rgba(140, 235, 180, 0.75);
+  box-shadow: 0 0 16px rgba(80, 220, 130, 0.35);
+}
+
+.profile-user-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .profile-ban-btn {

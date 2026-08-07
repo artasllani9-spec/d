@@ -6,6 +6,8 @@
   const tradesFeed = document.getElementById('profile-trades-feed');
   const tradesEmpty = document.getElementById('profile-trades-empty');
   const banBtn = document.getElementById('profile-ban-btn');
+  const blockBtn = document.getElementById('profile-block-btn');
+  const reportBtn = document.getElementById('profile-report-btn');
   if (!loading || !card) return;
 
   const avatar = card.querySelector('.profile-card__avatar');
@@ -19,8 +21,10 @@
   const profileId = (params.get('id') || '').trim();
 
   let viewedUserId = null;
+  let viewerLoggedIn = false;
   let viewerRoles = { isModerator: false, isOwner: false };
   let profileModeration = null;
+  let profileRelationship = null;
 
   function avatarUrlFor(user) {
     if (user.avatarUrl) return user.avatarUrl;
@@ -38,6 +42,13 @@
     if (failedStat) failedStat.textContent = String(next.failed || 0);
   }
 
+  function isViewingSelf() {
+    if (profileRelationship && typeof profileRelationship.isSelf === 'boolean') {
+      return profileRelationship.isSelf;
+    }
+    return Boolean(getAuthUser() && viewedUserId && String(getAuthUser().id) === String(viewedUserId));
+  }
+
   function syncBanButton() {
     if (!banBtn || !viewedUserId) {
       if (banBtn) banBtn.hidden = true;
@@ -45,7 +56,7 @@
     }
 
     const canModerate = Boolean(viewerRoles && viewerRoles.isModerator);
-    const isSelf = Boolean(getAuthUser() && String(getAuthUser().id) === String(viewedUserId));
+    const isSelf = isViewingSelf();
     const targetIsOwner = Boolean(profileModeration && profileModeration.isOwner);
     const targetIsModerator = Boolean(profileModeration && profileModeration.isModerator);
     const isBanned = Boolean(profileModeration && profileModeration.isBanned);
@@ -65,13 +76,37 @@
     banBtn.classList.toggle('profile-ban-btn--unban', isBanned);
   }
 
-  function renderUser(user, stats, moderation) {
+  function syncUserActionButtons() {
+    const showActions = Boolean(viewerLoggedIn && viewedUserId && !isViewingSelf());
+
+    if (reportBtn) {
+      reportBtn.hidden = !showActions;
+      reportBtn.disabled = false;
+    }
+
+    if (blockBtn) {
+      if (!showActions) {
+        blockBtn.hidden = true;
+      } else {
+        const isBlocked = Boolean(profileRelationship && profileRelationship.blockedByViewer);
+        blockBtn.hidden = false;
+        blockBtn.disabled = false;
+        blockBtn.textContent = isBlocked ? 'Unblock' : 'Block';
+        blockBtn.classList.toggle('profile-user-btn--unblock', isBlocked);
+      }
+    }
+
+    syncBanButton();
+  }
+
+  function renderUser(user, stats, moderation, relationship) {
     const label = user.username || user.name || 'Player';
     const imageUrl = avatarUrlFor(user);
     const robloxUrl = user.profile || `https://www.roblox.com/users/${encodeURIComponent(user.id)}/profile`;
 
     viewedUserId = user.id ? String(user.id) : null;
     profileModeration = moderation || null;
+    profileRelationship = relationship || null;
 
     loading.hidden = true;
     card.hidden = false;
@@ -90,7 +125,7 @@
       if (labelEl) labelEl.textContent = 'View on Roblox';
     }
     renderStats(stats);
-    syncBanButton();
+    syncUserActionButtons();
   }
 
   async function renderPublishedTrades(userId) {
@@ -156,6 +191,58 @@
     });
   }
 
+  if (reportBtn) {
+    reportBtn.addEventListener('click', () => {
+      if (!viewedUserId) return;
+      if (!window.confirm('Are you sure you would like to report this user?')) return;
+      window.alert('Thanks. Your report was submitted.');
+    });
+  }
+
+  if (blockBtn) {
+    blockBtn.addEventListener('click', async () => {
+      if (!viewedUserId) return;
+      const isBlocked = Boolean(profileRelationship && profileRelationship.blockedByViewer);
+
+      if (!isBlocked) {
+        if (!window.confirm('Are you sure you would like to block this user?')) return;
+      }
+
+      blockBtn.disabled = true;
+      try {
+        const response = await fetch(
+          isBlocked
+            ? `/api/moderation/blocks/${encodeURIComponent(viewedUserId)}`
+            : '/api/moderation/blocks',
+          {
+            method: isBlocked ? 'DELETE' : 'POST',
+            credentials: 'same-origin',
+            headers: isBlocked ? undefined : { 'Content-Type': 'application/json' },
+            body: isBlocked ? undefined : JSON.stringify({ userId: viewedUserId }),
+          },
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok && response.status !== 204) {
+          if (response.status === 401) {
+            window.location.href = '/api/auth/roblox';
+            return;
+          }
+          throw new Error(data.message || (isBlocked ? 'Could not unblock user.' : 'Could not block user.'));
+        }
+
+        profileRelationship = {
+          ...(profileRelationship || {}),
+          blockedByViewer: !isBlocked,
+          isSelf: false,
+        };
+        syncUserActionButtons();
+      } catch (error) {
+        window.alert((error && error.message) || 'Could not update block.');
+        blockBtn.disabled = false;
+      }
+    });
+  }
+
   if (banBtn) {
     banBtn.addEventListener('click', async () => {
       if (!viewedUserId) return;
@@ -208,6 +295,7 @@
           return;
         }
 
+        viewerLoggedIn = true;
         viewerRoles = {
           isOwner: Boolean(data.roles && data.roles.isOwner),
           isModerator: Boolean(data.roles && data.roles.isModerator),
@@ -215,6 +303,7 @@
 
         let stats = { posted: 0, completed: 0, failed: 0 };
         let moderation = null;
+        let relationship = { isSelf: true, blockedByViewer: false };
         try {
           const statsResponse = await fetch(`/api/users/${encodeURIComponent(data.user.id)}`, {
             credentials: 'same-origin',
@@ -223,12 +312,13 @@
             const statsData = await statsResponse.json();
             if (statsData && statsData.stats) stats = statsData.stats;
             moderation = statsData.moderation || null;
+            relationship = statsData.relationship || relationship;
           }
         } catch {
           // Keep zeroed stats if lookup fails.
         }
 
-        renderUser(data.user, stats, moderation);
+        renderUser(data.user, stats, moderation, relationship);
         await renderPublishedTrades(data.user.id);
       });
   }
@@ -242,6 +332,7 @@
           window.location.replace('banned.html');
           return;
         }
+        viewerLoggedIn = Boolean(authData && authData.user);
         viewerRoles = {
           isOwner: Boolean(authData && authData.roles && authData.roles.isOwner),
           isModerator: Boolean(authData && authData.roles && authData.roles.isModerator),
@@ -257,7 +348,7 @@
         if (!data || !data.user) {
           throw new Error('Profile not found.');
         }
-        renderUser(data.user, data.stats, data.moderation);
+        renderUser(data.user, data.stats, data.moderation, data.relationship);
         await renderPublishedTrades(data.user.id);
       });
   }

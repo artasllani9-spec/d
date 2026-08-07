@@ -17,7 +17,7 @@ let writeQueue = Promise.resolve();
 const SITE_OWNER_ID = '3519737769';
 
 function emptyStore() {
-  return { posted: [], accepted: [], moderators: [], bans: [] };
+  return { posted: [], accepted: [], moderators: [], bans: [], blocks: [] };
 }
 
 function normalizeBan(ban) {
@@ -29,6 +29,18 @@ function normalizeBan(ban) {
   };
 }
 
+function normalizeBlock(block) {
+  if (!block || block.blockerId == null || block.blockedId == null) return null;
+  const blockerId = String(block.blockerId);
+  const blockedId = String(block.blockedId);
+  if (!blockerId || !blockedId || blockerId === blockedId) return null;
+  return {
+    blockerId,
+    blockedId,
+    blockedAt: Number(block.blockedAt) || Date.now(),
+  };
+}
+
 function normalizeStore(store) {
   const moderators = Array.isArray(store && store.moderators)
     ? [...new Set(store.moderators.map((id) => String(id)).filter(Boolean))]
@@ -36,12 +48,16 @@ function normalizeStore(store) {
   const bans = Array.isArray(store && store.bans)
     ? store.bans.map(normalizeBan).filter(Boolean)
     : [];
+  const blocks = Array.isArray(store && store.blocks)
+    ? store.blocks.map(normalizeBlock).filter(Boolean)
+    : [];
 
   return {
     posted: Array.isArray(store && store.posted) ? store.posted : [],
     accepted: Array.isArray(store && store.accepted) ? store.accepted : [],
     moderators,
     bans,
+    blocks,
   };
 }
 
@@ -52,6 +68,7 @@ function cloneStore(store) {
     accepted: [...normalized.accepted],
     moderators: [...normalized.moderators],
     bans: normalized.bans.map((ban) => ({ ...ban })),
+    blocks: normalized.blocks.map((block) => ({ ...block })),
   };
 }
 
@@ -75,6 +92,23 @@ function getBanRecord(store, userId) {
 
 function isBannedUser(store, userId) {
   return Boolean(getBanRecord(store, userId));
+}
+
+function hasUserBlocked(store, blockerId, blockedId) {
+  if (!store || !Array.isArray(store.blocks) || !blockerId || !blockedId) return false;
+  const blocker = String(blockerId);
+  const blocked = String(blockedId);
+  return store.blocks.some(
+    (block) => String(block.blockerId) === blocker && String(block.blockedId) === blocked,
+  );
+}
+
+function getBlockedIdsForUser(store, blockerId) {
+  if (!store || !Array.isArray(store.blocks) || !blockerId) return [];
+  const blocker = String(blockerId);
+  return store.blocks
+    .filter((block) => String(block.blockerId) === blocker)
+    .map((block) => String(block.blockedId));
 }
 
 function getGitHubToken() {
@@ -264,6 +298,7 @@ function mergeStores(...stores) {
   const acceptedMap = new Map();
   const moderatorSet = new Set();
   const bansMap = new Map();
+  const blocksMap = new Map();
 
   stores.filter(Boolean).forEach((store) => {
     const normalized = normalizeStore(store);
@@ -290,6 +325,13 @@ function mergeStores(...stores) {
         bansMap.set(ban.userId, ban);
       }
     });
+    normalized.blocks.forEach((block) => {
+      const key = `${block.blockerId}:${block.blockedId}`;
+      const current = blocksMap.get(key);
+      if (!current || (block.blockedAt || 0) >= (current.blockedAt || 0)) {
+        blocksMap.set(key, block);
+      }
+    });
   });
 
   acceptedMap.forEach((_trade, id) => {
@@ -301,6 +343,7 @@ function mergeStores(...stores) {
     accepted: [...acceptedMap.values()].sort((a, b) => (b.acceptedAt || b.postedAt || 0) - (a.acceptedAt || a.postedAt || 0)),
     moderators: [...moderatorSet],
     bans: [...bansMap.values()].sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0)),
+    blocks: [...blocksMap.values()].sort((a, b) => (b.blockedAt || 0) - (a.blockedAt || 0)),
   };
 }
 
@@ -415,4 +458,6 @@ module.exports = {
   isSiteModerator,
   isBannedUser,
   getBanRecord,
+  hasUserBlocked,
+  getBlockedIdsForUser,
 };

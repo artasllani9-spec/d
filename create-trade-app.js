@@ -12,6 +12,8 @@ const {
   isSiteModerator,
   isBannedUser,
   getBanRecord,
+  hasUserBlocked,
+  getBlockedIdsForUser,
 } = require('./trade-store');
 
 function resolveUserId(req, fallbackId) {
@@ -236,6 +238,94 @@ function createTradeApp() {
     }
   });
 
+  app.get('/api/moderation/blocks', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser) {
+        res.status(401).json({ message: 'Log in to view blocked users.' });
+        return;
+      }
+
+      const store = await readStore();
+      res.json({
+        blockedIds: getBlockedIdsForUser(store, sessionUser.id),
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not load blocks.' });
+    }
+  });
+
+  app.post('/api/moderation/blocks', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser) {
+        res.status(401).json({ message: 'Log in to block users.' });
+        return;
+      }
+
+      const userId = normalizeRobloxId(req.body && req.body.userId);
+      if (!userId) {
+        res.status(400).json({ message: 'Invalid user id.' });
+        return;
+      }
+
+      if (String(userId) === String(sessionUser.id)) {
+        res.status(400).json({ message: 'You cannot block yourself.' });
+        return;
+      }
+
+      const store = await readStore();
+      if (hasUserBlocked(store, sessionUser.id, userId)) {
+        res.status(400).json({ message: 'That user is already blocked.' });
+        return;
+      }
+
+      const block = {
+        blockerId: String(sessionUser.id),
+        blockedId: userId,
+        blockedAt: Date.now(),
+      };
+      store.blocks.unshift(block);
+      await writeStore(store);
+      res.status(201).json({ block });
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not block user.' });
+    }
+  });
+
+  app.delete('/api/moderation/blocks/:id', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser) {
+        res.status(401).json({ message: 'Log in to unblock users.' });
+        return;
+      }
+
+      const userId = normalizeRobloxId(req.params.id);
+      if (!userId) {
+        res.status(400).json({ message: 'Invalid user id.' });
+        return;
+      }
+
+      const store = await readStore();
+      if (!hasUserBlocked(store, sessionUser.id, userId)) {
+        res.status(404).json({ message: 'That user is not blocked.' });
+        return;
+      }
+
+      store.blocks = store.blocks.filter(
+        (block) => !(
+          String(block.blockerId) === String(sessionUser.id) &&
+          String(block.blockedId) === userId
+        ),
+      );
+      await writeStore(store);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not unblock user.' });
+    }
+  });
+
   app.get('/api/trades/posted', async (req, res) => {
     try {
       const store = await readStore();
@@ -243,6 +333,14 @@ function createTradeApp() {
       const userId = req.query.userId ? String(req.query.userId) : '';
       if (userId) {
         posted = posted.filter((trade) => String(trade.postedBy) === userId);
+      } else {
+        const sessionUser = getSessionUser(req);
+        if (sessionUser) {
+          const blockedIds = new Set(getBlockedIdsForUser(store, sessionUser.id));
+          if (blockedIds.size) {
+            posted = posted.filter((trade) => !blockedIds.has(String(trade.postedBy)));
+          }
+        }
       }
       res.json(posted);
     } catch (error) {
@@ -346,6 +444,16 @@ function createTradeApp() {
       const trade = store.posted[tradeIndex];
       if (String(trade.postedBy) === userId) {
         res.status(403).json({ message: 'You cannot accept your own trade.' });
+        return;
+      }
+
+      if (hasUserBlocked(store, trade.postedBy, userId)) {
+        res.status(403).json({ message: 'You cannot accept this trade.' });
+        return;
+      }
+
+      if (hasUserBlocked(store, userId, trade.postedBy)) {
+        res.status(403).json({ message: 'You blocked this user. Unblock them to accept their trades.' });
         return;
       }
 
@@ -485,6 +593,9 @@ function createTradeApp() {
       const sessionUser = getSessionUser(req);
       const viewerIsModerator = sessionUser ? isSiteModerator(store, sessionUser.id) : false;
       const ban = getBanRecord(store, id);
+      const blockedByViewer = sessionUser
+        ? hasUserBlocked(store, sessionUser.id, id)
+        : false;
 
       res.json({
         user: {
@@ -510,6 +621,12 @@ function createTradeApp() {
             ),
           ).length,
         },
+        relationship: sessionUser
+          ? {
+              blockedByViewer,
+              isSelf: String(sessionUser.id) === String(id),
+            }
+          : null,
         moderation: viewerIsModerator
           ? {
               isBanned: Boolean(ban),
