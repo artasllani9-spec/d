@@ -478,10 +478,10 @@ video {
   grid-area: stats;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  min-width: 15.5rem;
-  padding: 1.05rem 1.2rem;
-  border-radius: 14px;
+  gap: 0.95rem;
+  min-width: 19rem;
+  padding: 1.35rem 1.5rem;
+  border-radius: 16px;
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -490,9 +490,9 @@ video {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1.1rem;
+  gap: 1.35rem;
   font-family: "Outfit", system-ui, sans-serif;
-  font-size: 1.12rem;
+  font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.25;
 }
@@ -503,7 +503,7 @@ video {
 
 .profile-stat__value {
   font-variant-numeric: tabular-nums;
-  font-size: 1.28rem;
+  font-size: 1.55rem;
   font-weight: 800;
 }
 
