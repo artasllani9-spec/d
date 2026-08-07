@@ -445,10 +445,10 @@ video {
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   grid-template-areas:
     "avatar meta . stats"
-    "button meta . stats";
+    "button . . stats";
   align-items: start;
-  column-gap: 0.7rem;
-  row-gap: 0.75rem;
+  column-gap: 0.55rem;
+  row-gap: 0.7rem;
   margin-top: 1.25rem;
   padding: 1.1rem 1.15rem;
   border-radius: 14px;
@@ -472,9 +472,11 @@ video {
 .profile-card__meta {
   grid-area: meta;
   min-width: 0;
-  max-width: 16rem;
+  max-width: 18rem;
   align-self: center;
-  padding-left: 0.15rem;
+  justify-self: start;
+  margin: 0;
+  padding: 0;
 }
 
 .profile-card__stats {
@@ -530,12 +532,14 @@ video {
   font-size: 1.35rem;
   font-weight: 800;
   color: #fff;
+  line-height: 1.15;
 }
 
 .profile-card__id {
-  margin: 0.35rem 0 0;
+  margin: 0.28rem 0 0;
   color: rgba(255, 255, 255, 0.62);
   font-size: 0.92rem;
+  line-height: 1.2;
 }
 
 .profile-card__roblox {
