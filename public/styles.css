@@ -1713,14 +1713,24 @@ a.view-trade-offerer__name:hover {
   white-space: nowrap;
 }
 
-.trade-action-btn--accept {
-  background: rgba(40, 140, 90, 0.45);
-  border-color: rgba(120, 220, 160, 0.5);
+.trade-action-btn--accept,
+.trade-action-btn--delete {
   position: relative;
   overflow: hidden;
 }
 
+.trade-action-btn--accept {
+  background: rgba(40, 140, 90, 0.45);
+  border-color: rgba(120, 220, 160, 0.5);
+}
+
+.trade-action-btn--delete {
+  background: rgba(170, 45, 45, 0.45);
+  border-color: rgba(255, 120, 120, 0.5);
+}
+
 .trade-action-btn--accept::before,
+.trade-action-btn--delete::before,
 .trade-action-btn--return::before {
   content: "";
   position: absolute;
@@ -1733,6 +1743,10 @@ a.view-trade-offerer__name:hover {
 
 .trade-action-btn--accept::before {
   background: radial-gradient(circle at 50% 50%, rgba(120, 255, 170, 0.55), rgba(60, 200, 110, 0.18) 55%, transparent 78%);
+}
+
+.trade-action-btn--delete::before {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 120, 120, 0.55), rgba(220, 60, 60, 0.18) 55%, transparent 78%);
 }
 
 .trade-action-btn--return {
@@ -1759,6 +1773,21 @@ a.view-trade-offerer__name:hover {
   opacity: 1;
 }
 
+.trade-action-btn--delete:hover {
+  background: rgba(190, 55, 55, 0.62);
+  border-color: rgba(255, 140, 140, 0.85);
+  box-shadow:
+    inset 0 0 22px rgba(255, 100, 100, 0.5),
+    inset 0 0 10px rgba(230, 70, 70, 0.35),
+    0 0 18px rgba(255, 80, 80, 0.65),
+    0 0 36px rgba(220, 50, 50, 0.4),
+    0 6px 22px rgba(180, 35, 35, 0.45);
+}
+
+.trade-action-btn--delete:hover::before {
+  opacity: 1;
+}
+
 .trade-action-btn--return:hover {
   background: rgba(170, 45, 45, 0.55);
   border-color: rgba(255, 120, 120, 0.8);
@@ -1775,6 +1804,7 @@ a.view-trade-offerer__name:hover {
 }
 
 .trade-action-btn--accept .trade-action-btn__label,
+.trade-action-btn--delete .trade-action-btn__label,
 .trade-action-btn--return .trade-action-btn__label {
   position: relative;
   z-index: 1;

@@ -59,9 +59,29 @@
 
   if (acceptBtn) {
     const postedTrade = viewTrade.tradeId ? getPostedTradeById(viewTrade.tradeId) : null;
-    if (!postedTrade || !canUserAcceptTrade(postedTrade)) {
-      acceptBtn.hidden = true;
-    } else {
+    const labelEl = acceptBtn.querySelector('.trade-action-btn__label');
+    const isOwnPosted = Boolean(
+      postedTrade &&
+      viewTrade.source !== 'accepted' &&
+      canUserDeleteTrade(postedTrade),
+    );
+
+    if (isOwnPosted) {
+      acceptBtn.classList.remove('trade-action-btn--accept');
+      acceptBtn.classList.add('trade-action-btn--delete');
+      acceptBtn.id = 'delete-trade-btn';
+      if (labelEl) labelEl.textContent = 'Delete Trade';
+      acceptBtn.addEventListener('click', () => {
+        if (!window.confirm('Delete this trade offer?')) return;
+        deletePostedTrade(viewTrade.tradeId).then((deleted) => {
+          if (deleted) {
+            window.location.href = 'trading.html';
+            return;
+          }
+          window.alert('Could not delete trade.');
+        });
+      });
+    } else if (postedTrade && canUserAcceptTrade(postedTrade)) {
       acceptBtn.addEventListener('click', () => {
         acceptPostedTrade(viewTrade.tradeId).then((accepted) => {
           if (accepted) {
@@ -75,6 +95,8 @@
           window.alert((error && error.message) || 'Could not accept trade.');
         });
       });
+    } else {
+      acceptBtn.hidden = true;
     }
   }
 })();

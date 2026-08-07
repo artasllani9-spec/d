@@ -403,7 +403,8 @@ async function deletePostedTrade(tradeId) {
   const trade = getPostedTradeById(tradeId);
   if (!trade || !canUserDeleteTrade(trade)) return false;
 
-  const userId = getCurrentUserId();
+  const authUser = await ensureAuthUser();
+  const userId = authUser && authUser.id ? String(authUser.id) : getCurrentUserId();
   if (!userId) return false;
 
   if (usesTradeApi()) {
