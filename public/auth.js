@@ -46,6 +46,11 @@
     adminToolsBtn.className = 'admin-tools-btn';
     adminToolsBtn.setAttribute('aria-label', 'Admin tools');
     adminToolsBtn.title = 'Admin tools';
+    adminToolsBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.href = 'admin-tools.html';
+    });
 
     const icon = document.createElement('span');
     icon.className = 'admin-tools-btn__icon';
