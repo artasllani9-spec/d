@@ -86,6 +86,27 @@
       </section>
     </article>
   </main>
+
+  <div class="report-modal" id="report-modal" hidden>
+    <div class="report-modal__backdrop" data-report-close></div>
+    <div class="report-glass-bar" role="dialog" aria-modal="true" aria-labelledby="report-modal-title">
+      <h2 class="report-glass-bar__title" id="report-modal-title">Report [@user]:</h2>
+      <label class="report-glass-bar__label" for="report-reason-input">Type reason for report..</label>
+      <textarea
+        class="report-glass-bar__input"
+        id="report-reason-input"
+        rows="4"
+        maxlength="1000"
+        placeholder="Type reason for report.."
+      ></textarea>
+      <p class="report-glass-bar__status" id="report-status" hidden></p>
+      <div class="report-glass-bar__actions">
+        <button type="button" class="report-glass-bar__btn report-glass-bar__btn--cancel" id="report-cancel-btn">Cancel</button>
+        <button type="button" class="report-glass-bar__btn report-glass-bar__btn--submit" id="report-submit-btn">Submit</button>
+      </div>
+    </div>
+  </div>
+
   <script src="trades.js"></script>
   <script src="nav.js"></script>
   <script src="auth.js"></script>

@@ -251,6 +251,16 @@
     height: 1.4rem;
   }
 
+  .mod-reports-btn {
+    width: 2.35rem;
+    height: 2.35rem;
+    min-height: 2.35rem;
+  }
+
+  .mod-reports-btn__icon {
+    font-size: 1.05rem;
+  }
+
   .discord-link {
     width: 2.1rem;
     height: 2.1rem;

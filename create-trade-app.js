@@ -326,6 +326,89 @@ function createTradeApp() {
     }
   });
 
+  app.get('/api/moderation/reports', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser) {
+        res.status(401).json({ message: 'Log in to view reports.' });
+        return;
+      }
+
+      const store = await readStore();
+      if (!isSiteModerator(store, sessionUser.id)) {
+        res.status(403).json({ message: 'Only site moderators can view reports.' });
+        return;
+      }
+
+      res.json({
+        reports: [...store.reports].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not load reports.' });
+    }
+  });
+
+  app.post('/api/moderation/reports', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser) {
+        res.status(401).json({ message: 'Log in to report users.' });
+        return;
+      }
+
+      const reportedId = normalizeRobloxId(req.body && req.body.userId);
+      const reason = String((req.body && req.body.reason) || '').trim();
+      if (!reportedId) {
+        res.status(400).json({ message: 'Invalid user id.' });
+        return;
+      }
+      if (!reason) {
+        res.status(400).json({ message: 'Enter a reason for the report.' });
+        return;
+      }
+      if (reason.length > 1000) {
+        res.status(400).json({ message: 'Report reason is too long.' });
+        return;
+      }
+      if (String(reportedId) === String(sessionUser.id)) {
+        res.status(400).json({ message: 'You cannot report yourself.' });
+        return;
+      }
+
+      let reportedUsername = req.body && req.body.username
+        ? String(req.body.username).trim()
+        : null;
+      if (!reportedUsername) {
+        try {
+          const robloxResponse = await fetch(`https://users.roblox.com/v1/users/${reportedId}`);
+          if (robloxResponse.ok) {
+            const data = await robloxResponse.json();
+            reportedUsername = data.name || data.displayName || null;
+          }
+        } catch {
+          // Keep null if lookup fails.
+        }
+      }
+
+      const store = await readStore();
+      const report = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        reporterId: String(sessionUser.id),
+        reporterUsername: sessionUser.username || sessionUser.name || null,
+        reportedId,
+        reportedUsername,
+        reason,
+        createdAt: Date.now(),
+      };
+      store.reports.unshift(report);
+      store.reports = store.reports.slice(0, 500);
+      await writeStore(store);
+      res.status(201).json({ report });
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not submit report.' });
+    }
+  });
+
   app.get('/api/trades/posted', async (req, res) => {
     try {
       const store = await readStore();

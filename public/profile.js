@@ -8,6 +8,12 @@
   const banBtn = document.getElementById('profile-ban-btn');
   const blockBtn = document.getElementById('profile-block-btn');
   const reportBtn = document.getElementById('profile-report-btn');
+  const reportModal = document.getElementById('report-modal');
+  const reportTitle = document.getElementById('report-modal-title');
+  const reportInput = document.getElementById('report-reason-input');
+  const reportStatus = document.getElementById('report-status');
+  const reportCancelBtn = document.getElementById('report-cancel-btn');
+  const reportSubmitBtn = document.getElementById('report-submit-btn');
   if (!loading || !card) return;
 
   const avatar = card.querySelector('.profile-card__avatar');
@@ -21,10 +27,38 @@
   const profileId = (params.get('id') || '').trim();
 
   let viewedUserId = null;
+  let viewedUsername = null;
   let viewerLoggedIn = false;
   let viewerRoles = { isModerator: false, isOwner: false };
   let profileModeration = null;
   let profileRelationship = null;
+
+  function setReportStatus(message, isError) {
+    if (!reportStatus) return;
+    reportStatus.hidden = !message;
+    reportStatus.textContent = message || '';
+    reportStatus.classList.toggle('report-glass-bar__status--error', Boolean(isError));
+  }
+
+  function closeReportModal() {
+    if (!reportModal) return;
+    reportModal.hidden = true;
+    document.body.classList.remove('report-modal-open');
+    if (reportInput) reportInput.value = '';
+    setReportStatus('', false);
+    if (reportSubmitBtn) reportSubmitBtn.disabled = false;
+  }
+
+  function openReportModal() {
+    if (!reportModal || !viewedUserId) return;
+    const handle = viewedUsername ? `@${viewedUsername}` : `@${viewedUserId}`;
+    if (reportTitle) reportTitle.textContent = `Report [${handle}]:`;
+    if (reportInput) reportInput.value = '';
+    setReportStatus('', false);
+    reportModal.hidden = false;
+    document.body.classList.add('report-modal-open');
+    if (reportInput) reportInput.focus();
+  }
 
   function avatarUrlFor(user) {
     if (user.avatarUrl) return user.avatarUrl;
@@ -105,6 +139,7 @@
     const robloxUrl = user.profile || `https://www.roblox.com/users/${encodeURIComponent(user.id)}/profile`;
 
     viewedUserId = user.id ? String(user.id) : null;
+    viewedUsername = user.username || user.name || null;
     profileModeration = moderation || null;
     profileRelationship = relationship || null;
 
@@ -194,8 +229,67 @@
   if (reportBtn) {
     reportBtn.addEventListener('click', () => {
       if (!viewedUserId) return;
-      if (!window.confirm('Are you sure you would like to report this user?')) return;
-      window.alert('Thanks. Your report was submitted.');
+      if (!viewerLoggedIn) {
+        window.location.href = '/api/auth/roblox';
+        return;
+      }
+      openReportModal();
+    });
+  }
+
+  if (reportCancelBtn) {
+    reportCancelBtn.addEventListener('click', closeReportModal);
+  }
+
+  if (reportModal) {
+    reportModal.addEventListener('click', (event) => {
+      if (event.target.closest('[data-report-close]')) closeReportModal();
+    });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && reportModal && !reportModal.hidden) {
+      closeReportModal();
+    }
+  });
+
+  if (reportSubmitBtn) {
+    reportSubmitBtn.addEventListener('click', async () => {
+      if (!viewedUserId || !reportInput) return;
+      const reason = String(reportInput.value || '').trim();
+      if (!reason) {
+        setReportStatus('Type a reason for the report.', true);
+        reportInput.focus();
+        return;
+      }
+
+      reportSubmitBtn.disabled = true;
+      setReportStatus('Submitting report…', false);
+      try {
+        const response = await fetch('/api/moderation/reports', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: viewedUserId,
+            username: viewedUsername,
+            reason,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (response.status === 401) {
+            window.location.href = '/api/auth/roblox';
+            return;
+          }
+          throw new Error(data.message || 'Could not submit report.');
+        }
+        closeReportModal();
+        window.alert('Thanks. Your report was submitted.');
+      } catch (error) {
+        setReportStatus((error && error.message) || 'Could not submit report.', true);
+        reportSubmitBtn.disabled = false;
+      }
     });
   }
 

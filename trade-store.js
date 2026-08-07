@@ -17,7 +17,7 @@ let writeQueue = Promise.resolve();
 const SITE_OWNER_ID = '3519737769';
 
 function emptyStore() {
-  return { posted: [], accepted: [], moderators: [], bans: [], blocks: [] };
+  return { posted: [], accepted: [], moderators: [], bans: [], blocks: [], reports: [] };
 }
 
 function normalizeBan(ban) {
@@ -41,6 +41,21 @@ function normalizeBlock(block) {
   };
 }
 
+function normalizeReport(report) {
+  if (!report || report.reportedId == null || report.reporterId == null) return null;
+  const reason = String(report.reason || '').trim();
+  if (!reason) return null;
+  return {
+    id: report.id != null ? String(report.id) : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    reporterId: String(report.reporterId),
+    reporterUsername: report.reporterUsername ? String(report.reporterUsername) : null,
+    reportedId: String(report.reportedId),
+    reportedUsername: report.reportedUsername ? String(report.reportedUsername) : null,
+    reason,
+    createdAt: Number(report.createdAt) || Date.now(),
+  };
+}
+
 function normalizeStore(store) {
   const moderators = Array.isArray(store && store.moderators)
     ? [...new Set(store.moderators.map((id) => String(id)).filter(Boolean))]
@@ -51,6 +66,9 @@ function normalizeStore(store) {
   const blocks = Array.isArray(store && store.blocks)
     ? store.blocks.map(normalizeBlock).filter(Boolean)
     : [];
+  const reports = Array.isArray(store && store.reports)
+    ? store.reports.map(normalizeReport).filter(Boolean)
+    : [];
 
   return {
     posted: Array.isArray(store && store.posted) ? store.posted : [],
@@ -58,6 +76,7 @@ function normalizeStore(store) {
     moderators,
     bans,
     blocks,
+    reports,
   };
 }
 
@@ -69,6 +88,7 @@ function cloneStore(store) {
     moderators: [...normalized.moderators],
     bans: normalized.bans.map((ban) => ({ ...ban })),
     blocks: normalized.blocks.map((block) => ({ ...block })),
+    reports: normalized.reports.map((report) => ({ ...report })),
   };
 }
 
@@ -299,6 +319,7 @@ function mergeStores(...stores) {
   const moderatorSet = new Set();
   const bansMap = new Map();
   const blocksMap = new Map();
+  const reportsMap = new Map();
 
   stores.filter(Boolean).forEach((store) => {
     const normalized = normalizeStore(store);
@@ -332,6 +353,12 @@ function mergeStores(...stores) {
         blocksMap.set(key, block);
       }
     });
+    normalized.reports.forEach((report) => {
+      const current = reportsMap.get(report.id);
+      if (!current || (report.createdAt || 0) >= (current.createdAt || 0)) {
+        reportsMap.set(report.id, report);
+      }
+    });
   });
 
   acceptedMap.forEach((_trade, id) => {
@@ -344,6 +371,7 @@ function mergeStores(...stores) {
     moderators: [...moderatorSet],
     bans: [...bansMap.values()].sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0)),
     blocks: [...blocksMap.values()].sort((a, b) => (b.blockedAt || 0) - (a.blockedAt || 0)),
+    reports: [...reportsMap.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
   };
 }
 

@@ -4,9 +4,11 @@
   if (!loginBtn) return;
 
   let currentUser = null;
+  let currentRoles = { isOwner: false, isModerator: false };
   let menuWrap = null;
   let dropdown = null;
   let adminToolsBtn = null;
+  let reportsBtn = null;
 
   function avatarUrlFor(user) {
     if (user.avatarUrl) return user.avatarUrl;
@@ -36,6 +38,12 @@
     adminToolsBtn = null;
   }
 
+  function removeReportsBtn() {
+    if (!reportsBtn) return;
+    reportsBtn.remove();
+    reportsBtn = null;
+  }
+
   function ensureAdminToolsBtn() {
     const wrap = ensureMenuWrap();
     if (adminToolsBtn && wrap.contains(adminToolsBtn)) return adminToolsBtn;
@@ -61,11 +69,44 @@
     return adminToolsBtn;
   }
 
-  function syncAdminToolsBtn(user) {
+  function ensureReportsBtn() {
+    const wrap = ensureMenuWrap();
+    if (reportsBtn && wrap.contains(reportsBtn)) return reportsBtn;
+
+    removeReportsBtn();
+    reportsBtn = document.createElement('button');
+    reportsBtn.type = 'button';
+    reportsBtn.className = 'mod-reports-btn';
+    reportsBtn.setAttribute('aria-label', 'User reports');
+    reportsBtn.title = 'User reports';
+    reportsBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.href = 'reports.html';
+    });
+
+    const icon = document.createElement('span');
+    icon.className = 'mod-reports-btn__icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '!';
+    reportsBtn.appendChild(icon);
+
+    const insertBefore = adminToolsBtn && wrap.contains(adminToolsBtn) ? adminToolsBtn : loginBtn;
+    wrap.insertBefore(reportsBtn, insertBefore);
+    return reportsBtn;
+  }
+
+  function syncModeratorButtons(user, roles) {
     if (isAdminUser(user)) {
       ensureAdminToolsBtn();
     } else {
       removeAdminToolsBtn();
+    }
+
+    if (roles && roles.isModerator) {
+      ensureReportsBtn();
+    } else {
+      removeReportsBtn();
     }
   }
 
@@ -143,7 +184,9 @@
   function renderLoggedOut() {
     closeDropdown();
     currentUser = null;
+    currentRoles = { isOwner: false, isModerator: false };
     removeAdminToolsBtn();
+    removeReportsBtn();
     if (dropdown) {
       dropdown.remove();
       dropdown = null;
@@ -164,14 +207,15 @@
     loginBtn.onclick = null;
   }
 
-  function renderLoggedIn(user) {
+  function renderLoggedIn(user, roles) {
     currentUser = user;
+    currentRoles = roles || { isOwner: false, isModerator: false };
     const label = user.username || user.name || 'Account';
     const avatarUrl = avatarUrlFor(user);
 
     ensureMenuWrap();
     buildDropdown(user);
-    syncAdminToolsBtn(user);
+    syncModeratorButtons(user, currentRoles);
 
     loginBtn.textContent = '';
     loginBtn.href = '#';
@@ -222,7 +266,7 @@
         return;
       }
       if (data && data.user) {
-        renderLoggedIn(data.user);
+        renderLoggedIn(data.user, data.roles || null);
       } else {
         renderLoggedOut();
       }
