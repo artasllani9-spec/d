@@ -10,6 +10,7 @@ let postedTradesCache = [];
 let acceptedTradesCache = [];
 let tradesSyncPromise = null;
 let authUserCache = undefined;
+let authRolesCache = null;
 let authUserPromise = null;
 
 function usesTradeApi() {
@@ -24,10 +25,17 @@ async function ensureAuthUser() {
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => {
       authUserCache = data && data.user ? data.user : null;
+      authRolesCache = data && data.roles
+        ? {
+            isOwner: Boolean(data.roles.isOwner),
+            isModerator: Boolean(data.roles.isModerator),
+          }
+        : null;
       return authUserCache;
     })
     .catch(() => {
       authUserCache = null;
+      authRolesCache = null;
       return null;
     })
     .finally(() => {
@@ -39,6 +47,15 @@ async function ensureAuthUser() {
 
 function getAuthUser() {
   return authUserCache || null;
+}
+
+function getAuthRoles() {
+  return authRolesCache || { isOwner: false, isModerator: false };
+}
+
+function isAuthModerator() {
+  const roles = getAuthRoles();
+  return Boolean(roles.isModerator || roles.isOwner);
 }
 
 function getOffererAvatarUrl(trade) {
@@ -394,9 +411,12 @@ function getCurrentUserId() {
 }
 
 function canUserDeleteTrade(trade) {
+  if (!trade?.postedBy) return false;
   const authUser = getAuthUser();
   const userId = authUser && authUser.id ? String(authUser.id) : getCurrentUserId();
-  return Boolean(userId && trade?.postedBy && String(trade.postedBy) === String(userId));
+  if (!userId) return false;
+  if (String(trade.postedBy) === String(userId)) return true;
+  return isAuthModerator();
 }
 
 async function deletePostedTrade(tradeId) {

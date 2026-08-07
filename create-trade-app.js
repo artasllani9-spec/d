@@ -293,7 +293,10 @@ function createTradeApp() {
       if (access.banned) return;
 
       const tradeId = Number(req.params.id);
-      const userId = resolveUserId(req, req.query.userId);
+      const sessionUser = access.sessionUser || getSessionUser(req);
+      const userId = sessionUser && sessionUser.id
+        ? String(sessionUser.id)
+        : resolveUserId(req, req.query.userId);
 
       if (!userId) {
         res.status(400).json({ message: 'Missing user id.' });
@@ -307,7 +310,9 @@ function createTradeApp() {
         return;
       }
 
-      if (String(trade.postedBy) !== String(userId)) {
+      const isPoster = String(trade.postedBy) === String(userId);
+      const isModerator = isSiteModerator(store, userId);
+      if (!isPoster && !isModerator) {
         res.status(403).json({ message: 'Not allowed to delete this trade.' });
         return;
       }
