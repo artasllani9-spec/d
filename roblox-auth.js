@@ -10,7 +10,8 @@ const OAUTH_SCOPES = 'openid profile';
 const COOKIE_OAUTH_STATE = 'dgg_oauth_state';
 const COOKIE_OAUTH_VERIFIER = 'dgg_oauth_verifier';
 const COOKIE_SESSION = 'dgg_session';
-const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+// Chrome caps persistent cookies around 400 days; sliding renewal keeps active users logged in.
+const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 400;
 
 function getClientId() {
   return process.env.ROBLOX_CLIENT_ID || DEFAULT_CLIENT_ID;
@@ -84,7 +85,12 @@ function cookieOptions({ maxAgeMs, httpOnly = true } = {}) {
   ].filter(Boolean);
 
   if (typeof maxAgeMs === 'number') {
-    parts.push(`Max-Age=${Math.floor(maxAgeMs / 1000)}`);
+    const maxAgeSeconds = Math.max(0, Math.floor(maxAgeMs / 1000));
+    parts.push(`Max-Age=${maxAgeSeconds}`);
+    const expiresAt = maxAgeMs > 0
+      ? new Date(Date.now() + maxAgeMs)
+      : new Date(0);
+    parts.push(`Expires=${expiresAt.toUTCString()}`);
   }
 
   return parts.join('; ');
@@ -200,6 +206,10 @@ async function fetchAvatarHeadshotUrl(userId) {
 function getSessionUser(req) {
   const cookies = parseCookies(req.headers.cookie);
   const payload = verifySession(cookies[COOKIE_SESSION]);
+  return sessionPayloadToUser(payload);
+}
+
+function sessionPayloadToUser(payload) {
   if (!payload || !payload.sub) return null;
   const id = String(payload.sub);
   return {
@@ -210,6 +220,20 @@ function getSessionUser(req) {
     picture: payload.picture || payload.avatarUrl || getAvatarFallbackUrl(id),
     avatarUrl: payload.avatarUrl || payload.picture || getAvatarFallbackUrl(id),
   };
+}
+
+function readSessionPayload(req) {
+  const cookies = parseCookies(req.headers.cookie);
+  return verifySession(cookies[COOKIE_SESSION]);
+}
+
+function refreshSessionCookie(res, payload) {
+  if (!payload || !payload.sub) return;
+  const nextPayload = {
+    ...payload,
+    exp: Date.now() + SESSION_MAX_AGE_MS,
+  };
+  setCookie(res, COOKIE_SESSION, signSession(nextPayload), { maxAgeMs: SESSION_MAX_AGE_MS });
 }
 
 async function exchangeCodeForTokens({ code, codeVerifier, redirectUri }) {
@@ -409,7 +433,11 @@ function registerRobloxAuth(app) {
   });
 
   app.get('/api/auth/me', (req, res) => {
-    const user = getSessionUser(req);
+    const payload = readSessionPayload(req);
+    const user = sessionPayloadToUser(payload);
+    if (user) {
+      refreshSessionCookie(res, payload);
+    }
     res.json({ user });
   });
 
