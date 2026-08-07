@@ -442,12 +442,12 @@ video {
 
 .profile-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   grid-template-areas:
-    "avatar meta stats"
-    "button meta stats";
+    "avatar meta . stats"
+    "button meta . stats";
   align-items: start;
-  column-gap: 1.25rem;
+  column-gap: 0.7rem;
   row-gap: 0.75rem;
   margin-top: 1.25rem;
   padding: 1.1rem 1.15rem;
@@ -472,7 +472,9 @@ video {
 .profile-card__meta {
   grid-area: meta;
   min-width: 0;
+  max-width: 16rem;
   align-self: center;
+  padding-left: 0.15rem;
 }
 
 .profile-card__stats {
@@ -481,6 +483,7 @@ video {
   flex-direction: column;
   gap: 0.95rem;
   min-width: 19rem;
+  margin-left: 1rem;
   padding: 1.35rem 1.5rem;
   border-radius: 16px;
   background: rgba(0, 0, 0, 0.22);
