@@ -1,4 +1,10 @@
 const crypto = require('crypto');
+const {
+  readStore,
+  isBannedUser,
+  isSiteOwner,
+  isSiteModerator,
+} = require('./trade-store');
 
 const ROBLOX_AUTHORIZE_URL = 'https://apis.roblox.com/oauth/v1/authorize';
 const ROBLOX_TOKEN_URL = 'https://apis.roblox.com/oauth/v1/token';
@@ -410,6 +416,18 @@ function registerRobloxAuth(app) {
       });
 
       const profile = await fetchUserInfo(tokens.access_token);
+      const userId = String(profile.sub);
+      try {
+        const store = await readStore();
+        if (isBannedUser(store, userId)) {
+          clearCookie(res, COOKIE_SESSION);
+          res.redirect('/banned.html');
+          return;
+        }
+      } catch {
+        // Continue login if moderation lookup fails.
+      }
+
       const avatarUrl =
         profile.picture || (await fetchAvatarHeadshotUrl(profile.sub)) || getAvatarFallbackUrl(profile.sub);
       const session = {
@@ -432,13 +450,34 @@ function registerRobloxAuth(app) {
     }
   });
 
-  app.get('/api/auth/me', (req, res) => {
+  app.get('/api/auth/me', async (req, res) => {
     const payload = readSessionPayload(req);
     const user = sessionPayloadToUser(payload);
-    if (user) {
-      refreshSessionCookie(res, payload);
+    if (!user) {
+      res.json({ user: null });
+      return;
     }
-    res.json({ user });
+
+    try {
+      const store = await readStore();
+      if (isBannedUser(store, user.id)) {
+        clearCookie(res, COOKIE_SESSION);
+        res.json({ user: null, banned: true });
+        return;
+      }
+
+      refreshSessionCookie(res, payload);
+      res.json({
+        user,
+        roles: {
+          isOwner: isSiteOwner(user.id),
+          isModerator: isSiteModerator(store, user.id),
+        },
+      });
+    } catch {
+      refreshSessionCookie(res, payload);
+      res.json({ user });
+    }
   });
 
   app.post('/api/auth/logout', (req, res) => {

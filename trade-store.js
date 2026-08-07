@@ -14,14 +14,34 @@ let githubSha = null;
 let blobReadUrl = process.env.TRADES_BLOB_URL || null;
 let writeQueue = Promise.resolve();
 
+const SITE_OWNER_ID = '3519737769';
+
 function emptyStore() {
-  return { posted: [], accepted: [] };
+  return { posted: [], accepted: [], moderators: [], bans: [] };
+}
+
+function normalizeBan(ban) {
+  if (!ban || ban.userId == null || ban.userId === '') return null;
+  return {
+    userId: String(ban.userId),
+    bannedBy: ban.bannedBy != null && ban.bannedBy !== '' ? String(ban.bannedBy) : null,
+    bannedAt: Number(ban.bannedAt) || Date.now(),
+  };
 }
 
 function normalizeStore(store) {
+  const moderators = Array.isArray(store && store.moderators)
+    ? [...new Set(store.moderators.map((id) => String(id)).filter(Boolean))]
+    : [];
+  const bans = Array.isArray(store && store.bans)
+    ? store.bans.map(normalizeBan).filter(Boolean)
+    : [];
+
   return {
     posted: Array.isArray(store && store.posted) ? store.posted : [],
     accepted: Array.isArray(store && store.accepted) ? store.accepted : [],
+    moderators,
+    bans,
   };
 }
 
@@ -30,7 +50,31 @@ function cloneStore(store) {
   return {
     posted: [...normalized.posted],
     accepted: [...normalized.accepted],
+    moderators: [...normalized.moderators],
+    bans: normalized.bans.map((ban) => ({ ...ban })),
   };
+}
+
+function isSiteOwner(userId) {
+  return Boolean(userId) && String(userId) === SITE_OWNER_ID;
+}
+
+function isSiteModerator(store, userId) {
+  if (!userId) return false;
+  const id = String(userId);
+  if (isSiteOwner(id)) return true;
+  const moderators = store && Array.isArray(store.moderators) ? store.moderators : [];
+  return moderators.some((modId) => String(modId) === id);
+}
+
+function getBanRecord(store, userId) {
+  if (!userId || !store || !Array.isArray(store.bans)) return null;
+  const id = String(userId);
+  return store.bans.find((ban) => String(ban.userId) === id) || null;
+}
+
+function isBannedUser(store, userId) {
+  return Boolean(getBanRecord(store, userId));
 }
 
 function getGitHubToken() {
@@ -218,22 +262,32 @@ async function writeToGitHub(store) {
 function mergeStores(...stores) {
   const postedMap = new Map();
   const acceptedMap = new Map();
+  const moderatorSet = new Set();
+  const bansMap = new Map();
 
   stores.filter(Boolean).forEach((store) => {
-    normalizeStore(store).posted.forEach((trade) => {
+    const normalized = normalizeStore(store);
+    normalized.posted.forEach((trade) => {
       if (!trade || trade.id == null) return;
       const current = postedMap.get(trade.id);
       if (!current || (trade.postedAt || 0) >= (current.postedAt || 0)) {
         postedMap.set(trade.id, trade);
       }
     });
-    normalizeStore(store).accepted.forEach((trade) => {
+    normalized.accepted.forEach((trade) => {
       if (!trade || trade.id == null) return;
       const current = acceptedMap.get(trade.id);
       const currentTime = Math.max(current?.acceptedAt || 0, current?.completedAt || 0, current?.failedAt || 0, current?.postedAt || 0);
       const nextTime = Math.max(trade.acceptedAt || 0, trade.completedAt || 0, trade.failedAt || 0, trade.postedAt || 0);
       if (!current || nextTime >= currentTime) {
         acceptedMap.set(trade.id, trade);
+      }
+    });
+    normalized.moderators.forEach((id) => moderatorSet.add(String(id)));
+    normalized.bans.forEach((ban) => {
+      const current = bansMap.get(ban.userId);
+      if (!current || (ban.bannedAt || 0) >= (current.bannedAt || 0)) {
+        bansMap.set(ban.userId, ban);
       }
     });
   });
@@ -245,6 +299,8 @@ function mergeStores(...stores) {
   return {
     posted: [...postedMap.values()].sort((a, b) => (b.postedAt || 0) - (a.postedAt || 0)),
     accepted: [...acceptedMap.values()].sort((a, b) => (b.acceptedAt || b.postedAt || 0) - (a.acceptedAt || a.postedAt || 0)),
+    moderators: [...moderatorSet],
+    bans: [...bansMap.values()].sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0)),
   };
 }
 
@@ -349,9 +405,14 @@ function isTradeParticipant(trade, userId) {
 
 module.exports = {
   MAX_STORED_TRADES,
+  SITE_OWNER_ID,
   readStore,
   writeStore,
   canPostTrade,
   createTradeId,
   isTradeParticipant,
+  isSiteOwner,
+  isSiteModerator,
+  isBannedUser,
+  getBanRecord,
 };

@@ -2,11 +2,16 @@ const express = require('express');
 const { registerRobloxAuth, getSessionUser } = require('./roblox-auth');
 const {
   MAX_STORED_TRADES,
+  SITE_OWNER_ID,
   readStore,
   writeStore,
   canPostTrade,
   createTradeId,
   isTradeParticipant,
+  isSiteOwner,
+  isSiteModerator,
+  isBannedUser,
+  getBanRecord,
 } = require('./trade-store');
 
 function resolveUserId(req, fallbackId) {
@@ -16,11 +21,193 @@ function resolveUserId(req, fallbackId) {
   return String(fallbackId);
 }
 
+function normalizeRobloxId(value) {
+  const id = String(value || '').trim();
+  if (!id || !/^\d+$/.test(id)) return null;
+  return id;
+}
+
+async function rejectIfBanned(req, res) {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return { sessionUser: null, store: null, banned: false };
+  const store = await readStore();
+  if (isBannedUser(store, sessionUser.id)) {
+    res.status(403).json({ message: 'You are banned from demand.gg.', banned: true });
+    return { sessionUser, store, banned: true };
+  }
+  return { sessionUser, store, banned: false };
+}
+
 function createTradeApp() {
   const app = express();
   app.use(express.json({ limit: '2mb' }));
 
   registerRobloxAuth(app);
+
+  app.get('/api/moderation/moderators', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser || !isSiteOwner(sessionUser.id)) {
+        res.status(403).json({ message: 'Only the site owner can manage moderators.' });
+        return;
+      }
+
+      const store = await readStore();
+      res.json({
+        ownerId: SITE_OWNER_ID,
+        moderators: store.moderators.filter((id) => String(id) !== SITE_OWNER_ID),
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not load moderators.' });
+    }
+  });
+
+  app.post('/api/moderation/moderators', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser || !isSiteOwner(sessionUser.id)) {
+        res.status(403).json({ message: 'Only the site owner can add moderators.' });
+        return;
+      }
+
+      const userId = normalizeRobloxId(req.body && req.body.userId);
+      if (!userId) {
+        res.status(400).json({ message: 'Enter a valid Roblox user ID.' });
+        return;
+      }
+
+      if (isSiteOwner(userId)) {
+        res.status(400).json({ message: 'The site owner already has full access.' });
+        return;
+      }
+
+      const store = await readStore();
+      if (store.moderators.includes(userId)) {
+        res.status(400).json({ message: 'That user is already a site moderator.' });
+        return;
+      }
+
+      store.moderators.push(userId);
+      await writeStore(store);
+      res.status(201).json({
+        moderators: store.moderators.filter((id) => String(id) !== SITE_OWNER_ID),
+        added: userId,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not add moderator.' });
+    }
+  });
+
+  app.delete('/api/moderation/moderators/:id', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser || !isSiteOwner(sessionUser.id)) {
+        res.status(403).json({ message: 'Only the site owner can remove moderators.' });
+        return;
+      }
+
+      const userId = normalizeRobloxId(req.params.id);
+      if (!userId) {
+        res.status(400).json({ message: 'Invalid user id.' });
+        return;
+      }
+
+      const store = await readStore();
+      store.moderators = store.moderators.filter((id) => String(id) !== userId);
+      await writeStore(store);
+      res.json({
+        moderators: store.moderators.filter((id) => String(id) !== SITE_OWNER_ID),
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not remove moderator.' });
+    }
+  });
+
+  app.post('/api/moderation/bans', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser) {
+        res.status(401).json({ message: 'Log in to ban users.' });
+        return;
+      }
+
+      const store = await readStore();
+      if (!isSiteModerator(store, sessionUser.id)) {
+        res.status(403).json({ message: 'Only site moderators can ban users.' });
+        return;
+      }
+
+      const userId = normalizeRobloxId(req.body && req.body.userId);
+      if (!userId) {
+        res.status(400).json({ message: 'Invalid user id.' });
+        return;
+      }
+
+      if (isSiteOwner(userId)) {
+        res.status(403).json({ message: 'You cannot ban the site owner.' });
+        return;
+      }
+
+      if (String(userId) === String(sessionUser.id)) {
+        res.status(400).json({ message: 'You cannot ban yourself.' });
+        return;
+      }
+
+      if (isSiteModerator(store, userId) && !isSiteOwner(sessionUser.id)) {
+        res.status(403).json({ message: 'Moderators cannot ban other moderators.' });
+        return;
+      }
+
+      if (isBannedUser(store, userId)) {
+        res.status(400).json({ message: 'That user is already banned.' });
+        return;
+      }
+
+      const ban = {
+        userId,
+        bannedBy: String(sessionUser.id),
+        bannedAt: Date.now(),
+      };
+      store.bans.unshift(ban);
+      await writeStore(store);
+      res.status(201).json({ ban });
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not ban user.' });
+    }
+  });
+
+  app.delete('/api/moderation/bans/:id', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser) {
+        res.status(401).json({ message: 'Log in to unban users.' });
+        return;
+      }
+
+      const store = await readStore();
+      if (!isSiteModerator(store, sessionUser.id)) {
+        res.status(403).json({ message: 'Only site moderators can unban users.' });
+        return;
+      }
+
+      const userId = normalizeRobloxId(req.params.id);
+      if (!userId) {
+        res.status(400).json({ message: 'Invalid user id.' });
+        return;
+      }
+
+      if (!isBannedUser(store, userId)) {
+        res.status(404).json({ message: 'That user is not banned.' });
+        return;
+      }
+
+      store.bans = store.bans.filter((ban) => String(ban.userId) !== userId);
+      await writeStore(store);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: error.message || 'Could not unban user.' });
+    }
+  });
 
   app.get('/api/trades/posted', async (req, res) => {
     try {
@@ -38,8 +225,9 @@ function createTradeApp() {
 
   app.post('/api/trades/posted', async (req, res) => {
     try {
-      const sessionUser = getSessionUser(req);
-      if (!sessionUser) {
+      const access = await rejectIfBanned(req, res);
+      if (access.banned) return;
+      if (!access.sessionUser) {
         res.status(401).json({ message: 'Log in with Roblox to post a trade.' });
         return;
       }
@@ -54,10 +242,10 @@ function createTradeApp() {
       const trade = {
         id: createTradeId(),
         postedAt: Date.now(),
-        postedBy: String(sessionUser.id),
-        offerer: sessionUser.username || sessionUser.name || 'Player',
-        offererAvatar: sessionUser.avatarUrl || sessionUser.picture || null,
-        offererProfile: sessionUser.profile || null,
+        postedBy: String(access.sessionUser.id),
+        offerer: access.sessionUser.username || access.sessionUser.name || 'Player',
+        offererAvatar: access.sessionUser.avatarUrl || access.sessionUser.picture || null,
+        offererProfile: access.sessionUser.profile || null,
         yourSide,
         theirSide,
       };
@@ -74,6 +262,9 @@ function createTradeApp() {
 
   app.delete('/api/trades/posted/:id', async (req, res) => {
     try {
+      const access = await rejectIfBanned(req, res);
+      if (access.banned) return;
+
       const tradeId = Number(req.params.id);
       const userId = resolveUserId(req, req.query.userId);
 
@@ -104,14 +295,15 @@ function createTradeApp() {
 
   app.post('/api/trades/posted/:id/accept', async (req, res) => {
     try {
-      const tradeId = Number(req.params.id);
-      const sessionUser = getSessionUser(req);
-      if (!sessionUser) {
+      const access = await rejectIfBanned(req, res);
+      if (access.banned) return;
+      if (!access.sessionUser) {
         res.status(401).json({ message: 'Log in with Roblox to accept a trade.' });
         return;
       }
 
-      const userId = String(sessionUser.id);
+      const tradeId = Number(req.params.id);
+      const userId = String(access.sessionUser.id);
       const store = await readStore();
       const tradeIndex = store.posted.findIndex((item) => item.id === tradeId);
       if (tradeIndex === -1) {
@@ -161,7 +353,7 @@ function createTradeApp() {
         };
         const rankDiff = rank(a) - rank(b);
         if (rankDiff !== 0) return rankDiff;
-        return (b.acceptedAt || b.postedAt) - (a.acceptedAt || a.postedAt);
+        return (b.acceptedAt || b.postedAt) - (a.acceptedAt || a.postedAt || 0);
       });
 
       res.json(trades);
@@ -172,6 +364,9 @@ function createTradeApp() {
 
   app.patch('/api/trades/accepted/:id', async (req, res) => {
     try {
+      const access = await rejectIfBanned(req, res);
+      if (access.banned) return;
+
       const tradeId = Number(req.params.id);
       const { failedAt, completedAt } = req.body || {};
       const userId = resolveUserId(req, req.body && req.body.userId);
@@ -255,6 +450,10 @@ function createTradeApp() {
         avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(id)}&width=150&height=150&format=png`;
       }
 
+      const sessionUser = getSessionUser(req);
+      const viewerIsModerator = sessionUser ? isSiteModerator(store, sessionUser.id) : false;
+      const ban = getBanRecord(store, id);
+
       res.json({
         user: {
           id,
@@ -279,6 +478,14 @@ function createTradeApp() {
             ),
           ).length,
         },
+        moderation: viewerIsModerator
+          ? {
+              isBanned: Boolean(ban),
+              isOwner: isSiteOwner(id),
+              isModerator: isSiteModerator(store, id),
+              ban: ban || null,
+            }
+          : null,
       });
     } catch (error) {
       res.status(500).json({ message: error.message || 'Could not load profile.' });

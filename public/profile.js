@@ -5,6 +5,7 @@
   const tradesSection = document.querySelector('.profile-trades');
   const tradesFeed = document.getElementById('profile-trades-feed');
   const tradesEmpty = document.getElementById('profile-trades-empty');
+  const banBtn = document.getElementById('profile-ban-btn');
   if (!loading || !card) return;
 
   const avatar = card.querySelector('.profile-card__avatar');
@@ -16,6 +17,10 @@
   const failedStat = document.getElementById('profile-stat-failed');
   const params = new URLSearchParams(window.location.search);
   const profileId = (params.get('id') || '').trim();
+
+  let viewedUserId = null;
+  let viewerRoles = { isModerator: false, isOwner: false };
+  let profileModeration = null;
 
   function avatarUrlFor(user) {
     if (user.avatarUrl) return user.avatarUrl;
@@ -33,10 +38,40 @@
     if (failedStat) failedStat.textContent = String(next.failed || 0);
   }
 
-  function renderUser(user, stats) {
+  function syncBanButton() {
+    if (!banBtn || !viewedUserId) {
+      if (banBtn) banBtn.hidden = true;
+      return;
+    }
+
+    const canModerate = Boolean(viewerRoles && viewerRoles.isModerator);
+    const isSelf = Boolean(getAuthUser() && String(getAuthUser().id) === String(viewedUserId));
+    const targetIsOwner = Boolean(profileModeration && profileModeration.isOwner);
+    const targetIsModerator = Boolean(profileModeration && profileModeration.isModerator);
+    const isBanned = Boolean(profileModeration && profileModeration.isBanned);
+    const canBanTarget = canModerate
+      && !isSelf
+      && !targetIsOwner
+      && (viewerRoles.isOwner || !targetIsModerator);
+
+    if (!canBanTarget) {
+      banBtn.hidden = true;
+      return;
+    }
+
+    banBtn.hidden = false;
+    banBtn.disabled = false;
+    banBtn.textContent = isBanned ? 'Unban User' : 'Ban User';
+    banBtn.classList.toggle('profile-ban-btn--unban', isBanned);
+  }
+
+  function renderUser(user, stats, moderation) {
     const label = user.username || user.name || 'Player';
     const imageUrl = avatarUrlFor(user);
     const robloxUrl = user.profile || `https://www.roblox.com/users/${encodeURIComponent(user.id)}/profile`;
+
+    viewedUserId = user.id ? String(user.id) : null;
+    profileModeration = moderation || null;
 
     loading.hidden = true;
     card.hidden = false;
@@ -55,6 +90,7 @@
       if (labelEl) labelEl.textContent = 'View on Roblox';
     }
     renderStats(stats);
+    syncBanButton();
   }
 
   async function renderPublishedTrades(userId) {
@@ -120,17 +156,65 @@
     });
   }
 
+  if (banBtn) {
+    banBtn.addEventListener('click', async () => {
+      if (!viewedUserId) return;
+      const isBanned = Boolean(profileModeration && profileModeration.isBanned);
+      const actionLabel = isBanned ? 'unban' : 'ban';
+      if (!window.confirm(`Are you sure you want to ${actionLabel} this user?`)) return;
+
+      banBtn.disabled = true;
+      try {
+        const response = await fetch(
+          isBanned
+            ? `/api/moderation/bans/${encodeURIComponent(viewedUserId)}`
+            : '/api/moderation/bans',
+          {
+            method: isBanned ? 'DELETE' : 'POST',
+            credentials: 'same-origin',
+            headers: isBanned ? undefined : { 'Content-Type': 'application/json' },
+            body: isBanned ? undefined : JSON.stringify({ userId: viewedUserId }),
+          },
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok && response.status !== 204) {
+          throw new Error(data.message || `Could not ${actionLabel} user.`);
+        }
+
+        profileModeration = {
+          ...(profileModeration || {}),
+          isBanned: !isBanned,
+          ban: isBanned ? null : (data.ban || { userId: viewedUserId }),
+        };
+        syncBanButton();
+      } catch (error) {
+        window.alert((error && error.message) || `Could not ${actionLabel} user.`);
+        banBtn.disabled = false;
+      }
+    });
+  }
+
   function loadOwnProfile() {
     loading.textContent = 'Loading your account…';
     return fetch('/api/auth/me', { credentials: 'same-origin' })
       .then((response) => (response.ok ? response.json() : null))
       .then(async (data) => {
+        if (data && data.banned) {
+          window.location.replace('banned.html');
+          return;
+        }
         if (!data || !data.user) {
           window.location.replace('/api/auth/roblox');
           return;
         }
 
+        viewerRoles = {
+          isOwner: Boolean(data.roles && data.roles.isOwner),
+          isModerator: Boolean(data.roles && data.roles.isModerator),
+        };
+
         let stats = { posted: 0, completed: 0, failed: 0 };
+        let moderation = null;
         try {
           const statsResponse = await fetch(`/api/users/${encodeURIComponent(data.user.id)}`, {
             credentials: 'same-origin',
@@ -138,30 +222,42 @@
           if (statsResponse.ok) {
             const statsData = await statsResponse.json();
             if (statsData && statsData.stats) stats = statsData.stats;
+            moderation = statsData.moderation || null;
           }
         } catch {
           // Keep zeroed stats if lookup fails.
         }
 
-        renderUser(data.user, stats);
+        renderUser(data.user, stats, moderation);
         await renderPublishedTrades(data.user.id);
       });
   }
 
   function loadPublicProfile(userId) {
     loading.textContent = 'Loading profile…';
-    return fetch(`/api/users/${encodeURIComponent(userId)}`, { credentials: 'same-origin' })
-      .then((response) => {
+    return fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then(async (authData) => {
+        if (authData && authData.banned) {
+          window.location.replace('banned.html');
+          return;
+        }
+        viewerRoles = {
+          isOwner: Boolean(authData && authData.roles && authData.roles.isOwner),
+          isModerator: Boolean(authData && authData.roles && authData.roles.isModerator),
+        };
+
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
+          credentials: 'same-origin',
+        });
         if (!response.ok) {
           throw new Error('Profile not found.');
         }
-        return response.json();
-      })
-      .then(async (data) => {
+        const data = await response.json();
         if (!data || !data.user) {
           throw new Error('Profile not found.');
         }
-        renderUser(data.user, data.stats);
+        renderUser(data.user, data.stats, data.moderation);
         await renderPublishedTrades(data.user.id);
       });
   }

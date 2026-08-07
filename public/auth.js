@@ -215,6 +215,12 @@
   fetch('/api/auth/me', { credentials: 'same-origin' })
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => {
+      if (data && data.banned) {
+        if (!/banned\.html$/i.test(window.location.pathname)) {
+          window.location.replace('banned.html');
+        }
+        return;
+      }
       if (data && data.user) {
         renderLoggedIn(data.user);
       } else {
