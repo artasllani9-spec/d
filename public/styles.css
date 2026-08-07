@@ -359,10 +359,55 @@ video {
   margin-left: auto;
   flex-shrink: 0;
   z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .account-menu .login-btn {
   margin-left: 0;
+}
+
+.admin-tools-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.55rem;
+  height: 2.55rem;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.admin-tools-btn__icon {
+  display: block;
+  width: 1.55rem;
+  height: 1.55rem;
+  pointer-events: none;
+  background-color: #fff;
+  -webkit-mask-image: url("images/icon-admin-tools.png");
+  mask-image: url("images/icon-admin-tools.png");
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.admin-tools-btn:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.18);
+}
+
+.admin-tools-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
 }
 
 .account-dropdown {

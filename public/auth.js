@@ -1,10 +1,12 @@
 (function () {
+  const ADMIN_ROBLOX_ID = '3519737769';
   const loginBtn = document.querySelector('.login-btn');
   if (!loginBtn) return;
 
   let currentUser = null;
   let menuWrap = null;
   let dropdown = null;
+  let adminToolsBtn = null;
 
   function avatarUrlFor(user) {
     if (user.avatarUrl) return user.avatarUrl;
@@ -15,6 +17,10 @@
     return '';
   }
 
+  function isAdminUser(user) {
+    return Boolean(user && user.id && String(user.id) === ADMIN_ROBLOX_ID);
+  }
+
   function ensureMenuWrap() {
     if (menuWrap && menuWrap.contains(loginBtn)) return menuWrap;
     menuWrap = document.createElement('div');
@@ -22,6 +28,40 @@
     loginBtn.parentNode.insertBefore(menuWrap, loginBtn);
     menuWrap.appendChild(loginBtn);
     return menuWrap;
+  }
+
+  function removeAdminToolsBtn() {
+    if (!adminToolsBtn) return;
+    adminToolsBtn.remove();
+    adminToolsBtn = null;
+  }
+
+  function ensureAdminToolsBtn() {
+    const wrap = ensureMenuWrap();
+    if (adminToolsBtn && wrap.contains(adminToolsBtn)) return adminToolsBtn;
+
+    removeAdminToolsBtn();
+    adminToolsBtn = document.createElement('button');
+    adminToolsBtn.type = 'button';
+    adminToolsBtn.className = 'admin-tools-btn';
+    adminToolsBtn.setAttribute('aria-label', 'Admin tools');
+    adminToolsBtn.title = 'Admin tools';
+
+    const icon = document.createElement('span');
+    icon.className = 'admin-tools-btn__icon';
+    icon.setAttribute('aria-hidden', 'true');
+    adminToolsBtn.appendChild(icon);
+
+    wrap.insertBefore(adminToolsBtn, loginBtn);
+    return adminToolsBtn;
+  }
+
+  function syncAdminToolsBtn(user) {
+    if (isAdminUser(user)) {
+      ensureAdminToolsBtn();
+    } else {
+      removeAdminToolsBtn();
+    }
   }
 
   function closeDropdown() {
@@ -98,6 +138,7 @@
   function renderLoggedOut() {
     closeDropdown();
     currentUser = null;
+    removeAdminToolsBtn();
     if (dropdown) {
       dropdown.remove();
       dropdown = null;
@@ -125,6 +166,7 @@
 
     ensureMenuWrap();
     buildDropdown(user);
+    syncAdminToolsBtn(user);
 
     loginBtn.textContent = '';
     loginBtn.href = '#';
