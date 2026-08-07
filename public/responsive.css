@@ -1307,9 +1307,15 @@
     grid-template-areas:
       "avatar"
       "meta"
+      "stats"
       "button";
     justify-items: start;
     text-align: left;
+  }
+
+  .profile-card__stats {
+    width: min(100%, 16rem);
+    min-width: 0;
   }
 
   .profile-card__roblox {

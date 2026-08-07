@@ -11,6 +11,9 @@
   const username = card.querySelector('.profile-card__username');
   const idEl = card.querySelector('.profile-card__id');
   const robloxLink = card.querySelector('.profile-card__roblox');
+  const postedStat = document.getElementById('profile-stat-posted');
+  const completedStat = document.getElementById('profile-stat-completed');
+  const failedStat = document.getElementById('profile-stat-failed');
   const params = new URLSearchParams(window.location.search);
   const profileId = (params.get('id') || '').trim();
 
@@ -23,7 +26,14 @@
     return '';
   }
 
-  function renderUser(user) {
+  function renderStats(stats) {
+    const next = stats || {};
+    if (postedStat) postedStat.textContent = String(next.posted || 0);
+    if (completedStat) completedStat.textContent = String(next.completed || 0);
+    if (failedStat) failedStat.textContent = String(next.failed || 0);
+  }
+
+  function renderUser(user, stats) {
     const label = user.username || user.name || 'Player';
     const imageUrl = avatarUrlFor(user);
     const robloxUrl = user.profile || `https://www.roblox.com/users/${encodeURIComponent(user.id)}/profile`;
@@ -44,6 +54,7 @@
       const labelEl = robloxLink.querySelector('.profile-card__roblox-label');
       if (labelEl) labelEl.textContent = 'View on Roblox';
     }
+    renderStats(stats);
   }
 
   async function renderPublishedTrades(userId) {
@@ -118,7 +129,21 @@
           window.location.replace('/api/auth/roblox');
           return;
         }
-        renderUser(data.user);
+
+        let stats = { posted: 0, completed: 0, failed: 0 };
+        try {
+          const statsResponse = await fetch(`/api/users/${encodeURIComponent(data.user.id)}`, {
+            credentials: 'same-origin',
+          });
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            if (statsData && statsData.stats) stats = statsData.stats;
+          }
+        } catch {
+          // Keep zeroed stats if lookup fails.
+        }
+
+        renderUser(data.user, stats);
         await renderPublishedTrades(data.user.id);
       });
   }
@@ -136,7 +161,7 @@
         if (!data || !data.user) {
           throw new Error('Profile not found.');
         }
-        renderUser(data.user);
+        renderUser(data.user, data.stats);
         await renderPublishedTrades(data.user.id);
       });
   }

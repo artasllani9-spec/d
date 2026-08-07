@@ -264,6 +264,21 @@ function createTradeApp() {
           picture: avatarUrl,
           profile: `https://www.roblox.com/users/${encodeURIComponent(id)}/profile`,
         },
+        stats: {
+          posted: relatedTrades.length,
+          completed: store.accepted.filter(
+            (trade) => (
+              (String(trade.postedBy) === id || String(trade.acceptedBy) === id) &&
+              Boolean(trade.completedAt)
+            ),
+          ).length,
+          failed: store.accepted.filter(
+            (trade) => (
+              (String(trade.postedBy) === id || String(trade.acceptedBy) === id) &&
+              Boolean(trade.failedAt)
+            ),
+          ).length,
+        },
       });
     } catch (error) {
       res.status(500).json({ message: error.message || 'Could not load profile.' });
