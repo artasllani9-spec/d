@@ -1316,8 +1316,8 @@
 
   .profile-card__meta {
     max-width: none;
-    align-self: center;
-    margin-left: -0.3rem;
+    align-self: start;
+    margin: 0.4rem 0 0 -0.9rem;
   }
 
   .profile-card__stats {
