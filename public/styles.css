@@ -447,7 +447,7 @@ video {
     "avatar meta . stats"
     "button . . stats";
   align-items: start;
-  column-gap: 0.35rem;
+  column-gap: 0;
   row-gap: 0.7rem;
   margin-top: 1.25rem;
   padding: 1.1rem 1.15rem;
@@ -475,7 +475,7 @@ video {
   max-width: 18rem;
   align-self: center;
   justify-self: start;
-  margin: 0 0 0 -0.15rem;
+  margin: 0 0 0 0.35rem;
   padding: 0;
 }
 

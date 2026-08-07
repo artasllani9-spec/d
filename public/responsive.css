@@ -1310,14 +1310,14 @@
       "stats stats";
     justify-items: start;
     text-align: left;
-    column-gap: 0.3rem;
+    column-gap: 0;
     row-gap: 0.7rem;
   }
 
   .profile-card__meta {
     max-width: none;
     align-self: center;
-    margin-left: -0.1rem;
+    margin-left: 0.3rem;
   }
 
   .profile-card__stats {
