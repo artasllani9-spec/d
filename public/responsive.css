@@ -1314,11 +1314,6 @@
     row-gap: 0.7rem;
   }
 
-  .profile-card__mod-actions {
-    top: 0.55rem;
-    right: 0.55rem;
-  }
-
   .profile-card__meta {
     max-width: none;
     align-self: start;

@@ -441,7 +441,6 @@ video {
 }
 
 .profile-card {
-  position: relative;
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   grid-template-areas:
@@ -455,79 +454,6 @@ video {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.profile-card__mod-actions {
-  position: absolute;
-  top: 0.65rem;
-  right: 0.65rem;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.profile-mod-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.15rem;
-  height: 2.15rem;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 0.18s ease;
-}
-
-.profile-mod-btn__icon {
-  display: block;
-  width: 1.7rem;
-  height: 1.7rem;
-  pointer-events: none;
-  transition: filter 0.18s ease, background-color 0.18s ease;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-}
-
-.profile-mod-btn--report .profile-mod-btn__icon {
-  background-color: #f4c430;
-  -webkit-mask-image: url("images/icon-report.png");
-  mask-image: url("images/icon-report.png");
-}
-
-.profile-mod-btn--block .profile-mod-btn__icon {
-  background-color: #e8e8e8;
-  -webkit-mask-image: url("images/icon-block.png");
-  mask-image: url("images/icon-block.png");
-}
-
-.profile-mod-btn--report:hover .profile-mod-btn__icon,
-.profile-mod-btn--report:focus-visible .profile-mod-btn__icon {
-  background-color: #ffb020;
-  filter:
-    drop-shadow(0 0 6px rgba(255, 170, 40, 0.95))
-    drop-shadow(0 0 14px rgba(255, 140, 20, 0.75))
-    drop-shadow(0 0 22px rgba(255, 120, 0, 0.45));
-}
-
-.profile-mod-btn--block:hover .profile-mod-btn__icon,
-.profile-mod-btn--block:focus-visible .profile-mod-btn__icon {
-  background-color: #ff4d4d;
-  filter:
-    drop-shadow(0 0 6px rgba(255, 70, 70, 0.95))
-    drop-shadow(0 0 14px rgba(230, 30, 30, 0.75))
-    drop-shadow(0 0 22px rgba(200, 0, 0, 0.45));
-}
-
-.profile-mod-btn:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.55);
-  outline-offset: 2px;
 }
 
 .profile-card__avatar {
