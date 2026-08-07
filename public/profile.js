@@ -52,7 +52,7 @@
   function openReportModal() {
     if (!reportModal || !viewedUserId) return;
     const handle = viewedUsername ? `@${viewedUsername}` : `@${viewedUserId}`;
-    if (reportTitle) reportTitle.textContent = `Report [${handle}]:`;
+    if (reportTitle) reportTitle.textContent = `Report ${handle}:`;
     if (reportInput) reportInput.value = '';
     setReportStatus('', false);
     reportModal.hidden = false;
