@@ -9,6 +9,9 @@
   const unbanForm = document.getElementById('unban-form');
   const unbanInput = document.getElementById('unban-user-id');
   const unbanStatusEl = document.getElementById('unban-status');
+  const banForm = document.getElementById('ban-form');
+  const banInput = document.getElementById('ban-user-id');
+  const banStatusEl = document.getElementById('ban-status');
 
   function setStatus(message, isError) {
     if (!statusEl) return;
@@ -22,6 +25,13 @@
     unbanStatusEl.hidden = !message;
     unbanStatusEl.textContent = message || '';
     unbanStatusEl.classList.toggle('admin-moderator-status--error', Boolean(isError));
+  }
+
+  function setBanStatus(message, isError) {
+    if (!banStatusEl) return;
+    banStatusEl.hidden = !message;
+    banStatusEl.textContent = message || '';
+    banStatusEl.classList.toggle('admin-moderator-status--error', Boolean(isError));
   }
 
   function escapeHtml(value) {
@@ -112,6 +122,20 @@
     throw new Error(data.message || 'Could not unban user.');
   }
 
+  async function banUser(userId) {
+    const response = await fetch('/api/moderation/bans', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Could not ban user.');
+    }
+    return data.ban || { userId };
+  }
+
   if (form && input) {
     form.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -147,6 +171,27 @@
         .then(() => setStatus(`Removed site moderator ${userId}.`, false))
         .catch((error) => {
           setStatus((error && error.message) || 'Could not remove moderator.', true);
+        });
+    });
+  }
+
+  if (banForm && banInput) {
+    banForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const userId = String(banInput.value || '').trim();
+      if (!/^\d+$/.test(userId)) {
+        setBanStatus('Enter a valid Roblox user ID.', true);
+        return;
+      }
+
+      setBanStatus('Banning user…', false);
+      banUser(userId)
+        .then(() => {
+          banInput.value = '';
+          setBanStatus(`Banned user ${userId}.`, false);
+        })
+        .catch((error) => {
+          setBanStatus((error && error.message) || 'Could not ban user.', true);
         });
     });
   }

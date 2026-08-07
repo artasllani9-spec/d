@@ -548,6 +548,16 @@ video {
   border-color: rgba(140, 235, 180, 0.7);
 }
 
+.admin-moderator-form__submit--ban {
+  background: rgba(170, 45, 45, 0.5);
+  border-color: rgba(255, 120, 120, 0.5);
+}
+
+.admin-moderator-form__submit--ban:hover {
+  background: rgba(190, 55, 55, 0.65);
+  border-color: rgba(255, 140, 140, 0.7);
+}
+
 .admin-moderator-status {
   margin: 0.75rem 0 0;
   font-size: 0.92rem;

@@ -71,6 +71,33 @@
         <ul class="admin-moderator-list" id="moderator-list" aria-label="Site moderators"></ul>
       </section>
 
+      <section class="admin-moderator-section" aria-labelledby="ban-heading">
+        <h2 class="admin-moderator-section__title" id="ban-heading">Ban:</h2>
+        <form class="admin-moderator-form" id="ban-form">
+          <div class="admin-moderator-search">
+            <span class="admin-moderator-search__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"/>
+                <path d="M16.2 16.2L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <input
+              class="admin-moderator-search__input"
+              id="ban-user-id"
+              type="search"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              autocomplete="off"
+              placeholder="Paste Roblox user ID"
+              aria-label="Roblox user ID to ban"
+              required
+            >
+          </div>
+          <button type="submit" class="admin-moderator-form__submit admin-moderator-form__submit--ban">Ban</button>
+        </form>
+        <p class="admin-moderator-status" id="ban-status" hidden></p>
+      </section>
+
       <section class="admin-moderator-section" aria-labelledby="unban-heading">
         <h2 class="admin-moderator-section__title" id="unban-heading">Unban:</h2>
         <form class="admin-moderator-form" id="unban-form">
