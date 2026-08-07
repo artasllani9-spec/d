@@ -375,10 +375,18 @@
     });
   }
 
+  function fetchAuthMe() {
+    if (!window.__demandggAuthMePromise) {
+      window.__demandggAuthMePromise = fetch('/api/auth/me', { credentials: 'same-origin' })
+        .then((response) => (response.ok ? response.json() : null))
+        .catch(() => null);
+    }
+    return window.__demandggAuthMePromise;
+  }
+
   function loadOwnProfile() {
     loading.textContent = 'Loading your account…';
-    return fetch('/api/auth/me', { credentials: 'same-origin' })
-      .then((response) => (response.ok ? response.json() : null))
+    return fetchAuthMe()
       .then(async (data) => {
         if (data && data.banned) {
           window.location.replace('banned.html');
@@ -419,8 +427,7 @@
 
   function loadPublicProfile(userId) {
     loading.textContent = 'Loading profile…';
-    return fetch('/api/auth/me', { credentials: 'same-origin' })
-      .then((response) => (response.ok ? response.json() : null))
+    return fetchAuthMe()
       .then(async (authData) => {
         if (authData && authData.banned) {
           window.location.replace('banned.html');

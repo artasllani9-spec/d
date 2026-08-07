@@ -4,7 +4,8 @@ const {
   MAX_STORED_TRADES,
   SITE_OWNER_ID,
   readStore,
-  writeStore,
+  updateStore,
+  httpError,
   canPostTrade,
   createTradeId,
   isTradeParticipant,
@@ -27,6 +28,14 @@ function normalizeRobloxId(value) {
   const id = String(value || '').trim();
   if (!id || !/^\d+$/.test(id)) return null;
   return id;
+}
+
+function sendError(res, error, fallbackMessage) {
+  const status = Number(error && error.status) || 500;
+  const payload = { message: (error && error.message) || fallbackMessage };
+  if (error && error.banned) payload.banned = true;
+  if (error && error.code) payload.code = error.code;
+  res.status(status).json(payload);
 }
 
 async function fetchRobloxUsername(userId) {
@@ -85,7 +94,7 @@ function createTradeApp() {
         moderators: await enrichModerators(store.moderators),
       });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not load moderators.' });
+      sendError(res, error, 'Could not load moderators.');
     }
   });
 
@@ -108,14 +117,13 @@ function createTradeApp() {
         return;
       }
 
-      const store = await readStore();
-      if (store.moderators.includes(userId)) {
-        res.status(400).json({ message: 'That user is already a site moderator.' });
-        return;
-      }
+      const { store } = await updateStore((draft) => {
+        if (draft.moderators.includes(userId)) {
+          throw httpError(400, 'That user is already a site moderator.');
+        }
+        draft.moderators.push(userId);
+      });
 
-      store.moderators.push(userId);
-      await writeStore(store);
       const moderators = await enrichModerators(store.moderators);
       const added = moderators.find((item) => item.id === userId) || { id: userId, username: null };
       res.status(201).json({
@@ -123,7 +131,7 @@ function createTradeApp() {
         added,
       });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not add moderator.' });
+      sendError(res, error, 'Could not add moderator.');
     }
   });
 
@@ -141,14 +149,14 @@ function createTradeApp() {
         return;
       }
 
-      const store = await readStore();
-      store.moderators = store.moderators.filter((id) => String(id) !== userId);
-      await writeStore(store);
+      const { store } = await updateStore((draft) => {
+        draft.moderators = draft.moderators.filter((id) => String(id) !== userId);
+      });
       res.json({
         moderators: await enrichModerators(store.moderators),
       });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not remove moderator.' });
+      sendError(res, error, 'Could not remove moderator.');
     }
   });
 
@@ -157,12 +165,6 @@ function createTradeApp() {
       const sessionUser = getSessionUser(req);
       if (!sessionUser) {
         res.status(401).json({ message: 'Log in to ban users.' });
-        return;
-      }
-
-      const store = await readStore();
-      if (!isSiteModerator(store, sessionUser.id)) {
-        res.status(403).json({ message: 'Only site moderators can ban users.' });
         return;
       }
 
@@ -182,26 +184,29 @@ function createTradeApp() {
         return;
       }
 
-      if (isSiteModerator(store, userId) && !isSiteOwner(sessionUser.id)) {
-        res.status(403).json({ message: 'Moderators cannot ban other moderators.' });
-        return;
-      }
+      const { result: ban } = await updateStore((draft) => {
+        if (!isSiteModerator(draft, sessionUser.id)) {
+          throw httpError(403, 'Only site moderators can ban users.');
+        }
+        if (isSiteModerator(draft, userId) && !isSiteOwner(sessionUser.id)) {
+          throw httpError(403, 'Moderators cannot ban other moderators.');
+        }
+        if (isBannedUser(draft, userId)) {
+          throw httpError(400, 'That user is already banned.');
+        }
 
-      if (isBannedUser(store, userId)) {
-        res.status(400).json({ message: 'That user is already banned.' });
-        return;
-      }
+        const nextBan = {
+          userId,
+          bannedBy: String(sessionUser.id),
+          bannedAt: Date.now(),
+        };
+        draft.bans.unshift(nextBan);
+        return nextBan;
+      });
 
-      const ban = {
-        userId,
-        bannedBy: String(sessionUser.id),
-        bannedAt: Date.now(),
-      };
-      store.bans.unshift(ban);
-      await writeStore(store);
       res.status(201).json({ ban });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not ban user.' });
+      sendError(res, error, 'Could not ban user.');
     }
   });
 
@@ -213,28 +218,24 @@ function createTradeApp() {
         return;
       }
 
-      const store = await readStore();
-      if (!isSiteModerator(store, sessionUser.id)) {
-        res.status(403).json({ message: 'Only site moderators can unban users.' });
-        return;
-      }
-
       const userId = normalizeRobloxId(req.params.id);
       if (!userId) {
         res.status(400).json({ message: 'Invalid user id.' });
         return;
       }
 
-      if (!isBannedUser(store, userId)) {
-        res.status(404).json({ message: 'That user is not banned.' });
-        return;
-      }
-
-      store.bans = store.bans.filter((ban) => String(ban.userId) !== userId);
-      await writeStore(store);
+      await updateStore((draft) => {
+        if (!isSiteModerator(draft, sessionUser.id)) {
+          throw httpError(403, 'Only site moderators can unban users.');
+        }
+        if (!isBannedUser(draft, userId)) {
+          throw httpError(404, 'That user is not banned.');
+        }
+        draft.bans = draft.bans.filter((ban) => String(ban.userId) !== userId);
+      });
       res.status(204).end();
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not unban user.' });
+      sendError(res, error, 'Could not unban user.');
     }
   });
 
@@ -251,7 +252,7 @@ function createTradeApp() {
         blockedIds: getBlockedIdsForUser(store, sessionUser.id),
       });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not load blocks.' });
+      sendError(res, error, 'Could not load blocks.');
     }
   });
 
@@ -274,22 +275,21 @@ function createTradeApp() {
         return;
       }
 
-      const store = await readStore();
-      if (hasUserBlocked(store, sessionUser.id, userId)) {
-        res.status(400).json({ message: 'That user is already blocked.' });
-        return;
-      }
-
-      const block = {
-        blockerId: String(sessionUser.id),
-        blockedId: userId,
-        blockedAt: Date.now(),
-      };
-      store.blocks.unshift(block);
-      await writeStore(store);
+      const { result: block } = await updateStore((draft) => {
+        if (hasUserBlocked(draft, sessionUser.id, userId)) {
+          throw httpError(400, 'That user is already blocked.');
+        }
+        const nextBlock = {
+          blockerId: String(sessionUser.id),
+          blockedId: userId,
+          blockedAt: Date.now(),
+        };
+        draft.blocks.unshift(nextBlock);
+        return nextBlock;
+      });
       res.status(201).json({ block });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not block user.' });
+      sendError(res, error, 'Could not block user.');
     }
   });
 
@@ -307,22 +307,20 @@ function createTradeApp() {
         return;
       }
 
-      const store = await readStore();
-      if (!hasUserBlocked(store, sessionUser.id, userId)) {
-        res.status(404).json({ message: 'That user is not blocked.' });
-        return;
-      }
-
-      store.blocks = store.blocks.filter(
-        (block) => !(
-          String(block.blockerId) === String(sessionUser.id) &&
-          String(block.blockedId) === userId
-        ),
-      );
-      await writeStore(store);
+      await updateStore((draft) => {
+        if (!hasUserBlocked(draft, sessionUser.id, userId)) {
+          throw httpError(404, 'That user is not blocked.');
+        }
+        draft.blocks = draft.blocks.filter(
+          (block) => !(
+            String(block.blockerId) === String(sessionUser.id) &&
+            String(block.blockedId) === userId
+          ),
+        );
+      });
       res.status(204).end();
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not unblock user.' });
+      sendError(res, error, 'Could not unblock user.');
     }
   });
 
@@ -344,7 +342,7 @@ function createTradeApp() {
         reports: [...store.reports].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
       });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not load reports.' });
+      sendError(res, error, 'Could not load reports.');
     }
   });
 
@@ -379,33 +377,26 @@ function createTradeApp() {
         ? String(req.body.username).trim()
         : null;
       if (!reportedUsername) {
-        try {
-          const robloxResponse = await fetch(`https://users.roblox.com/v1/users/${reportedId}`);
-          if (robloxResponse.ok) {
-            const data = await robloxResponse.json();
-            reportedUsername = data.name || data.displayName || null;
-          }
-        } catch {
-          // Keep null if lookup fails.
-        }
+        reportedUsername = await fetchRobloxUsername(reportedId);
       }
 
-      const store = await readStore();
-      const report = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        reporterId: String(sessionUser.id),
-        reporterUsername: sessionUser.username || sessionUser.name || null,
-        reportedId,
-        reportedUsername,
-        reason,
-        createdAt: Date.now(),
-      };
-      store.reports.unshift(report);
-      store.reports = store.reports.slice(0, 500);
-      await writeStore(store);
+      const { result: report } = await updateStore((draft) => {
+        const nextReport = {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          reporterId: String(sessionUser.id),
+          reporterUsername: sessionUser.username || sessionUser.name || null,
+          reportedId,
+          reportedUsername,
+          reason,
+          createdAt: Date.now(),
+        };
+        draft.reports.unshift(nextReport);
+        draft.reports = draft.reports.slice(0, 500);
+        return nextReport;
+      });
       res.status(201).json({ report });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not submit report.' });
+      sendError(res, error, 'Could not submit report.');
     }
   });
 
@@ -425,9 +416,10 @@ function createTradeApp() {
           }
         }
       }
+      res.set('Cache-Control', 'private, no-store');
       res.json(posted);
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not load trades.' });
+      sendError(res, error, 'Could not load trades.');
     }
   });
 
@@ -458,13 +450,13 @@ function createTradeApp() {
         theirSide,
       };
 
-      const store = await readStore();
-      store.posted.unshift(trade);
-      store.posted = store.posted.slice(0, MAX_STORED_TRADES);
-      await writeStore(store);
+      await updateStore((draft) => {
+        draft.posted.unshift(trade);
+        draft.posted = draft.posted.slice(0, MAX_STORED_TRADES);
+      });
       res.status(201).json(trade);
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not post trade.' });
+      sendError(res, error, 'Could not post trade.');
     }
   });
 
@@ -484,25 +476,23 @@ function createTradeApp() {
         return;
       }
 
-      const store = await readStore();
-      const trade = store.posted.find((item) => item.id === tradeId);
-      if (!trade) {
-        res.status(404).json({ message: 'Trade not found.' });
-        return;
-      }
+      await updateStore((draft) => {
+        const trade = draft.posted.find((item) => item.id === tradeId);
+        if (!trade) {
+          throw httpError(404, 'Trade not found.');
+        }
 
-      const isPoster = String(trade.postedBy) === String(userId);
-      const isModerator = isSiteModerator(store, userId);
-      if (!isPoster && !isModerator) {
-        res.status(403).json({ message: 'Not allowed to delete this trade.' });
-        return;
-      }
+        const isPoster = String(trade.postedBy) === String(userId);
+        const isModerator = isSiteModerator(draft, userId);
+        if (!isPoster && !isModerator) {
+          throw httpError(403, 'Not allowed to delete this trade.');
+        }
 
-      store.posted = store.posted.filter((item) => item.id !== tradeId);
-      await writeStore(store);
+        draft.posted = draft.posted.filter((item) => item.id !== tradeId);
+      });
       res.status(204).end();
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not delete trade.' });
+      sendError(res, error, 'Could not delete trade.');
     }
   });
 
@@ -517,43 +507,42 @@ function createTradeApp() {
 
       const tradeId = Number(req.params.id);
       const userId = String(access.sessionUser.id);
-      const store = await readStore();
-      const tradeIndex = store.posted.findIndex((item) => item.id === tradeId);
-      if (tradeIndex === -1) {
-        res.status(404).json({ message: 'Trade not found.' });
-        return;
-      }
 
-      const trade = store.posted[tradeIndex];
-      if (String(trade.postedBy) === userId) {
-        res.status(403).json({ message: 'You cannot accept your own trade.' });
-        return;
-      }
+      const { result: acceptedTrade } = await updateStore((draft) => {
+        const tradeIndex = draft.posted.findIndex((item) => item.id === tradeId);
+        if (tradeIndex === -1) {
+          throw httpError(404, 'Trade not found.');
+        }
 
-      if (hasUserBlocked(store, trade.postedBy, userId)) {
-        res.status(403).json({ message: 'You cannot accept this trade.' });
-        return;
-      }
+        const trade = draft.posted[tradeIndex];
+        if (String(trade.postedBy) === userId) {
+          throw httpError(403, 'You cannot accept your own trade.');
+        }
 
-      if (hasUserBlocked(store, userId, trade.postedBy)) {
-        res.status(403).json({ message: 'You blocked this user. Unblock them to accept their trades.' });
-        return;
-      }
+        if (hasUserBlocked(draft, trade.postedBy, userId)) {
+          throw httpError(403, 'You cannot accept this trade.');
+        }
 
-      const acceptedTrade = {
-        ...trade,
-        postedBy: String(trade.postedBy),
-        acceptedAt: Date.now(),
-        acceptedBy: userId,
-      };
+        if (hasUserBlocked(draft, userId, trade.postedBy)) {
+          throw httpError(403, 'You blocked this user. Unblock them to accept their trades.');
+        }
 
-      store.posted.splice(tradeIndex, 1);
-      store.accepted.unshift(acceptedTrade);
-      store.accepted = store.accepted.slice(0, MAX_STORED_TRADES);
-      await writeStore(store);
+        const nextAccepted = {
+          ...trade,
+          postedBy: String(trade.postedBy),
+          acceptedAt: Date.now(),
+          acceptedBy: userId,
+        };
+
+        draft.posted.splice(tradeIndex, 1);
+        draft.accepted.unshift(nextAccepted);
+        draft.accepted = draft.accepted.slice(0, MAX_STORED_TRADES);
+        return nextAccepted;
+      });
+
       res.json(acceptedTrade);
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not accept trade.' });
+      sendError(res, error, 'Could not accept trade.');
     }
   });
 
@@ -579,9 +568,10 @@ function createTradeApp() {
         return (b.acceptedAt || b.postedAt) - (a.acceptedAt || a.postedAt || 0);
       });
 
+      res.set('Cache-Control', 'private, no-store');
       res.json(trades);
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not load accepted trades.' });
+      sendError(res, error, 'Could not load accepted trades.');
     }
   });
 
@@ -599,45 +589,46 @@ function createTradeApp() {
         return;
       }
 
-      const store = await readStore();
-      const tradeIndex = store.accepted.findIndex((item) => item.id === tradeId);
-      if (tradeIndex === -1) {
-        res.status(404).json({ message: 'Trade not found.' });
-        return;
-      }
-
-      const trade = store.accepted[tradeIndex];
-      if (!isTradeParticipant(trade, userId)) {
-        res.status(403).json({ message: 'Not allowed to update this trade.' });
-        return;
-      }
-
-      if (trade.failedAt || trade.completedAt) {
-        res.status(400).json({ message: 'Trade is already closed.' });
-        return;
-      }
-
-      if (failedAt) {
-        store.accepted[tradeIndex] = {
-          ...trade,
-          failedAt: Date.now(),
-          failedBy: userId,
-        };
-      } else if (completedAt) {
-        store.accepted[tradeIndex] = {
-          ...trade,
-          completedAt: Date.now(),
-          completedBy: userId,
-        };
-      } else {
+      if (!failedAt && !completedAt) {
         res.status(400).json({ message: 'No update specified.' });
         return;
       }
 
-      await writeStore(store);
-      res.json(store.accepted[tradeIndex]);
+      const { result: updated } = await updateStore((draft) => {
+        const tradeIndex = draft.accepted.findIndex((item) => item.id === tradeId);
+        if (tradeIndex === -1) {
+          throw httpError(404, 'Trade not found.');
+        }
+
+        const trade = draft.accepted[tradeIndex];
+        if (!isTradeParticipant(trade, userId)) {
+          throw httpError(403, 'Not allowed to update this trade.');
+        }
+
+        if (trade.failedAt || trade.completedAt) {
+          throw httpError(400, 'Trade is already closed.');
+        }
+
+        if (failedAt) {
+          draft.accepted[tradeIndex] = {
+            ...trade,
+            failedAt: Date.now(),
+            failedBy: userId,
+          };
+        } else {
+          draft.accepted[tradeIndex] = {
+            ...trade,
+            completedAt: Date.now(),
+            completedBy: userId,
+          };
+        }
+
+        return draft.accepted[tradeIndex];
+      });
+
+      res.json(updated);
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not update trade.' });
+      sendError(res, error, 'Could not update trade.');
     }
   });
 
@@ -680,6 +671,7 @@ function createTradeApp() {
         ? hasUserBlocked(store, sessionUser.id, id)
         : false;
 
+      res.set('Cache-Control', 'private, no-store');
       res.json({
         user: {
           id,
@@ -720,7 +712,7 @@ function createTradeApp() {
           : null,
       });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Could not load profile.' });
+      sendError(res, error, 'Could not load profile.');
     }
   });
 

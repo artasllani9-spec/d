@@ -34,7 +34,11 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const app = createTradeApp();
 
-app.use(express.static(PUBLIC_DIR));
+app.use(express.static(PUBLIC_DIR, {
+  maxAge: process.env.NODE_ENV === 'production' ? '7d' : '1h',
+  etag: true,
+  lastModified: true,
+}));
 
 app.listen(PORT, () => {
   console.log(`demand.gg running at http://localhost:${PORT}`);

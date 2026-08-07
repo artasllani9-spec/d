@@ -3,7 +3,7 @@ const ACCEPTED_TRADES_KEY = 'demandgg-accepted-trades';
 const FAILED_TRADES_KEY = 'demandgg-failed-trades';
 const VIEW_TRADE_SESSION_KEY = 'demandgg-view-trade';
 const USER_ID_KEY = 'demandgg-user-id';
-const MAX_STORED_TRADES = 100;
+const MAX_STORED_TRADES = 2000;
 const TRADES_API_BASE = '/api/trades';
 
 let postedTradesCache = [];
@@ -17,22 +17,32 @@ function usesTradeApi() {
   return typeof window !== 'undefined' && window.location.protocol !== 'file:';
 }
 
+function applyAuthMePayload(data) {
+  authUserCache = data && data.user ? data.user : null;
+  authRolesCache = data && data.roles
+    ? {
+        isOwner: Boolean(data.roles.isOwner),
+        isModerator: Boolean(data.roles.isModerator),
+      }
+    : null;
+  return authUserCache;
+}
+
+function fetchAuthMeShared() {
+  if (!window.__demandggAuthMePromise) {
+    window.__demandggAuthMePromise = fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null);
+  }
+  return window.__demandggAuthMePromise;
+}
+
 async function ensureAuthUser() {
   if (authUserCache !== undefined) return authUserCache;
   if (authUserPromise) return authUserPromise;
 
-  authUserPromise = fetch('/api/auth/me', { credentials: 'same-origin' })
-    .then((response) => (response.ok ? response.json() : null))
-    .then((data) => {
-      authUserCache = data && data.user ? data.user : null;
-      authRolesCache = data && data.roles
-        ? {
-            isOwner: Boolean(data.roles.isOwner),
-            isModerator: Boolean(data.roles.isModerator),
-          }
-        : null;
-      return authUserCache;
-    })
+  authUserPromise = fetchAuthMeShared()
+    .then((data) => applyAuthMePayload(data))
     .catch(() => {
       authUserCache = null;
       authRolesCache = null;

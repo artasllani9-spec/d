@@ -256,8 +256,13 @@
     if (event.key === 'Escape') closeDropdown();
   });
 
-  fetch('/api/auth/me', { credentials: 'same-origin' })
-    .then((response) => (response.ok ? response.json() : null))
+  if (!window.__demandggAuthMePromise) {
+    window.__demandggAuthMePromise = fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null);
+  }
+
+  window.__demandggAuthMePromise
     .then((data) => {
       if (data && data.banned) {
         if (!/banned\.html$/i.test(window.location.pathname)) {

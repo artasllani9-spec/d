@@ -1198,7 +1198,7 @@ body.report-modal-open {
 .tos-background {
   position: fixed;
   inset: -20px;
-  background: url("tos-background.png") center / cover no-repeat;
+  background: url("tos-background.jpg") center / cover no-repeat;
   filter: blur(4px);
   transform: scale(1.05);
   z-index: 0;
@@ -1343,7 +1343,7 @@ body.report-modal-open {
 .credits-background {
   position: fixed;
   inset: -20px;
-  background: url("credits-background.png") center / cover no-repeat;
+  background: url("credits-background.jpg") center / cover no-repeat;
   filter: blur(6px);
   transform: scale(1.05);
   z-index: 0;
