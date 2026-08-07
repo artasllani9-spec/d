@@ -1314,8 +1314,17 @@
   }
 
   .profile-card__stats {
-    width: min(100%, 16rem);
+    width: min(100%, 20rem);
     min-width: 0;
+    padding: 0.95rem 1.1rem;
+  }
+
+  .profile-stat {
+    font-size: 1.05rem;
+  }
+
+  .profile-stat__value {
+    font-size: 1.18rem;
   }
 
   .profile-card__roblox {
