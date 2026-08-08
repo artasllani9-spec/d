@@ -210,6 +210,37 @@
             </div>
           </div>
         </div>
+        <div class="trade-picker__pet-popout" id="trade-side-filter-detail" hidden>
+          <div class="trade-picker__pet-popout-card">
+            <div class="trade-picker__pet-bar-media">
+              <div class="trade-picker__pet-bar-preview">
+                <img class="trade-picker__pet-bar-img" id="trade-side-filter-detail-img" src="" alt="">
+                <div class="trade-picker__pet-bar-badges trade-slot__badges" id="trade-side-filter-detail-badges" hidden></div>
+              </div>
+            </div>
+            <div class="trade-picker__pet-bar-info">
+              <span class="trade-picker__pet-bar-name" id="trade-side-filter-detail-name"></span>
+              <div class="trade-picker__potions" id="trade-side-filter-potions">
+                <button type="button" class="trade-picker__potion trade-picker__potion--fly trade-picker__potion--active" data-potion="fly" aria-label="Fly" aria-pressed="true">F</button>
+                <button type="button" class="trade-picker__potion trade-picker__potion--ride trade-picker__potion--active" data-potion="ride" aria-label="Ride" aria-pressed="true">R</button>
+                <button type="button" class="trade-picker__potion trade-picker__potion--neon" data-potion="neon" aria-label="Neon" aria-pressed="false">N</button>
+                <button type="button" class="trade-picker__potion trade-picker__potion--mega" data-potion="mega" aria-label="Mega" aria-pressed="false">M</button>
+              </div>
+            </div>
+            <div class="trade-picker__pet-actions">
+              <button type="button" class="trade-picker__pet-cancel" id="trade-side-filter-detail-cancel" aria-label="Cancel">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <button type="button" class="trade-picker__pet-confirm" id="trade-side-filter-detail-confirm" aria-label="Apply filter">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
