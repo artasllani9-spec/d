@@ -532,6 +532,9 @@ function createTradeApp() {
           postedBy: String(trade.postedBy),
           acceptedAt: Date.now(),
           acceptedBy: userId,
+          accepterUsername: access.sessionUser.username || access.sessionUser.name || 'Player',
+          accepterAvatar: access.sessionUser.avatarUrl || access.sessionUser.picture || null,
+          accepterProfile: access.sessionUser.profile || null,
         };
 
         draft.posted.splice(tradeIndex, 1);

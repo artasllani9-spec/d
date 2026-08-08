@@ -68,13 +68,19 @@ function isAuthModerator() {
   return Boolean(roles.isModerator || roles.isOwner);
 }
 
+function getRobloxAvatarUrl(userId) {
+  if (!userId || String(userId).startsWith('user-') || !/^\d+$/.test(String(userId))) return '';
+  return `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(userId)}&width=150&height=150&format=png`;
+}
+
+function getRobloxProfileUrl(userId) {
+  if (!userId || String(userId).startsWith('user-') || !/^\d+$/.test(String(userId))) return '';
+  return `https://www.roblox.com/users/${encodeURIComponent(userId)}/profile`;
+}
+
 function getOffererAvatarUrl(trade) {
   if (trade?.offererAvatar) return trade.offererAvatar;
-  const postedBy = trade?.postedBy;
-  if (postedBy && !String(postedBy).startsWith('user-')) {
-    return `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(postedBy)}&width=150&height=150&format=png`;
-  }
-  return '';
+  return getRobloxAvatarUrl(trade?.postedBy);
 }
 
 function getOffererProfileUrl(trade) {
@@ -83,6 +89,30 @@ function getOffererProfileUrl(trade) {
     return `profile.html?id=${encodeURIComponent(postedBy)}`;
   }
   return '';
+}
+
+/** Other party on an accepted trade: poster sees accepter, accepter sees poster. Links to Roblox. */
+function getAcceptedTraderDisplay(trade, viewerId) {
+  const viewer = viewerId != null ? String(viewerId) : '';
+  const postedBy = trade?.postedBy != null ? String(trade.postedBy) : '';
+  const acceptedBy = trade?.acceptedBy != null ? String(trade.acceptedBy) : '';
+  const showAccepter = Boolean(viewer && postedBy && viewer === postedBy && acceptedBy);
+
+  if (showAccepter) {
+    return {
+      name: trade.accepterUsername || trade.accepter || 'Player',
+      avatar: trade.accepterAvatar || getRobloxAvatarUrl(acceptedBy),
+      profileUrl: getRobloxProfileUrl(acceptedBy),
+      external: true,
+    };
+  }
+
+  return {
+    name: trade.offerer || 'Player',
+    avatar: trade.offererAvatar || getRobloxAvatarUrl(postedBy),
+    profileUrl: getRobloxProfileUrl(postedBy),
+    external: true,
+  };
 }
 
 function readLocalPostedTrades() {
@@ -391,6 +421,9 @@ async function acceptPostedTrade(tradeId) {
     ...trade,
     acceptedAt: Date.now(),
     acceptedBy: accepterId,
+    accepterUsername: authUser.username || authUser.name || 'Player',
+    accepterAvatar: authUser.avatarUrl || authUser.picture || getRobloxAvatarUrl(accepterId),
+    accepterProfile: authUser.profile || getRobloxProfileUrl(accepterId) || null,
   };
 
   const postedTrades = postedTradesCache.filter((item) => item.id !== tradeId);
@@ -674,18 +707,33 @@ function buildPostedTradeHTML(trade, options = {}) {
   const { accepted = false, failed = false, completed = false } = options;
   const viewerYourSide = trade.theirSide || [];
   const viewerTheirSide = trade.yourSide || [];
-  const offerer = escapeHtml(trade.offerer || '—');
-  const offererAvatar = getOffererAvatarUrl(trade);
-  const offererProfileUrl = getOffererProfileUrl(trade);
-  const offererAvatarHtml = offererAvatar
-    ? `<img class="posted-trade__offerer-avatar" src="${escapeHtml(offererAvatar)}" alt="" width="36" height="36" loading="lazy" referrerpolicy="no-referrer">`
-    : '';
-  const offererNameHtml = offererProfileUrl
-    ? `<a class="posted-trade__offerer-name" href="${escapeHtml(offererProfileUrl)}">${offerer}</a>`
-    : `<span class="posted-trade__offerer-name">${offerer}</span>`;
   const userId = getCurrentUserId();
-  const isAccepter = Boolean(userId && trade.acceptedBy === userId);
-  const isPoster = Boolean(userId && trade.postedBy === userId);
+  const isAccepter = Boolean(userId && String(trade.acceptedBy) === String(userId));
+  const isPoster = Boolean(userId && String(trade.postedBy) === String(userId));
+
+  let personName;
+  let personAvatar;
+  let personProfileUrl;
+  let personExternal = false;
+
+  if (accepted) {
+    const trader = getAcceptedTraderDisplay(trade, userId);
+    personName = escapeHtml(trader.name || '—');
+    personAvatar = trader.avatar || '';
+    personProfileUrl = trader.profileUrl || '';
+    personExternal = Boolean(trader.external && personProfileUrl);
+  } else {
+    personName = escapeHtml(trade.offerer || '—');
+    personAvatar = getOffererAvatarUrl(trade);
+    personProfileUrl = getOffererProfileUrl(trade);
+  }
+
+  const personAvatarHtml = personAvatar
+    ? `<img class="posted-trade__offerer-avatar" src="${escapeHtml(personAvatar)}" alt="" width="36" height="36" loading="lazy" referrerpolicy="no-referrer">`
+    : '';
+  const personNameHtml = personProfileUrl
+    ? `<a class="posted-trade__offerer-name" href="${escapeHtml(personProfileUrl)}"${personExternal ? ' target="_blank" rel="noopener noreferrer"' : ''}>${personName}</a>`
+    : `<span class="posted-trade__offerer-name">${personName}</span>`;
 
   let timer;
   if (failed && trade.failedAt) {
@@ -756,8 +804,8 @@ function buildPostedTradeHTML(trade, options = {}) {
   return `<article class="posted-trade${articleModifier}" data-trade-id="${trade.id}" data-trade-source="${viewSource}">
     <div class="posted-trade__bar" style="${barStyle}">
       <div class="posted-trade__offerer">
-        ${offererAvatarHtml}
-        ${offererNameHtml}
+        ${personAvatarHtml}
+        ${personNameHtml}
       </div>
       ${buildPostedTradeSideHTML(viewerYourSide, 'Your Side', { showLabel: false })}
       ${buildPostedTradeSideHTML(viewerTheirSide, 'Their Side', { showLabel: false })}

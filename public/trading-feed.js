@@ -2,6 +2,7 @@
   const feed = document.getElementById('posted-trades-feed');
   const emptyState = document.getElementById('posted-trades-empty');
   const headbar = document.getElementById('trading-feed-headbar');
+  const personLabel = document.getElementById('trading-feed-person-label');
   const acceptedBtn = document.getElementById('accepted-trades-btn');
 
   if (!feed || !emptyState) return;
@@ -14,6 +15,9 @@
     if (acceptedBtn) {
       acceptedBtn.classList.toggle('trading-btn--active', active);
       acceptedBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+    if (personLabel) {
+      personLabel.textContent = active ? 'Trader' : 'Offerer';
     }
   }
 
