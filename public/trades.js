@@ -705,11 +705,18 @@ function buildPostedTradeArrowsHTML(compact) {
 
 function buildPostedTradeHTML(trade, options = {}) {
   const { accepted = false, failed = false, completed = false } = options;
-  const viewerYourSide = trade.theirSide || [];
-  const viewerTheirSide = trade.yourSide || [];
   const userId = getCurrentUserId();
   const isAccepter = Boolean(userId && String(trade.acceptedBy) === String(userId));
   const isPoster = Boolean(userId && String(trade.postedBy) === String(userId));
+
+  // Posted feed / accepter view: sides are swapped to the viewer's perspective.
+  // Poster viewing an accepted trade: keep original offer sides (Your = offered, Their = requested).
+  const viewerYourSide = (accepted && isPoster)
+    ? (trade.yourSide || [])
+    : (trade.theirSide || []);
+  const viewerTheirSide = (accepted && isPoster)
+    ? (trade.theirSide || [])
+    : (trade.yourSide || []);
 
   let personName;
   let personAvatar;

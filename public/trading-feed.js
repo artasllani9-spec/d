@@ -113,7 +113,20 @@
   }
 
   function getViewerSideItems(trade, side) {
-    // Feed labels swap: "Your Side" shows trade.theirSide, "Their Side" shows trade.yourSide.
+    const userId = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+    const isPosterAccepted = Boolean(
+      trade
+      && trade.acceptedBy
+      && userId
+      && String(trade.postedBy) === String(userId),
+    );
+
+    // Match feed rendering: poster on accepted trades sees original sides;
+    // everyone else sees sides swapped to the viewer perspective.
+    if (isPosterAccepted) {
+      if (side === 'yours') return Array.isArray(trade.yourSide) ? trade.yourSide : [];
+      return Array.isArray(trade.theirSide) ? trade.theirSide : [];
+    }
     if (side === 'yours') return Array.isArray(trade.theirSide) ? trade.theirSide : [];
     return Array.isArray(trade.yourSide) ? trade.yourSide : [];
   }
