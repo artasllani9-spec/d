@@ -1665,12 +1665,23 @@ body.report-modal-open {
 
 .posted-trade__offerer {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.55rem;
+  justify-content: center;
+  gap: 0.4rem;
   min-width: 0;
   min-height: 100%;
+  text-align: center;
+}
+
+.posted-trade__offerer-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  text-align: center;
 }
 
 .posted-trade__offerer-avatar {
@@ -1703,6 +1714,9 @@ body.report-modal-open {
   color: #fff;
   word-break: break-word;
   text-decoration: none;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
 }
 
 a.posted-trade__offerer-name:hover,
