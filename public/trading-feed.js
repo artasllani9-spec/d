@@ -28,8 +28,8 @@
 
   let showingAccepted = new URLSearchParams(window.location.search).get('accepted') === '1';
   let lastFingerprint = '';
-  /** @type {{ side: 'yours' | 'theirs', itemName: string, potions: object | null } | null} */
-  let sideFilter = null;
+  /** @type {{ yours: { itemName: string, potions: object | null } | null, theirs: { itemName: string, potions: object | null } | null }} */
+  const sideFilters = { yours: null, theirs: null };
   /** @type {'yours' | 'theirs' | null} */
   let filterPickerSide = null;
   let activeFilterCategory = 'pets';
@@ -118,26 +118,47 @@
     return Array.isArray(trade.yourSide) ? trade.yourSide : [];
   }
 
-  function tradeMatchesSideFilter(trade) {
-    if (!sideFilter) return true;
-    const items = getViewerSideItems(trade, sideFilter.side);
-    const target = normalizeItemName(sideFilter.itemName);
+  function hasAnySideFilter() {
+    return Boolean(sideFilters.yours || sideFilters.theirs);
+  }
+
+  function formatFilterLabel(filter) {
+    if (!filter) return '';
+    return `${filter.itemName}${formatPotionsLabel(filter.potions)}`;
+  }
+
+  function sideMatchesFilter(trade, side, filter) {
+    if (!filter) return true;
+    const items = getViewerSideItems(trade, side);
+    const target = normalizeItemName(filter.itemName);
     return items.some((item) => {
       if (normalizeItemName(item && item.name) !== target) return false;
-      if (!sideFilter.potions) return true;
-      return potionsEqual(item.potions, sideFilter.potions);
+      if (!filter.potions) return true;
+      return potionsEqual(item.potions, filter.potions);
     });
   }
 
+  function tradeMatchesSideFilter(trade) {
+    return (
+      sideMatchesFilter(trade, 'yours', sideFilters.yours)
+      && sideMatchesFilter(trade, 'theirs', sideFilters.theirs)
+    );
+  }
+
   function applySideFilter(trades) {
-    if (!sideFilter) return trades;
+    if (!hasAnySideFilter()) return trades;
     return trades.filter(tradeMatchesSideFilter);
   }
 
   function fingerprintTrades(trades) {
-    const filterKey = sideFilter
-      ? `${sideFilter.side}:${normalizeItemName(sideFilter.itemName)}:${potionsKey(sideFilter.potions)}`
-      : 'none';
+    const filterKey = [
+      sideFilters.yours
+        ? `yours:${normalizeItemName(sideFilters.yours.itemName)}:${potionsKey(sideFilters.yours.potions)}`
+        : 'yours:none',
+      sideFilters.theirs
+        ? `theirs:${normalizeItemName(sideFilters.theirs.itemName)}:${potionsKey(sideFilters.theirs.potions)}`
+        : 'theirs:none',
+    ].join('|');
     return `${filterKey}|${trades.map((trade) => [
       trade.id,
       trade.postedAt || 0,
@@ -231,15 +252,13 @@
 
   function syncFilterButtonState() {
     document.querySelectorAll('.trading-side-filter-btn').forEach((btn) => {
-      const side = btn.dataset.side;
-      const active = Boolean(sideFilter && sideFilter.side === side);
+      const side = btn.dataset.side === 'theirs' ? 'theirs' : 'yours';
+      const filter = sideFilters[side];
+      const active = Boolean(filter);
       btn.classList.toggle('is-active', active);
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
       if (active) {
-        btn.setAttribute(
-          'title',
-          `Filtered by ${sideFilter.itemName}${formatPotionsLabel(sideFilter.potions)}`,
-        );
+        btn.setAttribute('title', `Filtered by ${formatFilterLabel(filter)}`);
       } else {
         btn.removeAttribute('title');
       }
@@ -247,7 +266,7 @@
 
     if (filterClearBtn) {
       const showClear = Boolean(
-        sideFilter && filterPickerSide && sideFilter.side === filterPickerSide,
+        filterPickerSide && sideFilters[filterPickerSide],
       );
       filterClearBtn.hidden = !showClear;
     }
@@ -256,9 +275,13 @@
   async function renderFeed(force) {
     await ensureTradesSynced();
 
-    const emptyFilterMessage = sideFilter
-      ? `No ${showingAccepted ? 'accepted ' : ''}trades with ${sideFilter.itemName}${formatPotionsLabel(sideFilter.potions)} on ${sideFilter.side === 'yours' ? 'Your Side' : 'Their Side'}.`
-      : null;
+    const emptyFilterMessage = (() => {
+      if (!hasAnySideFilter()) return null;
+      const parts = [];
+      if (sideFilters.yours) parts.push(`${formatFilterLabel(sideFilters.yours)} on Your Side`);
+      if (sideFilters.theirs) parts.push(`${formatFilterLabel(sideFilters.theirs)} on Their Side`);
+      return `No ${showingAccepted ? 'accepted ' : ''}trades with ${parts.join(' and ')}.`;
+    })();
 
     if (showingAccepted) {
       const allTrades = getAcceptedTradesForUser();
@@ -346,14 +369,13 @@
       : items;
 
     container.innerHTML = matches.map((item) => {
+      const activeSideFilter = filterPickerSide ? sideFilters[filterPickerSide] : null;
       const selected = Boolean(
         (pendingItemName && normalizeItemName(pendingItemName) === normalizeItemName(item.name))
         || (
           !pendingItemName
-          && sideFilter
-          && filterPickerSide
-          && sideFilter.side === filterPickerSide
-          && normalizeItemName(sideFilter.itemName) === normalizeItemName(item.name)
+          && activeSideFilter
+          && normalizeItemName(activeSideFilter.itemName) === normalizeItemName(item.name)
         ),
       );
       return `<button type="button" class="trade-picker__item${selected ? ' trade-picker__item--selected' : ''}" data-item-name="${escapeHtml(item.name)}" aria-label="${escapeHtml(item.name)}" aria-pressed="${selected ? 'true' : 'false'}">
@@ -405,8 +427,7 @@
   }
 
   function setSideFilter(side, itemName, potions) {
-    sideFilter = {
-      side,
+    sideFilters[side] = {
       itemName,
       potions: potions ? normalizePotions(potions) : null,
     };
@@ -415,8 +436,10 @@
     renderFeed(true);
   }
 
-  function clearSideFilter() {
-    sideFilter = null;
+  function clearSideFilter(side = filterPickerSide) {
+    if (side === 'yours' || side === 'theirs') {
+      sideFilters[side] = null;
+    }
     hideFilterDetail();
     syncFilterButtonState();
     renderFilterItems();
@@ -514,12 +537,12 @@
         itemBtn.classList.add('trade-picker__item--selected');
 
         if (activeFilterCategory === 'pets') {
+          const activeSideFilter = sideFilters[filterPickerSide];
           const restorePotions = (
-            sideFilter
-            && sideFilter.side === filterPickerSide
-            && normalizeItemName(sideFilter.itemName) === normalizeItemName(itemName)
-            && sideFilter.potions
-          ) ? sideFilter.potions : null;
+            activeSideFilter
+            && normalizeItemName(activeSideFilter.itemName) === normalizeItemName(itemName)
+            && activeSideFilter.potions
+          ) ? activeSideFilter.potions : null;
           showFilterDetail(itemName, itemImage, !supportsPotions, restorePotions);
           return;
         }
