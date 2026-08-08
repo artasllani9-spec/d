@@ -1553,6 +1553,33 @@ body.report-modal-open {
   transform: scale(0.96);
 }
 
+.trading-side-filter-btn.is-active {
+  background: rgba(70, 150, 255, 0.55);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(180, 220, 255, 0.55);
+}
+
+.trade-picker__clear-filter {
+  flex-shrink: 0;
+  height: 2.35rem;
+  padding: 0 0.85rem;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(40, 70, 120, 0.8);
+  color: rgba(220, 236, 255, 0.95);
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.trade-picker__clear-filter:hover {
+  background: rgba(55, 100, 170, 0.95);
+  color: #fff;
+}
+
 .trading-feed-headbar__label:first-child {
   text-align: left;
 }
@@ -1644,30 +1671,6 @@ body.report-modal-open {
   gap: 0.55rem;
   min-width: 0;
   min-height: 100%;
-}
-
-.posted-trade__offerer--trader {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0.35rem;
-}
-
-.posted-trade__offerer-person {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.55rem;
-  min-width: 0;
-}
-
-.posted-trade__trader-hint {
-  margin: 0;
-  font-family: "Outfit", system-ui, sans-serif;
-  font-size: 0.68rem;
-  font-weight: 600;
-  line-height: 1.25;
-  color: rgba(200, 228, 255, 0.88);
 }
 
 .posted-trade__offerer-avatar {
