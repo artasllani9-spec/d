@@ -63,8 +63,34 @@
         <div class="trading-feed-scroll">
           <div class="trading-feed-headbar" id="trading-feed-headbar" hidden>
             <span class="trading-feed-headbar__label">Offerer</span>
-            <span class="trading-feed-headbar__label">Your Side</span>
-            <span class="trading-feed-headbar__label">Their Side</span>
+            <span class="trading-feed-headbar__label trading-feed-headbar__label--with-btn">
+              <span>Your Side</span>
+              <button type="button" class="trading-side-filter-btn" data-side="yours" aria-label="Your side options">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 7h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                  <circle cx="19" cy="7" r="2.35" stroke="currentColor" stroke-width="2.2"/>
+                  <circle cx="5" cy="12" r="2.35" stroke="currentColor" stroke-width="2.2"/>
+                  <path d="M8.5 12H20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                  <path d="M4 17h6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                  <circle cx="13.5" cy="17" r="2.35" stroke="currentColor" stroke-width="2.2"/>
+                  <path d="M17 17h3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </span>
+            <span class="trading-feed-headbar__label trading-feed-headbar__label--with-btn">
+              <span>Their Side</span>
+              <button type="button" class="trading-side-filter-btn" data-side="theirs" aria-label="Their side options">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 7h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                  <circle cx="19" cy="7" r="2.35" stroke="currentColor" stroke-width="2.2"/>
+                  <circle cx="5" cy="12" r="2.35" stroke="currentColor" stroke-width="2.2"/>
+                  <path d="M8.5 12H20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                  <path d="M4 17h6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                  <circle cx="13.5" cy="17" r="2.35" stroke="currentColor" stroke-width="2.2"/>
+                  <path d="M17 17h3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </span>
             <span class="trading-feed-headbar__spacer" aria-hidden="true"></span>
           </div>
           <div class="posted-trades-feed" id="posted-trades-feed"></div>
