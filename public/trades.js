@@ -734,6 +734,16 @@ function buildPostedTradeHTML(trade, options = {}) {
   const personNameHtml = personProfileUrl
     ? `<a class="posted-trade__offerer-name" href="${escapeHtml(personProfileUrl)}"${personExternal ? ' target="_blank" rel="noopener noreferrer"' : ''}>${personName}</a>`
     : `<span class="posted-trade__offerer-name">${personName}</span>`;
+  const traderHintHtml = accepted
+    ? '<p class="posted-trade__trader-hint">Add this person to trade with them:</p>'
+    : '';
+  const personBlockHtml = `<div class="posted-trade__offerer${accepted ? ' posted-trade__offerer--trader' : ''}">
+        ${traderHintHtml}
+        <div class="posted-trade__offerer-person">
+          ${personAvatarHtml}
+          ${personNameHtml}
+        </div>
+      </div>`;
 
   let timer;
   if (failed && trade.failedAt) {
@@ -803,10 +813,7 @@ function buildPostedTradeHTML(trade, options = {}) {
 
   return `<article class="posted-trade${articleModifier}" data-trade-id="${trade.id}" data-trade-source="${viewSource}">
     <div class="posted-trade__bar" style="${barStyle}">
-      <div class="posted-trade__offerer">
-        ${personAvatarHtml}
-        ${personNameHtml}
-      </div>
+      ${personBlockHtml}
       ${buildPostedTradeSideHTML(viewerYourSide, 'Your Side', { showLabel: false })}
       ${buildPostedTradeSideHTML(viewerTheirSide, 'Their Side', { showLabel: false })}
       <div class="posted-trade__meta">
