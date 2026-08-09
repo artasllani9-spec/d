@@ -2101,14 +2101,14 @@ body.trade-confirm-open {
 }
 
 .trade-confirm__btn--no {
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 120, 120, 0.55);
+  background: rgba(170, 45, 45, 0.5);
   color: #fff;
 }
 
 .trade-confirm__btn--no:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(190, 55, 55, 0.68);
+  border-color: rgba(255, 140, 140, 0.8);
 }
 
 .trade-confirm__btn:active {
