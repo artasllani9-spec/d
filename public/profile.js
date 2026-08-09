@@ -14,9 +14,9 @@
   const reportStatus = document.getElementById('report-status');
   const reportCancelBtn = document.getElementById('report-cancel-btn');
   const reportSubmitBtn = document.getElementById('report-submit-btn');
-  const blockConfirm = document.getElementById('block-confirm');
-  const blockConfirmMessage = document.getElementById('block-confirm-message');
-  const blockConfirmYes = document.getElementById('block-confirm-yes');
+  const profileConfirm = document.getElementById('profile-confirm');
+  const profileConfirmMessage = document.getElementById('profile-confirm-message');
+  const profileConfirmYes = document.getElementById('profile-confirm-yes');
   if (!loading || !card) return;
 
   const avatar = card.querySelector('.profile-card__avatar');
@@ -252,8 +252,8 @@
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    if (blockConfirm && !blockConfirm.hidden) {
-      closeBlockConfirm();
+    if (profileConfirm && !profileConfirm.hidden) {
+      closeProfileConfirm();
       return;
     }
     if (reportModal && !reportModal.hidden) {
@@ -301,20 +301,25 @@
     });
   }
 
-  function closeBlockConfirm() {
-    if (!blockConfirm) return;
-    blockConfirm.hidden = true;
+  /** @type {'block' | 'ban' | null} */
+  let pendingProfileConfirm = null;
+
+  function closeProfileConfirm() {
+    pendingProfileConfirm = null;
+    if (!profileConfirm) return;
+    profileConfirm.hidden = true;
     document.body.classList.remove('trade-confirm-open');
   }
 
-  function openBlockConfirm() {
-    if (!blockConfirm) return;
-    if (blockConfirmMessage) {
-      blockConfirmMessage.textContent = 'Are you sure you would like to block this user?';
-    }
-    blockConfirm.hidden = false;
+  function openProfileConfirm(action) {
+    if (!profileConfirm || !profileConfirmMessage) return;
+    pendingProfileConfirm = action;
+    profileConfirmMessage.textContent = action === 'ban'
+      ? 'Are you sure you would like to ban this user?'
+      : 'Are you sure you would like to block this user?';
+    profileConfirm.hidden = false;
     document.body.classList.add('trade-confirm-open');
-    if (blockConfirmYes) blockConfirmYes.focus();
+    if (profileConfirmYes) profileConfirmYes.focus();
   }
 
   async function performBlockToggle() {
@@ -355,67 +360,78 @@
     }
   }
 
+  async function performBanToggle() {
+    if (!viewedUserId || !banBtn) return;
+    const isBanned = Boolean(profileModeration && profileModeration.isBanned);
+    const actionLabel = isBanned ? 'unban' : 'ban';
+
+    banBtn.disabled = true;
+    try {
+      const response = await fetch(
+        isBanned
+          ? `/api/moderation/bans/${encodeURIComponent(viewedUserId)}`
+          : '/api/moderation/bans',
+        {
+          method: isBanned ? 'DELETE' : 'POST',
+          credentials: 'same-origin',
+          headers: isBanned ? undefined : { 'Content-Type': 'application/json' },
+          body: isBanned ? undefined : JSON.stringify({ userId: viewedUserId }),
+        },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok && response.status !== 204) {
+        throw new Error(data.message || `Could not ${actionLabel} user.`);
+      }
+
+      profileModeration = {
+        ...(profileModeration || {}),
+        isBanned: !isBanned,
+        ban: isBanned ? null : (data.ban || { userId: viewedUserId }),
+      };
+      syncBanButton();
+    } catch (error) {
+      window.alert((error && error.message) || `Could not ${actionLabel} user.`);
+      banBtn.disabled = false;
+    }
+  }
+
   if (blockBtn) {
     blockBtn.addEventListener('click', () => {
       if (!viewedUserId) return;
       const isBlocked = Boolean(profileRelationship && profileRelationship.blockedByViewer);
       if (!isBlocked) {
-        openBlockConfirm();
+        openProfileConfirm('block');
         return;
       }
       performBlockToggle();
     });
   }
 
-  if (blockConfirmYes) {
-    blockConfirmYes.addEventListener('click', () => {
-      closeBlockConfirm();
-      performBlockToggle();
-    });
-  }
-
-  if (blockConfirm) {
-    blockConfirm.addEventListener('click', (event) => {
-      if (event.target.closest('[data-block-confirm-close]')) {
-        closeBlockConfirm();
-      }
-    });
-  }
-
   if (banBtn) {
-    banBtn.addEventListener('click', async () => {
+    banBtn.addEventListener('click', () => {
       if (!viewedUserId) return;
       const isBanned = Boolean(profileModeration && profileModeration.isBanned);
-      const actionLabel = isBanned ? 'unban' : 'ban';
-      if (!window.confirm(`Are you sure you want to ${actionLabel} this user?`)) return;
+      if (!isBanned) {
+        openProfileConfirm('ban');
+        return;
+      }
+      performBanToggle();
+    });
+  }
 
-      banBtn.disabled = true;
-      try {
-        const response = await fetch(
-          isBanned
-            ? `/api/moderation/bans/${encodeURIComponent(viewedUserId)}`
-            : '/api/moderation/bans',
-          {
-            method: isBanned ? 'DELETE' : 'POST',
-            credentials: 'same-origin',
-            headers: isBanned ? undefined : { 'Content-Type': 'application/json' },
-            body: isBanned ? undefined : JSON.stringify({ userId: viewedUserId }),
-          },
-        );
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok && response.status !== 204) {
-          throw new Error(data.message || `Could not ${actionLabel} user.`);
-        }
+  if (profileConfirmYes) {
+    profileConfirmYes.addEventListener('click', () => {
+      const action = pendingProfileConfirm;
+      closeProfileConfirm();
+      if (action === 'ban') performBanToggle();
+      else if (action === 'block') performBlockToggle();
+    });
+  }
 
-        profileModeration = {
-          ...(profileModeration || {}),
-          isBanned: !isBanned,
-          ban: isBanned ? null : (data.ban || { userId: viewedUserId }),
-        };
-        syncBanButton();
-      } catch (error) {
-        window.alert((error && error.message) || `Could not ${actionLabel} user.`);
-        banBtn.disabled = false;
+  if (profileConfirm) {
+    profileConfirm.addEventListener('click', (event) => {
+      if (event.target.closest('[data-profile-confirm-close]')) {
+        closeProfileConfirm();
       }
     });
   }
