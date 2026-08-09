@@ -646,6 +646,43 @@
     grid-area: meta;
   }
 
+  .posted-trades-feed .posted-trade__panel {
+    padding: 2px;
+    width: 100%;
+  }
+
+  .posted-trades-feed .posted-trade__grid-scroll {
+    --posted-trade-slot-size: min(2.7rem, calc((50vw - 3.25rem) / 3));
+    --posted-trade-gap: 2px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .posted-trades-feed .posted-trade__grid {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .posted-trades-feed .trade-slot__badge {
+    width: 0.62rem;
+    height: 0.62rem;
+    font-size: 0.38rem;
+    border-width: 0.5px;
+  }
+
+  .posted-trades-feed .trade-slot__badge--mega {
+    width: 0.66rem;
+    height: 0.66rem;
+    font-size: 0.4rem;
+    border-radius: 2px;
+  }
+
+  .posted-trades-feed .trade-slot__badges {
+    gap: 0.05rem;
+    right: 1px;
+    bottom: 1px;
+  }
+
   .posted-trade__meta {
     flex-wrap: wrap;
     gap: 0.5rem;
