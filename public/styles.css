@@ -5332,8 +5332,9 @@ a.trade-action-btn {
   }
 
   .posted-trades-feed .posted-trade__bar > .posted-trade__side + .posted-trade__side {
-    border-left: 1.5px solid rgba(160, 210, 255, 0.7);
+    border-left: 1px solid rgba(200, 230, 255, 0.28);
     border-top: 1px solid rgba(120, 180, 255, 0.38);
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.1);
   }
 
   .trade-center--posted-compact {
