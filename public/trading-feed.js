@@ -549,6 +549,18 @@
         const itemName = itemBtn.dataset.itemName;
         const itemImage = itemBtn.querySelector('img')?.src || '';
         const supportsPotions = itemSupportsPotions(activeFilterCategory, itemName);
+        const activeSideFilter = sideFilters[filterPickerSide];
+        const isSameItem = Boolean(
+          activeSideFilter
+          && normalizeItemName(activeSideFilter.itemName) === normalizeItemName(itemName)
+        );
+
+        // Clicking the already-selected filter item clears it.
+        if (isSameItem) {
+          clearSideFilter(filterPickerSide);
+          closeFilterPicker();
+          return;
+        }
 
         itemBtn.closest('.trade-picker__items')?.querySelectorAll('.trade-picker__item--selected').forEach((el) => {
           el.classList.remove('trade-picker__item--selected');
@@ -556,13 +568,7 @@
         itemBtn.classList.add('trade-picker__item--selected');
 
         if (activeFilterCategory === 'pets') {
-          const activeSideFilter = sideFilters[filterPickerSide];
-          const restorePotions = (
-            activeSideFilter
-            && normalizeItemName(activeSideFilter.itemName) === normalizeItemName(itemName)
-            && activeSideFilter.potions
-          ) ? activeSideFilter.potions : null;
-          showFilterDetail(itemName, itemImage, !supportsPotions, restorePotions);
+          showFilterDetail(itemName, itemImage, !supportsPotions, null);
           return;
         }
 
