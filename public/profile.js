@@ -14,6 +14,9 @@
   const reportStatus = document.getElementById('report-status');
   const reportCancelBtn = document.getElementById('report-cancel-btn');
   const reportSubmitBtn = document.getElementById('report-submit-btn');
+  const blockConfirm = document.getElementById('block-confirm');
+  const blockConfirmMessage = document.getElementById('block-confirm-message');
+  const blockConfirmYes = document.getElementById('block-confirm-yes');
   if (!loading || !card) return;
 
   const avatar = card.querySelector('.profile-card__avatar');
@@ -248,7 +251,12 @@
   }
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && reportModal && !reportModal.hidden) {
+    if (event.key !== 'Escape') return;
+    if (blockConfirm && !blockConfirm.hidden) {
+      closeBlockConfirm();
+      return;
+    }
+    if (reportModal && !reportModal.hidden) {
       closeReportModal();
     }
   });
@@ -293,46 +301,83 @@
     });
   }
 
-  if (blockBtn) {
-    blockBtn.addEventListener('click', async () => {
-      if (!viewedUserId) return;
-      const isBlocked = Boolean(profileRelationship && profileRelationship.blockedByViewer);
+  function closeBlockConfirm() {
+    if (!blockConfirm) return;
+    blockConfirm.hidden = true;
+    document.body.classList.remove('trade-confirm-open');
+  }
 
-      if (!isBlocked) {
-        if (!window.confirm('Are you sure you would like to block this user?')) return;
+  function openBlockConfirm() {
+    if (!blockConfirm) return;
+    if (blockConfirmMessage) {
+      blockConfirmMessage.textContent = 'Are you sure you would like to block this user?';
+    }
+    blockConfirm.hidden = false;
+    document.body.classList.add('trade-confirm-open');
+    if (blockConfirmYes) blockConfirmYes.focus();
+  }
+
+  async function performBlockToggle() {
+    if (!viewedUserId || !blockBtn) return;
+    const isBlocked = Boolean(profileRelationship && profileRelationship.blockedByViewer);
+
+    blockBtn.disabled = true;
+    try {
+      const response = await fetch(
+        isBlocked
+          ? `/api/moderation/blocks/${encodeURIComponent(viewedUserId)}`
+          : '/api/moderation/blocks',
+        {
+          method: isBlocked ? 'DELETE' : 'POST',
+          credentials: 'same-origin',
+          headers: isBlocked ? undefined : { 'Content-Type': 'application/json' },
+          body: isBlocked ? undefined : JSON.stringify({ userId: viewedUserId }),
+        },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok && response.status !== 204) {
+        if (response.status === 401) {
+          window.location.href = '/api/auth/roblox';
+          return;
+        }
+        throw new Error(data.message || (isBlocked ? 'Could not unblock user.' : 'Could not block user.'));
       }
 
-      blockBtn.disabled = true;
-      try {
-        const response = await fetch(
-          isBlocked
-            ? `/api/moderation/blocks/${encodeURIComponent(viewedUserId)}`
-            : '/api/moderation/blocks',
-          {
-            method: isBlocked ? 'DELETE' : 'POST',
-            credentials: 'same-origin',
-            headers: isBlocked ? undefined : { 'Content-Type': 'application/json' },
-            body: isBlocked ? undefined : JSON.stringify({ userId: viewedUserId }),
-          },
-        );
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok && response.status !== 204) {
-          if (response.status === 401) {
-            window.location.href = '/api/auth/roblox';
-            return;
-          }
-          throw new Error(data.message || (isBlocked ? 'Could not unblock user.' : 'Could not block user.'));
-        }
+      profileRelationship = {
+        ...(profileRelationship || {}),
+        blockedByViewer: !isBlocked,
+        isSelf: false,
+      };
+      syncUserActionButtons();
+    } catch (error) {
+      window.alert((error && error.message) || 'Could not update block.');
+      blockBtn.disabled = false;
+    }
+  }
 
-        profileRelationship = {
-          ...(profileRelationship || {}),
-          blockedByViewer: !isBlocked,
-          isSelf: false,
-        };
-        syncUserActionButtons();
-      } catch (error) {
-        window.alert((error && error.message) || 'Could not update block.');
-        blockBtn.disabled = false;
+  if (blockBtn) {
+    blockBtn.addEventListener('click', () => {
+      if (!viewedUserId) return;
+      const isBlocked = Boolean(profileRelationship && profileRelationship.blockedByViewer);
+      if (!isBlocked) {
+        openBlockConfirm();
+        return;
+      }
+      performBlockToggle();
+    });
+  }
+
+  if (blockConfirmYes) {
+    blockConfirmYes.addEventListener('click', () => {
+      closeBlockConfirm();
+      performBlockToggle();
+    });
+  }
+
+  if (blockConfirm) {
+    blockConfirm.addEventListener('click', (event) => {
+      if (event.target.closest('[data-block-confirm-close]')) {
+        closeBlockConfirm();
       }
     });
   }
