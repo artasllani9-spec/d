@@ -5577,7 +5577,8 @@ a.trade-action-btn {
   }
 
   body.post-trade-page .trade-board,
-  body.trade-calculator-page .trade-board {
+  body.trade-calculator-page .trade-board,
+  body.view-trade-page .trade-board {
     flex-direction: row;
     align-items: flex-end;
     gap: clamp(0.3rem, 1.4vw, 0.55rem);
@@ -5586,14 +5587,16 @@ a.trade-action-btn {
   }
 
   body.post-trade-page .trade-side,
-  body.trade-calculator-page .trade-side {
+  body.trade-calculator-page .trade-side,
+  body.view-trade-page .trade-side {
     flex: 1 1 0;
     min-width: 0;
     width: auto;
   }
 
   body.post-trade-page .trade-center,
-  body.trade-calculator-page .trade-center {
+  body.trade-calculator-page .trade-center,
+  body.view-trade-page .trade-center {
     flex: 0 0 clamp(4.25rem, 17vw, 5.5rem);
     width: clamp(4.25rem, 17vw, 5.5rem);
   }
