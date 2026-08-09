@@ -754,10 +754,12 @@ body.report-modal-open {
   padding: 1.5rem 1.55rem 1.35rem;
   border-radius: 16px;
   background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .report-glass-bar__title {
@@ -2058,6 +2060,14 @@ body.trade-confirm-open {
   box-shadow:
     0 16px 40px rgba(12, 40, 90, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.trade-confirm__bar--black {
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .trade-confirm__message {
