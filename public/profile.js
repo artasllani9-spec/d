@@ -109,7 +109,7 @@
 
     banBtn.hidden = false;
     banBtn.disabled = false;
-    banBtn.textContent = isBanned ? 'Unban User' : 'Ban User';
+    banBtn.textContent = isBanned ? 'Unban' : 'Ban';
     banBtn.classList.toggle('profile-ban-btn--unban', isBanned);
   }
 
