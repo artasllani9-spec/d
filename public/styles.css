@@ -2737,7 +2737,7 @@ a.trading-btn {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: var(--shell-pad-y) var(--shell-pad-x);
+  padding: 0.65rem var(--shell-pad-x) var(--shell-pad-y);
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -5536,11 +5536,11 @@ a.trade-action-btn {
 
   .post-trade-content {
     top: 3.25rem;
-    padding: 1.25rem;
+    padding: 0.55rem 0.85rem 1rem;
   }
 
   .trade-glass-bar {
-    padding: 1.5rem 1.25rem;
+    padding: 1.35rem 1rem 1rem;
     border-radius: 14px;
   }
 

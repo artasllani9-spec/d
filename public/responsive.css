@@ -794,13 +794,13 @@
     font-size: clamp(0.9rem, 3.5vw, 1.05rem);
   }
 
-  /* Post trade + calculator: keep horizontal board on phone */
+  /* Post trade + calculator + view trade: keep horizontal board on phone */
   body.post-trade-page .post-trade-content,
   body.trade-calculator-page .post-trade-content,
   body.view-trade-page .post-trade-content {
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 0.45rem 0.35rem calc(0.45rem + var(--safe-bottom));
+    padding: 0.35rem 0.35rem calc(0.45rem + var(--safe-bottom));
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -811,7 +811,7 @@
     width: 100%;
     max-width: 100%;
     margin-top: 0;
-    padding: clamp(2.1rem, 7vw, 2.5rem) clamp(0.4rem, 1.8vw, 0.6rem) clamp(0.55rem, 1.8vh, 0.75rem);
+    padding: clamp(1.35rem, 4.5vw, 1.75rem) clamp(0.4rem, 1.8vw, 0.6rem) clamp(0.45rem, 1.5vh, 0.65rem);
     border-radius: 14px;
   }
 
@@ -1282,7 +1282,7 @@
   }
 
   body.view-trade-page .trade-glass-bar {
-    padding-top: clamp(0.75rem, 2.5vh, 1rem);
+    padding-top: clamp(0.55rem, 2vh, 0.8rem);
   }
 
   body.view-trade-page .view-trade-offerer__label {
@@ -1786,16 +1786,16 @@
   body.post-trade-page .post-trade-content,
   body.trade-calculator-page .post-trade-content,
   body.view-trade-page .post-trade-content {
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 0.35rem 0.5rem calc(0.35rem + var(--safe-bottom));
+    padding: 0.25rem 0.5rem calc(0.35rem + var(--safe-bottom));
   }
 
   body.post-trade-page .trade-glass-bar,
   body.trade-calculator-page .trade-glass-bar,
   body.view-trade-page .trade-glass-bar {
     margin-top: 0;
-    padding: clamp(1.85rem, 6vh, 2.15rem) clamp(0.5rem, 2vw, 0.75rem) 0.5rem;
+    padding: clamp(1.15rem, 4vh, 1.55rem) clamp(0.5rem, 2vw, 0.75rem) 0.45rem;
   }
 
   body.post-trade-page .trade-board,
