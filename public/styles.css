@@ -5210,28 +5210,38 @@ a.trade-action-btn {
     margin: 0 -0.85rem;
     padding: 0.5rem 0;
     gap: 0;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "person person"
+      "yours theirs";
   }
 
   .trading-feed-headbar > *:first-child {
+    grid-area: person;
+    justify-content: center;
     padding-left: calc(0.85rem + 0.95rem);
-    padding-right: 2rem;
+    padding-right: calc(0.85rem + 0.95rem);
+    text-align: center;
   }
 
-  .trading-feed-headbar > *:nth-child(2),
-  .trading-feed-headbar > *:nth-child(3) {
+  .trading-feed-headbar > *:nth-child(2) {
+    grid-area: yours;
     justify-content: center;
     padding-left: 0.95rem;
-    padding-right: 0.95rem;
+    padding-right: 0.7rem;
   }
 
-  .trading-feed-headbar > *:last-child {
-    padding-right: calc(0.85rem + 0.95rem);
+  .trading-feed-headbar > *:nth-child(3) {
+    grid-area: theirs;
+    justify-content: center;
+    padding-left: 0.7rem;
+    padding-right: 0.95rem;
+    border-left: 1px solid rgba(200, 230, 255, 0.28);
   }
 
   .trading-feed-headbar__label:first-child,
   .trading-feed-headbar__label {
-    text-align: left;
+    text-align: center;
   }
 
   .trading-feed-headbar__spacer {

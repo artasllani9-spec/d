@@ -629,6 +629,34 @@
     grid-template-columns: 1fr;
   }
 
+  .trading-feed-headbar {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "person person"
+      "yours theirs";
+  }
+
+  .trading-feed-headbar > *:first-child {
+    grid-area: person;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .trading-feed-headbar > *:nth-child(2) {
+    grid-area: yours;
+    justify-content: center;
+  }
+
+  .trading-feed-headbar > *:nth-child(3) {
+    grid-area: theirs;
+    justify-content: center;
+    border-left: 1px solid rgba(200, 230, 255, 0.28);
+  }
+
+  .trading-feed-headbar__spacer {
+    display: none;
+  }
+
   .posted-trades-feed .posted-trade__bar {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
