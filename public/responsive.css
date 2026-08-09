@@ -621,14 +621,51 @@
     grid-template-columns: 1fr;
   }
 
+  .posted-trades-feed .posted-trade__bar {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "offerer offerer"
+      "yours theirs"
+      "meta meta";
+  }
+
+  .posted-trades-feed .posted-trade__offerer {
+    grid-area: offerer;
+  }
+
+  .posted-trades-feed .posted-trade__side:first-of-type {
+    grid-area: yours;
+  }
+
+  .posted-trades-feed .posted-trade__side:last-of-type {
+    grid-area: theirs;
+    border-left: 1px solid rgba(120, 180, 255, 0.38);
+  }
+
+  .posted-trades-feed .posted-trade__meta {
+    grid-area: meta;
+  }
+
   .posted-trade__meta {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
 
   .posted-trade__actions {
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 0.45rem;
+    justify-content: stretch;
+  }
+
+  .posted-trade__actions .posted-trade__btn {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    min-height: var(--touch-target);
+    font-size: 0.7rem;
   }
 
   .posted-trade__btn {
@@ -1279,12 +1316,20 @@
 
   .posted-trade__actions {
     width: 100%;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-items: stretch;
+    gap: 0.45rem;
+  }
+
+  .posted-trade__actions .posted-trade__btn {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
   }
 
   .posted-trade__btn {
-    width: 100%;
+    width: auto;
   }
 
   .trade-picker__category {
