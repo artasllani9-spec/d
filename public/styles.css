@@ -2744,6 +2744,12 @@ a.trading-btn {
   box-sizing: border-box;
 }
 
+body.post-trade-page .trade-glass-bar,
+body.trade-calculator-page .trade-glass-bar,
+body.view-trade-page .trade-glass-bar {
+  margin-top: 5rem;
+}
+
 .trade-glass-bar {
   position: relative;
   width: min(100%, 1120px);
