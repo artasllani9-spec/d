@@ -1,40 +1,5 @@
 {
-  "posted": [
-    {
-      "id": 1786298845602,
-      "postedAt": 1786298845002,
-      "postedBy": "3519737769",
-      "offerer": "casuaIIyace",
-      "offererAvatar": "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-70D32E10DE50F59D85368290A9FD4B4F-Png/150/150/AvatarHeadshot/Png/noFilter",
-      "offererProfile": "https://www.roblox.com/users/3519737769/profile",
-      "yourSide": [
-        {
-          "name": "Shadow Dragon",
-          "image": "https://d-seven-chi.vercel.app/pets/pet-04.png",
-          "potions": {
-            "fly": true,
-            "ride": true,
-            "neon": false,
-            "mega": false
-          },
-          "isSign": false
-        }
-      ],
-      "theirSide": [
-        {
-          "name": "Frost Dragon",
-          "image": "https://d-seven-chi.vercel.app/pets/pet-11.png",
-          "potions": {
-            "fly": true,
-            "ride": true,
-            "neon": false,
-            "mega": false
-          },
-          "isSign": false
-        }
-      ]
-    }
-  ],
+  "posted": [],
   "accepted": [
     {
       "id": 1786285249493,
