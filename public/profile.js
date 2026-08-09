@@ -14,6 +14,9 @@
   const reportStatus = document.getElementById('report-status');
   const reportCancelBtn = document.getElementById('report-cancel-btn');
   const reportSubmitBtn = document.getElementById('report-submit-btn');
+  const reportContinueBtn = document.getElementById('report-continue-btn');
+  const reportForm = document.getElementById('report-form');
+  const reportThanks = document.getElementById('report-thanks');
   const profileConfirm = document.getElementById('profile-confirm');
   const profileConfirmMessage = document.getElementById('profile-confirm-message');
   const profileConfirmYes = document.getElementById('profile-confirm-yes');
@@ -43,21 +46,38 @@
     reportStatus.classList.toggle('report-glass-bar__status--error', Boolean(isError));
   }
 
-  function closeReportModal() {
-    if (!reportModal) return;
-    reportModal.hidden = true;
-    document.body.classList.remove('report-modal-open');
+  function resetReportModalForm() {
+    reportModal?.classList.remove('report-modal--thanks');
+    if (reportForm) reportForm.hidden = false;
+    if (reportThanks) reportThanks.hidden = true;
     if (reportInput) reportInput.value = '';
     setReportStatus('', false);
     if (reportSubmitBtn) reportSubmitBtn.disabled = false;
   }
 
+  function closeReportModal() {
+    if (!reportModal) return;
+    reportModal.hidden = true;
+    document.body.classList.remove('report-modal-open');
+    resetReportModalForm();
+  }
+
+  function showReportThanks() {
+    if (!reportModal) return;
+    reportModal.classList.add('report-modal--thanks');
+    if (reportTitle) reportTitle.textContent = 'Thank you for submitting your report!';
+    if (reportForm) reportForm.hidden = true;
+    if (reportThanks) reportThanks.hidden = false;
+    reportModal.hidden = false;
+    document.body.classList.add('report-modal-open');
+    if (reportContinueBtn) reportContinueBtn.focus();
+  }
+
   function openReportModal() {
     if (!reportModal || !viewedUserId) return;
     const handle = viewedUsername ? `@${viewedUsername}` : `@${viewedUserId}`;
+    resetReportModalForm();
     if (reportTitle) reportTitle.textContent = `Report ${handle}:`;
-    if (reportInput) reportInput.value = '';
-    setReportStatus('', false);
     reportModal.hidden = false;
     document.body.classList.add('report-modal-open');
     if (reportInput) reportInput.focus();
@@ -244,9 +264,16 @@
     reportCancelBtn.addEventListener('click', closeReportModal);
   }
 
+  if (reportContinueBtn) {
+    reportContinueBtn.addEventListener('click', closeReportModal);
+  }
+
   if (reportModal) {
     reportModal.addEventListener('click', (event) => {
-      if (event.target.closest('[data-report-close]')) closeReportModal();
+      if (!event.target.closest('[data-report-close]')) return;
+      // Thanks state: require Continue (don't dismiss via backdrop).
+      if (reportModal.classList.contains('report-modal--thanks')) return;
+      closeReportModal();
     });
   }
 
@@ -257,6 +284,7 @@
       return;
     }
     if (reportModal && !reportModal.hidden) {
+      if (reportModal.classList.contains('report-modal--thanks')) return;
       closeReportModal();
     }
   });
@@ -292,8 +320,7 @@
           }
           throw new Error(data.message || 'Could not submit report.');
         }
-        closeReportModal();
-        window.alert('Thanks. Your report was submitted.');
+        showReportThanks();
       } catch (error) {
         setReportStatus((error && error.message) || 'Could not submit report.', true);
         reportSubmitBtn.disabled = false;

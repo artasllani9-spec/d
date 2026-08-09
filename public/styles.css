@@ -866,6 +866,26 @@ body.report-modal-open {
   cursor: wait;
 }
 
+.report-glass-bar__thanks[hidden],
+.report-glass-bar__form[hidden] {
+  display: none;
+}
+
+.report-modal--thanks .report-glass-bar {
+  width: min(100%, 28rem);
+  text-align: center;
+}
+
+.report-modal--thanks .report-glass-bar__title {
+  margin-bottom: 1.15rem;
+  line-height: 1.35;
+}
+
+.report-glass-bar__actions--thanks {
+  justify-content: center;
+  margin-top: 0;
+}
+
 .reports-list {
   list-style: none;
   margin: 1.15rem 0 0;
