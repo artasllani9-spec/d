@@ -40,7 +40,7 @@
   let pendingItemName = null;
   let pendingItemImage = null;
   let pendingNoPotions = false;
-  /** @type {{ tradeId: number, action: 'completed' | 'failed' | 'delete' } | null} */
+  /** @type {{ tradeId: number, action: 'completed' | 'failed' | 'delete' | 'accept' } | null} */
   let pendingConfirm = null;
 
   const CATEGORY_ITEMS = {
@@ -491,6 +491,8 @@
       tradeConfirmMessage.textContent = 'Are you sure you would like to mark this trade failed?';
     } else if (action === 'delete') {
       tradeConfirmMessage.textContent = 'Are you sure you would like to delete this trade?';
+    } else if (action === 'accept') {
+      tradeConfirmMessage.textContent = 'Are you sure you would like to accept this trade offer?';
     } else {
       tradeConfirmMessage.textContent = 'Are you sure you would like to mark this trade completed?';
     }
@@ -503,6 +505,23 @@
     const pending = pendingConfirm;
     closeTradeConfirm();
     if (!confirmed || !pending) return;
+
+    if (pending.action === 'accept') {
+      try {
+        const ok = await acceptPostedTrade(pending.tradeId);
+        if (ok) {
+          setAcceptedMode(true);
+          renderFeed(true);
+        }
+      } catch (error) {
+        if (error && error.code === 'AUTH_REQUIRED') {
+          window.location.href = '/api/auth/roblox';
+          return;
+        }
+        window.alert((error && error.message) || 'Could not accept trade.');
+      }
+      return;
+    }
 
     let ok = false;
     if (pending.action === 'failed') {
@@ -545,18 +564,8 @@
     }
 
     if (event.target.closest('.posted-trade__btn--accept')) {
-      acceptPostedTrade(tradeId).then((ok) => {
-        if (ok) {
-          setAcceptedMode(true);
-          renderFeed(true);
-        }
-      }).catch((error) => {
-        if (error && error.code === 'AUTH_REQUIRED') {
-          window.location.href = '/api/auth/roblox';
-          return;
-        }
-        window.alert((error && error.message) || 'Could not accept trade.');
-      });
+      openTradeConfirm(tradeId, 'accept');
+      return;
     }
   });
 

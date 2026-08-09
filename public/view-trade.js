@@ -13,8 +13,14 @@
   const offererAvatarEl = document.getElementById('view-trade-offerer-avatar');
   const timerEl = document.getElementById('view-trade-timer');
   const acceptBtn = document.getElementById('accept-trade-btn');
+  const tradeConfirm = document.getElementById('trade-confirm');
+  const tradeConfirmMessage = document.getElementById('trade-confirm-message');
+  const tradeConfirmYes = document.getElementById('trade-confirm-yes');
 
   if (!yoursGrid || !theirsGrid) return;
+
+  /** @type {'accept' | 'delete' | null} */
+  let pendingConfirmAction = null;
 
   const yourItems = viewTrade.yourSide || [];
   const theirItems = viewTrade.theirSide || [];
@@ -57,6 +63,73 @@
     timerEl.dateTime = new Date(viewTrade.postedAt).toISOString();
   }
 
+  function closeTradeConfirm() {
+    pendingConfirmAction = null;
+    if (!tradeConfirm) return;
+    tradeConfirm.hidden = true;
+    document.body.classList.remove('trade-confirm-open');
+  }
+
+  function openTradeConfirm(action) {
+    if (!tradeConfirm || !tradeConfirmMessage) return;
+    pendingConfirmAction = action;
+    tradeConfirmMessage.textContent = action === 'delete'
+      ? 'Are you sure you would like to delete this trade?'
+      : 'Are you sure you would like to accept this trade offer?';
+    tradeConfirm.hidden = false;
+    document.body.classList.add('trade-confirm-open');
+    if (tradeConfirmYes) tradeConfirmYes.focus();
+  }
+
+  async function resolveTradeConfirm(confirmed) {
+    const action = pendingConfirmAction;
+    closeTradeConfirm();
+    if (!confirmed || !action || !viewTrade.tradeId) return;
+
+    if (action === 'delete') {
+      const deleted = await deletePostedTrade(viewTrade.tradeId);
+      if (deleted) {
+        window.location.href = 'trading.html';
+        return;
+      }
+      window.alert('Could not delete trade.');
+      return;
+    }
+
+    try {
+      const accepted = await acceptPostedTrade(viewTrade.tradeId);
+      if (accepted) {
+        window.location.href = 'trading.html?accepted=1';
+      }
+    } catch (error) {
+      if (error && error.code === 'AUTH_REQUIRED') {
+        window.location.href = '/api/auth/roblox';
+        return;
+      }
+      window.alert((error && error.message) || 'Could not accept trade.');
+    }
+  }
+
+  if (tradeConfirmYes) {
+    tradeConfirmYes.addEventListener('click', () => {
+      resolveTradeConfirm(true);
+    });
+  }
+
+  if (tradeConfirm) {
+    tradeConfirm.addEventListener('click', (event) => {
+      if (event.target.closest('[data-confirm-close]')) {
+        resolveTradeConfirm(false);
+      }
+    });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && tradeConfirm && !tradeConfirm.hidden) {
+      resolveTradeConfirm(false);
+    }
+  });
+
   if (acceptBtn) {
     const postedTrade = viewTrade.tradeId ? getPostedTradeById(viewTrade.tradeId) : null;
     const labelEl = acceptBtn.querySelector('.trade-action-btn__label');
@@ -72,28 +145,11 @@
       acceptBtn.id = 'delete-trade-btn';
       if (labelEl) labelEl.textContent = 'Delete Trade';
       acceptBtn.addEventListener('click', () => {
-        if (!window.confirm('Delete this trade offer?')) return;
-        deletePostedTrade(viewTrade.tradeId).then((deleted) => {
-          if (deleted) {
-            window.location.href = 'trading.html';
-            return;
-          }
-          window.alert('Could not delete trade.');
-        });
+        openTradeConfirm('delete');
       });
     } else if (postedTrade && canUserAcceptTrade(postedTrade)) {
       acceptBtn.addEventListener('click', () => {
-        acceptPostedTrade(viewTrade.tradeId).then((accepted) => {
-          if (accepted) {
-            window.location.href = 'trading.html?accepted=1';
-          }
-        }).catch((error) => {
-          if (error && error.code === 'AUTH_REQUIRED') {
-            window.location.href = '/api/auth/roblox';
-            return;
-          }
-          window.alert((error && error.message) || 'Could not accept trade.');
-        });
+        openTradeConfirm('accept');
       });
     } else {
       acceptBtn.hidden = true;
