@@ -2019,6 +2019,102 @@ a.posted-trade-modal__offerer-name:hover {
   opacity: 1;
 }
 
+body.trade-confirm-open {
+  overflow: hidden;
+}
+
+.trade-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.trade-confirm[hidden] {
+  display: none !important;
+}
+
+.trade-confirm__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 10, 18, 0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.trade-confirm__bar {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 28rem);
+  padding: 1.35rem 1.4rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.trade-confirm__message {
+  margin: 0;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+  text-align: center;
+}
+
+.trade-confirm__actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.15rem;
+}
+
+.trade-confirm__btn {
+  min-width: 5.5rem;
+  min-height: 2.55rem;
+  padding: 0 1.15rem;
+  border-radius: 10px;
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+}
+
+.trade-confirm__btn--yes {
+  border: 1px solid rgba(120, 220, 160, 0.55);
+  background: rgba(40, 140, 90, 0.5);
+  color: #fff;
+}
+
+.trade-confirm__btn--yes:hover {
+  background: rgba(50, 165, 105, 0.68);
+  border-color: rgba(140, 235, 180, 0.8);
+}
+
+.trade-confirm__btn--no {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.trade-confirm__btn--no:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.trade-confirm__btn:active {
+  transform: scale(0.97);
+}
+
 .posted-trade-modal {
   position: fixed;
   inset: 0;

@@ -14,6 +14,10 @@
   const filterPotionsRow = document.getElementById('trade-side-filter-potions');
   const filterDetailCancel = document.getElementById('trade-side-filter-detail-cancel');
   const filterDetailConfirm = document.getElementById('trade-side-filter-detail-confirm');
+  const tradeConfirm = document.getElementById('trade-confirm');
+  const tradeConfirmMessage = document.getElementById('trade-confirm-message');
+  const tradeConfirmYes = document.getElementById('trade-confirm-yes');
+  const tradeConfirmNo = document.getElementById('trade-confirm-no');
   const potionButtons = filterPotionsRow
     ? filterPotionsRow.querySelectorAll('.trade-picker__potion')
     : [];
@@ -36,6 +40,8 @@
   let pendingItemName = null;
   let pendingItemImage = null;
   let pendingNoPotions = false;
+  /** @type {{ tradeId: number, action: 'completed' | 'failed' } | null} */
+  let pendingConfirm = null;
 
   const CATEGORY_ITEMS = {
     pets: typeof pets !== 'undefined' ? pets : [],
@@ -471,6 +477,35 @@
     setSideFilter(filterPickerSide, pendingItemName, potions);
   }
 
+  function closeTradeConfirm() {
+    pendingConfirm = null;
+    if (!tradeConfirm) return;
+    tradeConfirm.hidden = true;
+    document.body.classList.remove('trade-confirm-open');
+  }
+
+  function openTradeConfirm(tradeId, action) {
+    if (!tradeConfirm || !tradeConfirmMessage) return;
+    pendingConfirm = { tradeId, action };
+    tradeConfirmMessage.textContent = action === 'failed'
+      ? 'Are you sure you would like to mark this trade failed?'
+      : 'Are you sure you would like to mark this trade completed?';
+    tradeConfirm.hidden = false;
+    document.body.classList.add('trade-confirm-open');
+    if (tradeConfirmYes) tradeConfirmYes.focus();
+  }
+
+  async function resolveTradeConfirm(confirmed) {
+    const pending = pendingConfirm;
+    closeTradeConfirm();
+    if (!confirmed || !pending) return;
+
+    const ok = pending.action === 'failed'
+      ? await markAcceptedTradeFailed(pending.tradeId)
+      : await markAcceptedTradeCompleted(pending.tradeId);
+    if (ok) renderFeed(true);
+  }
+
   feed.addEventListener('click', (event) => {
     const article = event.target.closest('.posted-trade');
     if (!article) return;
@@ -486,16 +521,12 @@
     }
 
     if (event.target.closest('.posted-trade__btn--mark-completed')) {
-      markAcceptedTradeCompleted(tradeId).then((ok) => {
-        if (ok) renderFeed(true);
-      });
+      openTradeConfirm(tradeId, 'completed');
       return;
     }
 
     if (event.target.closest('.posted-trade__btn--mark-failed')) {
-      markAcceptedTradeFailed(tradeId).then((ok) => {
-        if (ok) renderFeed(true);
-      });
+      openTradeConfirm(tradeId, 'failed');
       return;
     }
 
@@ -619,6 +650,10 @@
   }
 
   document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && tradeConfirm && !tradeConfirm.hidden) {
+      closeTradeConfirm();
+      return;
+    }
     if (event.key === 'Escape' && filterPicker && !filterPicker.hidden) {
       if (filterDetail && !filterDetail.hidden) {
         hideFilterDetail();
@@ -628,6 +663,20 @@
       closeFilterPicker();
     }
   });
+
+  if (tradeConfirmYes) {
+    tradeConfirmYes.addEventListener('click', () => {
+      resolveTradeConfirm(true);
+    });
+  }
+
+  if (tradeConfirm) {
+    tradeConfirm.addEventListener('click', (event) => {
+      if (event.target.closest('[data-confirm-close]')) {
+        resolveTradeConfirm(false);
+      }
+    });
+  }
 
   if (acceptedBtn) {
     acceptedBtn.addEventListener('click', () => {

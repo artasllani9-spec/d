@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260809h">
-  <link rel="stylesheet" href="responsive.css?v=20260809h">
+  <link rel="stylesheet" href="styles.css?v=20260809m">
+  <link rel="stylesheet" href="responsive.css?v=20260809m">
 </head>
 <body class="credits-page trading-page">
   <div class="credits-background" aria-hidden="true"></div>
@@ -245,10 +245,21 @@
     </div>
   </main>
 
-  <script src="pets-data.js?v=20260809h"></script>
-  <script src="nav.js?v=20260809h"></script>
-  <script src="auth.js?v=20260809h"></script>
-  <script src="trades.js?v=20260809h"></script>
-  <script src="trading-feed.js?v=20260809h"></script>
+  <div class="trade-confirm" id="trade-confirm" hidden>
+    <div class="trade-confirm__backdrop" data-confirm-close aria-hidden="true"></div>
+    <div class="trade-confirm__bar" role="dialog" aria-modal="true" aria-labelledby="trade-confirm-message">
+      <p class="trade-confirm__message" id="trade-confirm-message">Are you sure?</p>
+      <div class="trade-confirm__actions">
+        <button type="button" class="trade-confirm__btn trade-confirm__btn--yes" id="trade-confirm-yes">Yes</button>
+        <button type="button" class="trade-confirm__btn trade-confirm__btn--no" id="trade-confirm-no" data-confirm-close>No</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="pets-data.js?v=20260809m"></script>
+  <script src="nav.js?v=20260809m"></script>
+  <script src="auth.js?v=20260809m"></script>
+  <script src="trades.js?v=20260809m"></script>
+  <script src="trading-feed.js?v=20260809m"></script>
 </body>
 </html>
