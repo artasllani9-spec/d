@@ -40,7 +40,7 @@
   let pendingItemName = null;
   let pendingItemImage = null;
   let pendingNoPotions = false;
-  /** @type {{ tradeId: number, action: 'completed' | 'failed' } | null} */
+  /** @type {{ tradeId: number, action: 'completed' | 'failed' | 'delete' } | null} */
   let pendingConfirm = null;
 
   const CATEGORY_ITEMS = {
@@ -487,9 +487,13 @@
   function openTradeConfirm(tradeId, action) {
     if (!tradeConfirm || !tradeConfirmMessage) return;
     pendingConfirm = { tradeId, action };
-    tradeConfirmMessage.textContent = action === 'failed'
-      ? 'Are you sure you would like to mark this trade failed?'
-      : 'Are you sure you would like to mark this trade completed?';
+    if (action === 'failed') {
+      tradeConfirmMessage.textContent = 'Are you sure you would like to mark this trade failed?';
+    } else if (action === 'delete') {
+      tradeConfirmMessage.textContent = 'Are you sure you would like to delete this trade?';
+    } else {
+      tradeConfirmMessage.textContent = 'Are you sure you would like to mark this trade completed?';
+    }
     tradeConfirm.hidden = false;
     document.body.classList.add('trade-confirm-open');
     if (tradeConfirmYes) tradeConfirmYes.focus();
@@ -500,9 +504,14 @@
     closeTradeConfirm();
     if (!confirmed || !pending) return;
 
-    const ok = pending.action === 'failed'
-      ? await markAcceptedTradeFailed(pending.tradeId)
-      : await markAcceptedTradeCompleted(pending.tradeId);
+    let ok = false;
+    if (pending.action === 'failed') {
+      ok = await markAcceptedTradeFailed(pending.tradeId);
+    } else if (pending.action === 'delete') {
+      ok = await deletePostedTrade(pending.tradeId);
+    } else {
+      ok = await markAcceptedTradeCompleted(pending.tradeId);
+    }
     if (ok) renderFeed(true);
   }
 
@@ -531,9 +540,7 @@
     }
 
     if (event.target.closest('.posted-trade__btn--delete')) {
-      deletePostedTrade(tradeId).then((ok) => {
-        if (ok) renderFeed(true);
-      });
+      openTradeConfirm(tradeId, 'delete');
       return;
     }
 
