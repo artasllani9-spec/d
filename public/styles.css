@@ -5259,15 +5259,15 @@ a.trade-action-btn {
   .posted-trades-feed .posted-trade__side:first-of-type {
     grid-area: yours;
     align-items: center;
-    padding-left: 0.95rem;
-    padding-right: 0.55rem;
+    padding-left: 0.75rem;
+    padding-right: 0.7rem;
   }
 
   .posted-trades-feed .posted-trade__side:last-of-type {
     grid-area: theirs;
     align-items: center;
-    padding-left: 0.55rem;
-    padding-right: 0.95rem;
+    padding-left: 0.7rem;
+    padding-right: 0.75rem;
   }
 
   .posted-trades-feed .posted-trade__meta {
@@ -5280,7 +5280,7 @@ a.trade-action-btn {
   }
 
   .posted-trades-feed .posted-trade__grid-scroll {
-    --posted-trade-slot-size: min(2.7rem, calc((50vw - 3.25rem) / 3));
+    --posted-trade-slot-size: min(2.3rem, calc((50vw - 3.5rem) / 3));
     --posted-trade-gap: 2px;
     width: 100%;
     max-width: 100%;
@@ -5303,25 +5303,25 @@ a.trade-action-btn {
   }
 
   .posted-trades-feed .posted-trade__empty-side {
-    font-size: 0.62rem;
+    font-size: 0.55rem;
   }
 
   .posted-trades-feed .trade-slot__badge {
-    width: 0.62rem;
-    height: 0.62rem;
-    font-size: 0.38rem;
+    width: 0.52rem;
+    height: 0.52rem;
+    font-size: 0.32rem;
     border-width: 0.5px;
   }
 
   .posted-trades-feed .trade-slot__badge--mega {
-    width: 0.66rem;
-    height: 0.66rem;
-    font-size: 0.4rem;
+    width: 0.56rem;
+    height: 0.56rem;
+    font-size: 0.34rem;
     border-radius: 2px;
   }
 
   .posted-trades-feed .trade-slot__badges {
-    gap: 0.05rem;
+    gap: 0.04rem;
     right: 1px;
     bottom: 1px;
   }
@@ -5331,8 +5331,9 @@ a.trade-action-btn {
     border-top: 1px solid rgba(120, 180, 255, 0.38);
   }
 
-  .posted-trades-feed .posted-trade__side:last-of-type {
-    border-left: 1px solid rgba(120, 180, 255, 0.38);
+  .posted-trades-feed .posted-trade__bar > .posted-trade__side + .posted-trade__side {
+    border-left: 1.5px solid rgba(160, 210, 255, 0.7);
+    border-top: 1px solid rgba(120, 180, 255, 0.38);
   }
 
   .trade-center--posted-compact {
