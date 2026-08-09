@@ -810,7 +810,7 @@
   body.view-trade-page .trade-glass-bar {
     width: 100%;
     max-width: 100%;
-    margin-top: 0;
+    margin-top: 5rem;
     padding: clamp(1.35rem, 4.5vw, 1.75rem) clamp(0.4rem, 1.8vw, 0.6rem) clamp(0.45rem, 1.5vh, 0.65rem);
     border-radius: 14px;
   }
@@ -1794,7 +1794,7 @@
   body.post-trade-page .trade-glass-bar,
   body.trade-calculator-page .trade-glass-bar,
   body.view-trade-page .trade-glass-bar {
-    margin-top: 0;
+    margin-top: 5rem;
     padding: clamp(1.15rem, 4vh, 1.55rem) clamp(0.5rem, 2vw, 0.75rem) 0.45rem;
   }
 
