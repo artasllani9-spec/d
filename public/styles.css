@@ -5263,7 +5263,24 @@ a.trade-action-btn {
 
   .posted-trades-feed .posted-trade__offerer {
     grid-area: offerer;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: left;
+    padding-left: 0.75rem;
     padding-right: 0.95rem;
+  }
+
+  .posted-trades-feed .posted-trade__offerer-person {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 0.5rem;
+  }
+
+  .posted-trades-feed .posted-trade__offerer-name {
+    text-align: left;
   }
 
   .posted-trades-feed .posted-trade__side:first-of-type {
