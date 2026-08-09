@@ -1536,6 +1536,9 @@ body.report-modal-open {
   color: rgba(210, 232, 255, 0.95);
   cursor: pointer;
   flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
   transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
@@ -3152,7 +3155,7 @@ a.trade-action-btn {
 .trade-picker {
   position: fixed;
   inset: var(--header-h) 0 0;
-  z-index: 10;
+  z-index: 120;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3161,7 +3164,11 @@ a.trade-action-btn {
 }
 
 .trade-picker[hidden] {
-  display: none;
+  display: none !important;
+}
+
+.trade-picker--filter {
+  z-index: 130;
 }
 
 .trade-picker__backdrop {

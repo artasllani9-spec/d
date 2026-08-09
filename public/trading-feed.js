@@ -420,7 +420,12 @@
   function openFilterPicker(side) {
     if (!filterPicker) return;
     filterPickerSide = side;
+    // Keep overlay above the fixed trading shell (overflow/stacking).
+    if (filterPicker.parentElement !== document.body) {
+      document.body.appendChild(filterPicker);
+    }
     filterPicker.hidden = false;
+    filterPicker.style.display = 'flex';
     document.body.classList.add('trade-picker-open');
     if (filterSearch) {
       filterSearch.value = '';
@@ -434,6 +439,7 @@
     if (!filterPicker) return;
     hideFilterDetail();
     filterPicker.hidden = true;
+    filterPicker.style.display = '';
     document.body.classList.remove('trade-picker-open');
     filterPickerSide = null;
     syncFilterButtonState();
@@ -516,13 +522,13 @@
     }
   });
 
-  document.querySelectorAll('.trading-side-filter-btn').forEach((btn) => {
-    btn.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      const side = btn.dataset.side === 'theirs' ? 'theirs' : 'yours';
-      openFilterPicker(side);
-    });
+  document.addEventListener('click', (event) => {
+    const btn = event.target.closest('.trading-side-filter-btn');
+    if (!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const side = btn.dataset.side === 'theirs' ? 'theirs' : 'yours';
+    openFilterPicker(side);
   });
 
   if (filterPicker) {
