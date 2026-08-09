@@ -13,6 +13,7 @@
   const offererAvatarEl = document.getElementById('view-trade-offerer-avatar');
   const timerEl = document.getElementById('view-trade-timer');
   const acceptBtn = document.getElementById('accept-trade-btn');
+  const deleteBtn = document.getElementById('delete-trade-btn');
   const tradeConfirm = document.getElementById('trade-confirm');
   const tradeConfirmMessage = document.getElementById('trade-confirm-message');
   const tradeConfirmYes = document.getElementById('trade-confirm-yes');
@@ -130,29 +131,39 @@
     }
   });
 
-  if (acceptBtn) {
+  if (acceptBtn || deleteBtn) {
     const postedTrade = viewTrade.tradeId ? getPostedTradeById(viewTrade.tradeId) : null;
-    const labelEl = acceptBtn.querySelector('.trade-action-btn__label');
-    const isOwnPosted = Boolean(
-      postedTrade &&
-      viewTrade.source !== 'accepted' &&
-      canUserDeleteTrade(postedTrade),
+    const canAccept = Boolean(
+      postedTrade
+      && viewTrade.source !== 'accepted'
+      && canUserAcceptTrade(postedTrade),
+    );
+    const canDelete = Boolean(
+      postedTrade
+      && viewTrade.source !== 'accepted'
+      && canUserDeleteTrade(postedTrade),
     );
 
-    if (isOwnPosted) {
-      acceptBtn.classList.remove('trade-action-btn--accept');
-      acceptBtn.classList.add('trade-action-btn--delete');
-      acceptBtn.id = 'delete-trade-btn';
-      if (labelEl) labelEl.textContent = 'Delete Trade';
-      acceptBtn.addEventListener('click', () => {
-        openTradeConfirm('delete');
-      });
-    } else if (postedTrade && canUserAcceptTrade(postedTrade)) {
-      acceptBtn.addEventListener('click', () => {
-        openTradeConfirm('accept');
-      });
-    } else {
-      acceptBtn.hidden = true;
+    if (acceptBtn) {
+      if (canAccept) {
+        acceptBtn.hidden = false;
+        acceptBtn.addEventListener('click', () => {
+          openTradeConfirm('accept');
+        });
+      } else {
+        acceptBtn.hidden = true;
+      }
+    }
+
+    if (deleteBtn) {
+      if (canDelete) {
+        deleteBtn.hidden = false;
+        deleteBtn.addEventListener('click', () => {
+          openTradeConfirm('delete');
+        });
+      } else {
+        deleteBtn.hidden = true;
+      }
     }
   }
 })();

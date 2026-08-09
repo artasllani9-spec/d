@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260809u">
-  <link rel="stylesheet" href="responsive.css?v=20260809u">
+  <link rel="stylesheet" href="styles.css?v=20260809v">
+  <link rel="stylesheet" href="responsive.css?v=20260809v">
 </head>
 <body class="credits-page view-trade-page">
   <div class="credits-background" aria-hidden="true"></div>
@@ -64,8 +64,11 @@
 
         <div class="trade-center">
           <div class="trade-center__actions">
-            <button type="button" class="trade-action-btn trade-action-btn--accept" id="accept-trade-btn">
+            <button type="button" class="trade-action-btn trade-action-btn--accept" id="accept-trade-btn" hidden>
               <span class="trade-action-btn__label">Accept Trade</span>
+            </button>
+            <button type="button" class="trade-action-btn trade-action-btn--delete" id="delete-trade-btn" hidden>
+              <span class="trade-action-btn__label">Delete Trade</span>
             </button>
             <a href="trading.html" class="trade-action-btn trade-action-btn--return" id="return-trade-btn">
               <span class="trade-action-btn__label">Return</span>
@@ -96,9 +99,9 @@
     </div>
   </div>
 
-  <script src="nav.js?v=20260809u"></script>
-  <script src="auth.js?v=20260809u"></script>
-  <script src="trades.js?v=20260809u"></script>
-  <script src="view-trade.js?v=20260809u"></script>
+  <script src="nav.js?v=20260809v"></script>
+  <script src="auth.js?v=20260809v"></script>
+  <script src="trades.js?v=20260809v"></script>
+  <script src="view-trade.js?v=20260809v"></script>
 </body>
 </html>
