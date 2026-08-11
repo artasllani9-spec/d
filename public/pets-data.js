@@ -60,6 +60,15 @@ const PET_IMAGES = {
   'Aussie Egg': 'pets/aussie-egg.png',
   'Easter 2020 Egg': 'pets/easter-2020-egg.png',
   "S'mores Raccoon": 'pets/smores-raccoon.png',
+  '2D Doggy': 'pets/2d-doggy.webp',
+  'Cake Friend': 'pets/cake-friend.webp',
+  'General Sheepdog': 'pets/general-sheepdog.webp',
+  'Violet Friend': 'pets/violet-friend.webp',
+  'Sunflower Friend': 'pets/sunflower-friend.webp',
+  'Chestnut Glyptodon': 'pets/chestnut-glyptodon.webp',
+  '2026 Birthday Butterfly': 'pets/2026-birthday-butterfly.webp',
+  'Forest Sprite': 'pets/forest-sprite.webp',
+  'Ruddy Duck': 'pets/ruddy-duck.webp',
 };
 
 const PETS_ORDER = [
@@ -931,6 +940,11 @@ const PET_WEAR_IMAGES = {
   'Chimney Hat': 'pets/chimney-hat.png',
   'Nest of Eggs': 'pets/nest-of-eggs.png',
   'Sack of Cash': 'pets/sack-of-cash.png',
+  'Panda Cap': 'pets/panda-cap.webp',
+  'Buzzing Honeypot Hat': 'pets/buzzing-honeypot-hat.webp',
+  'Hive Backpack': 'pets/hive-backpack.webp',
+  'Queen Bee Slippers': 'pets/queen-bee-slippers.webp',
+  'White Chef Hat': 'pets/white-chef-hat.webp',
 };
 
 const PET_WEAR_ORDER = [
@@ -1583,6 +1597,7 @@ const gifts = GIFTS_ORDER.map((name) => ({
 
 const STICKER_IMAGES = {
   'Solaris Animated Sticker': 'pets/solaris-animated-sticker.webp',
+  'Jimothy': 'pets/jimothy.webp',
 };
 
 const STICKERS_ORDER = [
@@ -1672,6 +1687,7 @@ const stickers = STICKERS_ORDER.map((name) => ({
 const HOUSE_IMAGES = {
   "Ruler's Castle": 'https://amvgg.com/items/Rulers%20Castle.webp',
   "Dragon's Castle": 'https://amvgg.com/items/Dragons%20Castle.webp',
+  'Beehive House': 'pets/beehive-house.webp',
 };
 
 const HOUSES_ORDER = [
