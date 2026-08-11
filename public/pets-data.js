@@ -59,6 +59,7 @@ const PET_IMAGES = {
   'Christmas Egg': 'pets/christmas-egg.png',
   'Aussie Egg': 'pets/aussie-egg.png',
   'Easter 2020 Egg': 'pets/easter-2020-egg.png',
+  "S'mores Raccoon": 'pets/smores-raccoon.png',
 };
 
 const PETS_ORDER = [
@@ -277,6 +278,7 @@ const PETS_ORDER = [
   'Unicorn',
   'Rhino',
   'Black Springer Spaniel',
+  "S'mores Raccoon",
   'Capricorn',
   'Firefly',
   'Shetland Pony Light Brown',
