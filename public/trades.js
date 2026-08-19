@@ -749,9 +749,7 @@ function buildPostedTradeHTML(trade, options = {}) {
     : `<span class="posted-trade__offerer-name">${personName}</span>`;
   const robloxAddHtml = personRobloxUrl
     ? `<a class="posted-trade__roblox-add" href="${escapeHtml(personRobloxUrl)}" target="_blank" rel="noopener noreferrer">
-            <svg class="posted-trade__roblox-add-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="currentColor" d="M5.22 5.22l13.56 4.08-4.08 13.56L1.14 18.78 5.22 5.22zm4.2 5.46l-1.5 5.04 5.04 1.5 1.5-5.04-5.04-1.5z"/>
-            </svg>
+            <img class="posted-trade__roblox-add-icon" src="icons/roblox.png" alt="" width="16" height="16">
             <span>Add on Roblox</span>
           </a>`
     : '';
