@@ -1709,6 +1709,48 @@ body.report-modal-open {
   text-align: center;
 }
 
+.posted-trade__offerer-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.posted-trade__roblox-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  max-width: 100%;
+  padding: 0.22rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.38);
+  color: #fff;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.posted-trade__roblox-add:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.posted-trade__roblox-add-icon {
+  width: 0.78rem;
+  height: 0.78rem;
+  flex-shrink: 0;
+}
+
 .posted-trade__offerer-avatar {
   width: 2.15rem;
   height: 2.15rem;
@@ -5430,6 +5472,10 @@ a.trade-action-btn {
     justify-content: flex-start;
     text-align: left;
     gap: 0.5rem;
+  }
+
+  .posted-trades-feed .posted-trade__offerer-identity {
+    align-items: flex-start;
   }
 
   .posted-trades-feed .posted-trade__offerer-name {

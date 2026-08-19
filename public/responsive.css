@@ -711,6 +711,10 @@
     gap: 0.5rem;
   }
 
+  .posted-trades-feed .posted-trade__offerer-identity {
+    align-items: flex-start;
+  }
+
   .posted-trades-feed .posted-trade__offerer-name {
     text-align: left;
   }
