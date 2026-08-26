@@ -1,5 +1,95 @@
 {
-  "posted": [],
+  "posted": [
+    {
+      "id": 1787765357186,
+      "postedAt": 1787765356633,
+      "postedBy": "3519737769",
+      "offerer": "casuaIIyace",
+      "offererAvatar": "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-5EB39632528D8010C126AC96EA13876A-Png/150/150/AvatarHeadshot/Png/noFilter",
+      "offererProfile": "https://www.roblox.com/users/3519737769/profile",
+      "yourSide": [
+        {
+          "name": "Shadow Dragon",
+          "image": "https://d-seven-chi.vercel.app/pets/pet-04.png",
+          "potions": {
+            "fly": true,
+            "ride": true,
+            "neon": false,
+            "mega": true
+          },
+          "isSign": false
+        },
+        {
+          "name": "Water Walking Potion",
+          "image": "https://fetch-images.b-cdn.net/images/pets/Water%20Walking%20Potion.png",
+          "potions": {
+            "fly": false,
+            "ride": false,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": false
+        },
+        {
+          "name": "Water Walking Potion",
+          "image": "https://fetch-images.b-cdn.net/images/pets/Water%20Walking%20Potion.png",
+          "potions": {
+            "fly": false,
+            "ride": false,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": false
+        },
+        {
+          "name": "Water Walking Potion",
+          "image": "https://fetch-images.b-cdn.net/images/pets/Water%20Walking%20Potion.png",
+          "potions": {
+            "fly": false,
+            "ride": false,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": false
+        },
+        {
+          "name": "Water Walking Potion",
+          "image": "https://fetch-images.b-cdn.net/images/pets/Water%20Walking%20Potion.png",
+          "potions": {
+            "fly": false,
+            "ride": false,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": false
+        }
+      ],
+      "theirSide": [
+        {
+          "name": "Giraffe",
+          "image": "https://d-seven-chi.vercel.app/pets/pet-07.png",
+          "potions": {
+            "fly": true,
+            "ride": true,
+            "neon": false,
+            "mega": true
+          },
+          "isSign": false
+        },
+        {
+          "name": "African Wild Dog",
+          "image": "https://d-seven-chi.vercel.app/pets/pet-09.png",
+          "potions": {
+            "fly": true,
+            "ride": true,
+            "neon": false,
+            "mega": true
+          },
+          "isSign": false
+        }
+      ]
+    }
+  ],
   "accepted": [
     {
       "id": 1786299428110,
