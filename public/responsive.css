@@ -274,17 +274,10 @@
     height: 2.1rem;
   }
 
-  .info-content,
-  .trading-content,
-  .demand-check-content,
-  .post-trade-content,
   .credits-content {
     top: var(--header-h);
-    padding: var(--shell-pad-y) var(--shell-pad-x);
-  }
-
-  .credits-content {
-    top: calc(var(--header-h) + 1.5rem);
+    padding: var(--shell-pad-y) var(--shell-pad-x) calc(2rem + var(--safe-bottom));
+    gap: 1.15rem;
   }
 
   .credits-bar {
@@ -292,15 +285,15 @@
     height: auto;
     min-height: 0;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 1rem 1.15rem 1.35rem;
+    gap: 0.9rem;
+    padding: 1.1rem 1rem 1.25rem;
     overflow: visible;
   }
 
   .credits-bar__people {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.75rem;
     flex: 0 0 auto;
     min-height: 0;
     height: auto;
@@ -309,7 +302,7 @@
   .credits-slot {
     height: auto;
     min-height: 0;
-    padding: 0.85rem 0.45rem 1rem;
+    padding: 1rem 0.55rem 1.05rem;
     align-items: center;
     box-sizing: border-box;
   }
@@ -325,13 +318,17 @@
   }
 
   .credits-name-row {
-    font-size: clamp(1rem, 3.5vw, 1.45rem);
+    font-size: clamp(1rem, 3.5vw, 1.35rem);
     flex-wrap: wrap;
     text-align: center;
   }
 
   .credits-role {
-    width: min(100%, 10.5rem);
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.82rem;
   }
 
   .demand-check-toolbar {
@@ -1547,11 +1544,11 @@
 
   .credits-title-card {
     width: 100%;
-    padding: 0.9rem 1rem;
+    padding: 0;
   }
 
   .credits-title {
-    font-size: clamp(0.8rem, 4.5vw, 1.15rem);
+    font-size: clamp(0.9rem, 4.4vw, 1.2rem);
   }
 
   .posted-trade__actions {

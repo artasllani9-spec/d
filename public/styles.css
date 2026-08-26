@@ -1209,7 +1209,7 @@ body.report-modal-open {
 }
 
 .credits-page {
-  background: #333;
+  background: #061018;
 }
 
 .tos-page {
@@ -1364,24 +1364,33 @@ body.report-modal-open {
 
 .credits-background {
   position: fixed;
-  inset: -20px;
+  inset: -24px;
   background: url("credits-background.jpg") center / cover no-repeat;
-  filter: blur(6px);
-  transform: scale(1.05);
+  filter: blur(8px) saturate(1.08) contrast(1.04);
+  transform: scale(1.08);
   z-index: 0;
+  animation: credits-bg-drift 30s ease-in-out infinite alternate;
 }
 
 .credits-overlay {
   position: fixed;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(10, 40, 70, 0.35) 0%,
-    rgba(10, 40, 70, 0.15) 45%,
-    rgba(0, 0, 0, 0.65) 75%,
-    #000 100%
-  );
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 8%, rgba(70, 150, 220, 0.22) 0%, transparent 58%),
+    radial-gradient(ellipse 45% 40% at 12% 70%, rgba(20, 70, 120, 0.18) 0%, transparent 60%),
+    linear-gradient(
+      to bottom,
+      rgba(4, 14, 28, 0.42) 0%,
+      rgba(4, 14, 28, 0.2) 38%,
+      rgba(0, 0, 0, 0.62) 78%,
+      #000 100%
+    );
   z-index: 1;
+}
+
+@keyframes credits-bg-drift {
+  from { transform: scale(1.08) translate3d(0, 0, 0); }
+  to { transform: scale(1.12) translate3d(-1%, 1%, 0); }
 }
 
 .info-content {
@@ -4239,7 +4248,7 @@ a.trade-action-btn {
 
 .credits-content {
   position: fixed;
-  top: calc(var(--header-h) + 3rem);
+  top: var(--header-h);
   left: 0;
   right: 0;
   bottom: 0;
@@ -4247,8 +4256,9 @@ a.trade-action-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
-  padding: 0 var(--shell-pad-x) calc(2.5rem + var(--safe-bottom));
+  justify-content: flex-start;
+  gap: clamp(1.35rem, 3vh, 2rem);
+  padding: clamp(1.5rem, 4vh, 2.75rem) var(--shell-pad-x) calc(2.5rem + var(--safe-bottom));
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -4256,87 +4266,112 @@ a.trade-action-btn {
 }
 
 .credits-title-card {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  max-width: none;
-  padding: 1.25rem 2.5rem;
-  background: rgba(25, 25, 25, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  gap: 0.85rem;
+  max-width: min(100%, 44rem);
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  animation: credits-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.credits-title-card::after {
+  content: "";
+  width: min(7.5rem, 40%);
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(160, 215, 255, 0.85) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 16px rgba(100, 180, 255, 0.35);
 }
 
 .credits-title {
   text-align: center;
   font-family: "Montserrat", system-ui, sans-serif;
-  font-size: clamp(0.85rem, 2.8vw, 2.5rem);
+  font-size: clamp(1.05rem, 2.6vw, 2rem);
   font-weight: 800;
   color: #fff;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  line-height: 1.2;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  line-height: 1.25;
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 
 .credits-bar {
-  width: min(92vw, 1280px);
+  width: min(94vw, 1180px);
   height: auto;
-  min-height: 21.75rem;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.85rem;
-  padding: 1.1rem 1.25rem 1.25rem;
-  background: rgba(25, 25, 25, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  gap: 1.15rem;
+  padding: 1.35rem 1.35rem 1.55rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%),
+    rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 48px rgba(0, 0, 0, 0.45);
   overflow: visible;
   box-sizing: border-box;
+  animation: credits-rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
 }
 
 .credits-bar__title {
   margin: 0;
   flex-shrink: 0;
   text-align: center;
-  font-family: "Montserrat", system-ui, sans-serif;
-  font-size: clamp(0.95rem, 2vw, 1.35rem);
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.12em;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: clamp(0.82rem, 1.6vw, 0.98rem);
+  font-weight: 700;
+  color: rgba(210, 232, 255, 0.78);
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   line-height: 1.2;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  text-shadow: none;
 }
 
 .credits-bar__people {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
-  gap: 1rem;
-  flex: 1;
-  min-height: 17.5rem;
+  gap: 0.85rem;
+  flex: 0 0 auto;
+  min-height: 0;
 }
 
 .credits-slot {
-  flex: 1;
-  height: 100%;
+  flex: none;
+  height: auto;
   min-width: 0;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 1.25rem;
-  background: transparent;
-  border: none;
-  border-radius: 12px;
+  padding: 1.2rem 0.7rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
   box-shadow: none;
   transition:
     background 0.25s ease,
-    box-shadow 0.25s ease;
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
 }
 
 .credits-slot--shade,
@@ -4346,39 +4381,59 @@ a.trade-action-btn {
   cursor: pointer;
 }
 
+.credits-slot--shade:hover,
+.credits-slot--rayn:hover,
+.credits-slot--ace:hover,
+.credits-slot--bankai:hover {
+  transform: translateY(-3px);
+}
+
 .credits-slot--shade:hover {
   background: rgba(255, 212, 59, 0.08);
-  box-shadow: inset 0 0 40px rgba(255, 212, 59, 0.18);
+  border-color: rgba(255, 212, 59, 0.28);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    inset 0 0 36px rgba(255, 212, 59, 0.12);
 }
 
 .credits-slot--rayn:hover {
   background: rgba(255, 212, 59, 0.08);
-  box-shadow: inset 0 0 40px rgba(255, 212, 59, 0.18);
+  border-color: rgba(255, 212, 59, 0.28);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    inset 0 0 36px rgba(255, 212, 59, 0.12);
 }
 
 .credits-slot--ace:hover {
   background: rgba(255, 77, 77, 0.08);
-  box-shadow: inset 0 0 40px rgba(255, 77, 77, 0.18);
+  border-color: rgba(255, 100, 100, 0.28);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    inset 0 0 36px rgba(255, 77, 77, 0.12);
 }
 
 .credits-slot--bankai:hover {
   background: rgba(93, 184, 255, 0.08);
-  box-shadow: inset 0 0 40px rgba(93, 184, 255, 0.18);
+  border-color: rgba(93, 184, 255, 0.3);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    inset 0 0 36px rgba(93, 184, 255, 0.12);
 }
 
 .credits-person {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.7rem;
+  width: 100%;
 }
 
 .credits-name-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  font-size: 1.85rem;
+  gap: 0.4rem;
+  font-size: clamp(1.2rem, 1.8vw, 1.65rem);
 }
 
 .credits-profile-link {
@@ -4386,19 +4441,24 @@ a.trade-action-btn {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.22);
   color: #fff;
   opacity: 0.92;
-  transition: opacity 0.2s ease, transform 0.2s ease, color 0.25s ease, filter 0.25s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease, color 0.25s ease, filter 0.25s ease, border-color 0.25s ease, background 0.25s ease;
 }
 
 .credits-profile-link:hover {
   opacity: 1;
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .credits-profile-icon {
-  width: 1em;
-  height: 1em;
+  width: 0.78em;
+  height: 0.78em;
   display: block;
 }
 
@@ -4408,88 +4468,99 @@ a.trade-action-btn {
   font-weight: 600;
   color: #fff;
   text-align: center;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
   transition: text-shadow 0.25s ease, color 0.25s ease;
 }
 
 .credits-slot--shade:hover .credits-name {
   color: #ffd43b;
   text-shadow:
-    0 0 12px rgba(255, 212, 59, 0.9),
-    0 0 28px rgba(255, 212, 59, 0.55);
+    0 0 12px rgba(255, 212, 59, 0.75),
+    0 0 24px rgba(255, 212, 59, 0.35);
 }
 
 .credits-slot--shade:hover .credits-profile-link {
   color: #ffd43b;
-  filter: drop-shadow(0 0 6px rgba(255, 212, 59, 0.55));
+  border-color: rgba(255, 212, 59, 0.45);
+  background: rgba(255, 212, 59, 0.1);
+  filter: none;
 }
 
 .credits-slot--rayn:hover .credits-name {
   color: #ffd43b;
   text-shadow:
-    0 0 12px rgba(255, 212, 59, 0.9),
-    0 0 28px rgba(255, 212, 59, 0.55);
+    0 0 12px rgba(255, 212, 59, 0.75),
+    0 0 24px rgba(255, 212, 59, 0.35);
 }
 
 .credits-slot--rayn:hover .credits-profile-link {
   color: #ffd43b;
-  filter: drop-shadow(0 0 6px rgba(255, 212, 59, 0.55));
+  border-color: rgba(255, 212, 59, 0.45);
+  background: rgba(255, 212, 59, 0.1);
+  filter: none;
 }
 
 .credits-slot--ace:hover .credits-name {
-  color: #ff4d4d;
+  color: #ff6b6b;
   text-shadow:
-    0 0 12px rgba(255, 77, 77, 0.9),
-    0 0 28px rgba(255, 77, 77, 0.55);
+    0 0 12px rgba(255, 77, 77, 0.75),
+    0 0 24px rgba(255, 77, 77, 0.35);
 }
 
 .credits-slot--ace:hover .credits-profile-link {
-  color: #ff4d4d;
-  filter: drop-shadow(0 0 6px rgba(255, 77, 77, 0.55));
+  color: #ff6b6b;
+  border-color: rgba(255, 100, 100, 0.45);
+  background: rgba(255, 77, 77, 0.1);
+  filter: none;
 }
 
 .credits-slot--bankai:hover .credits-name {
-  color: #5db8ff;
+  color: #7ec8ff;
   text-shadow:
-    0 0 12px rgba(93, 184, 255, 0.9),
-    0 0 28px rgba(93, 184, 255, 0.55);
+    0 0 12px rgba(93, 184, 255, 0.75),
+    0 0 24px rgba(93, 184, 255, 0.35);
 }
 
 .credits-slot--bankai:hover .credits-profile-link {
-  color: #5db8ff;
-  filter: drop-shadow(0 0 6px rgba(93, 184, 255, 0.55));
+  color: #7ec8ff;
+  border-color: rgba(93, 184, 255, 0.45);
+  background: rgba(93, 184, 255, 0.1);
+  filter: none;
 }
 
 .credits-role {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  margin-top: 0.5rem;
-  width: 12.5rem;
-  min-height: 2.75rem;
-  padding: 0.3rem 0.5rem;
-  background: rgba(255, 255, 255, 0.18);
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  width: auto;
+  min-width: 8.5rem;
+  max-width: 100%;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.85rem;
+  background: rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 212, 59, 0.35);
   border-radius: 999px;
   box-shadow:
-    0 4px 16px rgba(255, 255, 255, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    0 6px 16px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   font-family: "Fredoka", system-ui, sans-serif;
-  font-size: 1.05rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #ffd43b;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   text-align: center;
   line-height: 1.1;
-  text-shadow: 0 0 12px rgba(255, 212, 59, 0.45);
+  text-shadow: 0 0 10px rgba(255, 212, 59, 0.35);
   transition:
     box-shadow 0.25s ease,
     border-color 0.25s ease,
-    text-shadow 0.25s ease;
+    text-shadow 0.25s ease,
+    background 0.25s ease;
 }
 
 .credits-role-icon {
@@ -4611,54 +4682,69 @@ a.trade-action-btn {
 }
 
 .credits-role--blue {
-  color: #5db8ff;
-  text-shadow: 0 0 12px rgba(93, 184, 255, 0.5);
+  color: #7ec8ff;
+  border-color: rgba(93, 184, 255, 0.38);
+  text-shadow: 0 0 10px rgba(93, 184, 255, 0.35);
 }
 
 .credits-role--red {
-  color: #ff4d4d;
-  text-shadow: 0 0 12px rgba(255, 77, 77, 0.5);
+  color: #ff6b6b;
+  border-color: rgba(255, 100, 100, 0.38);
+  text-shadow: 0 0 10px rgba(255, 77, 77, 0.35);
 }
 
 .credits-avatar {
-  width: 9rem;
-  height: 9rem;
+  width: 8.25rem;
+  height: 8.25rem;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.16) 0%, transparent 42%),
+    rgba(255, 255, 255, 0.08);
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   transition:
     border-color 0.25s ease,
-    box-shadow 0.25s ease;
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.credits-slot--shade:hover .credits-avatar,
+.credits-slot--rayn:hover .credits-avatar,
+.credits-slot--ace:hover .credits-avatar,
+.credits-slot--bankai:hover .credits-avatar {
+  transform: scale(1.03);
 }
 
 .credits-slot--shade:hover .credits-avatar {
-  border-color: rgba(255, 212, 59, 0.85);
+  border-color: rgba(255, 212, 59, 0.8);
   box-shadow:
-    0 0 18px rgba(255, 212, 59, 0.7),
-    0 0 36px rgba(255, 212, 59, 0.4);
+    0 0 0 3px rgba(255, 212, 59, 0.12),
+    0 12px 28px rgba(255, 212, 59, 0.22);
 }
 
 .credits-slot--rayn:hover .credits-avatar {
-  border-color: rgba(255, 212, 59, 0.85);
+  border-color: rgba(255, 212, 59, 0.8);
   box-shadow:
-    0 0 18px rgba(255, 212, 59, 0.7),
-    0 0 36px rgba(255, 212, 59, 0.4);
+    0 0 0 3px rgba(255, 212, 59, 0.12),
+    0 12px 28px rgba(255, 212, 59, 0.22);
 }
 
 .credits-slot--ace:hover .credits-avatar {
-  border-color: rgba(255, 77, 77, 0.85);
+  border-color: rgba(255, 100, 100, 0.8);
   box-shadow:
-    0 0 18px rgba(255, 77, 77, 0.7),
-    0 0 36px rgba(255, 77, 77, 0.4);
+    0 0 0 3px rgba(255, 77, 77, 0.12),
+    0 12px 28px rgba(255, 77, 77, 0.22);
 }
 
 .credits-slot--bankai:hover .credits-avatar {
   border-color: rgba(93, 184, 255, 0.85);
   box-shadow:
-    0 0 18px rgba(93, 184, 255, 0.7),
-    0 0 36px rgba(93, 184, 255, 0.4);
+    0 0 0 3px rgba(93, 184, 255, 0.12),
+    0 12px 28px rgba(93, 184, 255, 0.22);
 }
 
 .credits-avatar img {
@@ -4670,6 +4756,25 @@ a.trade-action-btn {
 
 .credits-slot--rayn .credits-avatar img {
   transform: scale(1.15);
+}
+
+@keyframes credits-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .credits-background,
+  .credits-title-card,
+  .credits-bar {
+    animation: none !important;
+  }
 }
 
 .layout {
@@ -5373,8 +5478,9 @@ a.trade-action-btn {
   }
 
   .credits-content {
-    top: calc(3.25rem + 2rem);
-    padding: 0 1.25rem;
+    top: var(--header-h);
+    padding: 1.25rem 1.25rem calc(1.5rem + var(--safe-bottom));
+    gap: 1.1rem;
   }
 
   .info-content {
@@ -5888,11 +5994,11 @@ a.trade-action-btn {
   }
 
   .credits-title {
-    font-size: clamp(0.65rem, 2.2vw, 1.75rem);
+    font-size: clamp(0.95rem, 4.4vw, 1.35rem);
   }
 
   .credits-title-card {
-    padding: 1rem 1.25rem;
+    padding: 0;
   }
 
   .credits-bar {
@@ -5901,8 +6007,8 @@ a.trade-action-btn {
     min-height: 0;
     display: flex;
     flex-direction: column;
-    padding: 0.85rem 0.85rem 1.35rem;
-    gap: 0.75rem;
+    padding: 0.95rem 0.8rem 1.2rem;
+    gap: 0.85rem;
     overflow: visible;
   }
 
