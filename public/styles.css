@@ -6088,3 +6088,274 @@ a.trade-action-btn {
     height: 1.1rem;
   }
 }
+
+/* ── Home hero (2026 redesign) ── */
+body.home-page {
+  overflow: hidden;
+  background: #02060c;
+  color: #fff;
+}
+
+body.home-page .home-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding:
+    calc(var(--header-h) + clamp(1.25rem, 3vh, 2.5rem))
+    clamp(1.25rem, 4vw, 3.5rem)
+    calc(2.5rem + var(--safe-bottom));
+  overflow: hidden;
+}
+
+body.home-page .home-hero__sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+body.home-page .home-hero__photo {
+  position: absolute;
+  inset: -8%;
+  background:
+    linear-gradient(115deg, rgba(2, 8, 18, 0.55) 0%, rgba(2, 8, 18, 0.12) 48%, rgba(2, 8, 18, 0.35) 100%),
+    url("background.png") center / cover no-repeat;
+  filter: saturate(1.05) contrast(1.05);
+  transform: scale(1.08);
+  animation: home-sky-drift 28s ease-in-out infinite alternate;
+}
+
+body.home-page .home-hero__mist {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 18% 42%, rgba(70, 160, 230, 0.28) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 45% at 82% 58%, rgba(20, 90, 160, 0.22) 0%, transparent 60%),
+    linear-gradient(
+      to bottom,
+      rgba(4, 12, 24, 0.28) 0%,
+      rgba(4, 12, 24, 0.08) 38%,
+      rgba(0, 0, 0, 0.55) 78%,
+      #000 100%
+    );
+}
+
+body.home-page .home-hero__beam {
+  position: absolute;
+  width: 42vw;
+  max-width: 34rem;
+  height: 140%;
+  top: -20%;
+  background: linear-gradient(
+    180deg,
+    rgba(180, 230, 255, 0.16) 0%,
+    rgba(90, 170, 230, 0.05) 42%,
+    transparent 78%
+  );
+  filter: blur(28px);
+  transform-origin: top center;
+  opacity: 0.85;
+  animation: home-beam-sway 12s ease-in-out infinite alternate;
+}
+
+body.home-page .home-hero__beam--a {
+  left: 8%;
+  transform: rotate(14deg);
+}
+
+body.home-page .home-hero__beam--b {
+  right: 4%;
+  width: 28vw;
+  animation-delay: -4s;
+  animation-duration: 16s;
+  transform: rotate(-10deg);
+  opacity: 0.55;
+}
+
+body.home-page .home-hero__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  mix-blend-mode: soft-light;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.03) 0,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+}
+
+body.home-page .home-hero__copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(0.85rem, 2vh, 1.35rem);
+  width: min(100%, 42rem);
+  text-align: center;
+  animation: home-copy-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+body.home-page .home-hero__identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.55rem, 1.6vh, 1rem);
+  width: 100%;
+}
+
+body.home-page .home-hero__mark-img {
+  width: min(58%, 16.5rem);
+  height: auto;
+  max-height: min(34vh, 16.5rem);
+  object-fit: contain;
+  filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.5));
+  animation: home-mark-float 7.5s ease-in-out infinite;
+  user-select: none;
+  pointer-events: none;
+}
+
+body.home-page .home-hero__brand {
+  margin: 0;
+  font-family: "Fredoka", "Montserrat", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(3.1rem, 7.6vw, 5.8rem);
+  line-height: 0.92;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.45),
+    0 0 60px rgba(90, 180, 255, 0.18);
+}
+
+body.home-page .home-hero__line {
+  margin: 0;
+  max-width: 22rem;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: clamp(1.05rem, 2.1vw, 1.35rem);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: rgba(220, 236, 255, 0.84);
+}
+
+body.home-page .home-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+body.home-page .home-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 3.05rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: 12px;
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+body.home-page .home-cta__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex-shrink: 0;
+}
+
+body.home-page .home-cta__icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+body.home-page .home-cta--primary {
+  border: 1px solid rgba(160, 220, 255, 0.45);
+  background: linear-gradient(180deg, rgba(55, 140, 220, 0.72) 0%, rgba(20, 70, 140, 0.78) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 12px 28px rgba(20, 70, 140, 0.28);
+}
+
+body.home-page .home-cta--primary:hover {
+  transform: translateY(-2px);
+  border-color: rgba(190, 230, 255, 0.65);
+  background: linear-gradient(180deg, rgba(70, 160, 235, 0.82) 0%, rgba(28, 90, 170, 0.88) 100%);
+}
+
+body.home-page .home-cta--ghost {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+body.home-page .home-cta--ghost:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.home-page .home-cta:active {
+  transform: translateY(0);
+}
+
+@keyframes home-sky-drift {
+  from { transform: scale(1.08) translate3d(0, 0, 0); }
+  to { transform: scale(1.12) translate3d(-1.5%, 1%, 0); }
+}
+
+@keyframes home-beam-sway {
+  from { opacity: 0.55; filter: blur(28px); }
+  to { opacity: 0.9; filter: blur(34px); }
+}
+
+@keyframes home-copy-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.4rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes home-mark-float {
+  0%,
+  100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -0.7rem, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.home-page .home-hero__photo,
+  body.home-page .home-hero__beam,
+  body.home-page .home-hero__copy,
+  body.home-page .home-hero__mark-img {
+    animation: none !important;
+  }
+}
