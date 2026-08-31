@@ -466,6 +466,26 @@ function sumTradeSideUsd(items) {
 function formatTradeSideLabel(label, total) {
   return label + ': ' + formatUsdValue(total);
 }
+
+function getItemListSortUsd(name) {
+  if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, name)) {
+    const usd = getPetUsdValue(AMVGG_PET_PRICING[name], { fly: true, ride: true, neon: false, mega: false });
+    return usd == null ? -1 : usd;
+  }
+  if (Object.prototype.hasOwnProperty.call(AMVGG_USD_VALUES, name)) {
+    return AMVGG_USD_VALUES[name];
+  }
+  return -1;
+}
+
+function sortItemsByUsdDesc(items) {
+  return [...items].sort((a, b) => {
+    const diff = getItemListSortUsd(b.name) - getItemListSortUsd(a.name);
+    return diff !== 0 ? diff : a.name.localeCompare(b.name);
+  });
+}
+
+var petsByUsd = typeof pets !== 'undefined' ? sortItemsByUsdDesc(pets) : [];
 `;
 
   fs.writeFileSync(OUT_PATH, file);

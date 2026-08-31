@@ -282,7 +282,7 @@
   </main>
 
   <script src="pets-data.js?v=20260831amvgg"></script>
-  <script src="amvgg-usd-values.js?v=20260831usd-variants"></script>
+  <script src="amvgg-usd-values.js?v=20260831eggs-usd"></script>
   <script>
     const tradePicker = document.getElementById('trade-picker');
     const tradePickerPanel = tradePicker.querySelector('.trade-picker__panel');
@@ -727,7 +727,7 @@
 
     function renderPets() {
       renderCategoryItems({
-        items: pets,
+        items: petsByUsd,
         container: petsItems,
         hint: petsHint,
         emptyHint: 'Type a pet name to search',

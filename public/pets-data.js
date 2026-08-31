@@ -953,7 +953,7 @@ function getPetImage(name) {
   return `https://fetch-images.b-cdn.net/images/pets/${encodeURIComponent(name)}.png`;
 }
 
-const pets = PETS_ORDER.map((name) => ({
+var pets = PETS_ORDER.map((name) => ({
   name,
   image: getPetImage(name),
 }));

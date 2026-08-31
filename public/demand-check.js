@@ -10,7 +10,7 @@
 
   const CATEGORY_CONFIG = {
     pets: {
-      items: pets,
+      items: petsByUsd,
       label: 'Pets',
       searchPlaceholder: 'Type pet name to search...',
       emptyLabel: 'pets',
