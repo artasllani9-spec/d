@@ -69,10 +69,15 @@ function extractNames(html) {
   return names;
 }
 
+const CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
 function fetchHtml(slug) {
   const cachePath = path.join(CACHE_DIR, `${slug}.html`);
-  if (fs.existsSync(cachePath) && fs.statSync(cachePath).size > 1000) {
-    return Promise.resolve(fs.readFileSync(cachePath, 'utf8'));
+  if (fs.existsSync(cachePath)) {
+    const age = Date.now() - fs.statSync(cachePath).mtimeMs;
+    if (age < CACHE_MAX_AGE_MS && fs.statSync(cachePath).size > 1000) {
+      return Promise.resolve(fs.readFileSync(cachePath, 'utf8'));
+    }
   }
   return new Promise((resolve, reject) => {
     https.get(`https://amvgg.com/values/${slug}`, (res) => {
@@ -219,6 +224,18 @@ async function main() {
   console.log(JSON.stringify(report, null, 2));
   const totalAdded = report.reduce((sum, r) => sum + r.addedCount, 0);
   console.log(`\nTotal added: ${totalAdded}`);
+
+  const allAdded = report.flatMap((r) => r.added);
+  if (allAdded.length) {
+    const { spawnSync } = require('child_process');
+    const result = spawnSync(process.execPath, [
+      path.join(__dirname, 'fetch-amvgg-images.js'),
+      ...allAdded,
+    ], { stdio: 'inherit' });
+    if (result.status !== 0) {
+      process.exit(result.status || 1);
+    }
+  }
 }
 
 main().catch((err) => {

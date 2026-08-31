@@ -1812,6 +1812,18 @@ a.posted-trade-modal__offerer-name:hover {
   font-size: 0.72rem;
 }
 
+.posted-trade__side-usd {
+  margin: 0 0 0.35rem;
+  text-align: center;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: clamp(0.62rem, 1.4vw, 0.72rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+}
+
 .posted-trade__panel {
   padding: 4px;
 }
@@ -2703,85 +2715,173 @@ body.view-trade-page .trade-slot--add {
 
 .demand-check-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
-  gap: 1.15rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
   padding-bottom: 0.5rem;
 }
 
 .demand-check-pet-card.trade-picker__pet-popout-card {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
   min-width: 0;
   min-height: 0;
   width: 100%;
-  padding: 1.35rem 1.5rem 1.1rem;
+  padding: 1rem 1.15rem;
+  gap: 0.9rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .demand-check-pet-card__media {
-  width: 9.5rem;
-  min-width: 9.5rem;
+  flex: 0 0 38%;
+  width: auto;
+  min-width: 0;
+  max-width: 7.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .demand-check-pet-card .trade-picker__pet-bar-preview {
-  width: 7.25rem;
-  height: 7.25rem;
+  width: 100%;
+  max-width: 6.25rem;
+  aspect-ratio: 1;
+  height: auto;
+}
+
+.demand-check-pet-card .trade-picker__pet-bar-badges {
+  right: 0;
+  bottom: 0;
+  gap: 0.14rem;
+}
+
+.demand-check-pet-card .trade-picker__pet-bar-badges .trade-slot__badge {
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 0.64rem;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.demand-check-pet-card .trade-picker__pet-bar-badges .trade-slot__badge--mega {
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.66rem;
+}
+
+.demand-check-pet-card .trade-picker__pet-bar-info {
+  flex: 1;
+  min-width: 0;
+  gap: 0.65rem;
+  padding-top: 0.15rem;
+  justify-content: center;
 }
 
 .demand-check-pet-card .trade-picker__pet-bar-name {
   font-family: "Montserrat", system-ui, sans-serif;
-  font-weight: 800;
-  font-size: 1.45rem;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  font-size: clamp(0.95rem, 1.4vw, 1.2rem);
+  letter-spacing: 0.01em;
   text-transform: none;
-  text-shadow:
-    0 0 4px rgba(0, 0, 0, 0.85),
-    -0.5px 0 0 rgba(0, 0, 0, 0.75),
-    0.5px 0 0 rgba(0, 0, 0, 0.75),
-    0 -0.5px 0 rgba(0, 0, 0, 0.75),
-    0 0.5px 0 rgba(0, 0, 0, 0.75);
+  text-shadow: none;
+  line-height: 1.15;
 }
 
 .demand-check-pet-card .trade-picker__potions,
 .demand-check-pet-card__potions {
-  margin-top: 0;
+  display: flex;
   flex-wrap: nowrap;
-  gap: 0.4rem;
+  align-items: center;
   justify-content: center;
+  margin-top: 0;
+  gap: 0.35rem;
   width: 100%;
 }
 
 .demand-check-pet-card .trade-picker__potion {
-  width: 2.45rem;
-  height: 2.45rem;
-  min-width: 2.45rem;
-  font-size: 1.05rem;
+  width: 2.15rem;
+  height: 2.15rem;
+  min-width: 2.15rem;
+  font-size: 0.88rem;
   flex-shrink: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  background: rgba(62, 62, 66, 0.95);
+}
+
+.demand-check-pet-card .trade-picker__potion--fly.trade-picker__potion--active {
+  background: #00aeef;
+  box-shadow: 0 0 8px rgba(0, 174, 239, 0.4);
+}
+
+.demand-check-pet-card .trade-picker__potion--ride.trade-picker__potion--active {
+  background: #ff007f;
+  box-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+}
+
+.demand-check-pet-card .trade-picker__potion--neon.trade-picker__potion--active {
+  background: #8cff00;
+  box-shadow: 0 0 8px rgba(140, 255, 0, 0.4);
+}
+
+.demand-check-pet-card .trade-picker__potion--mega.trade-picker__potion--active {
+  background: linear-gradient(180deg, #b44aff 0%, #7a1fd4 100%);
+  box-shadow: 0 0 8px rgba(166, 0, 255, 0.4);
 }
 
 .demand-check-pet-card__stats {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
+  align-items: stretch;
   width: 100%;
-  margin-top: 0.5rem;
+  margin-top: 0;
 }
 
-.demand-check-pet-card__stat {
-  margin: 0;
+.demand-check-value {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   width: 100%;
-  font-family: "Montserrat", system-ui, sans-serif;
-  font-size: 1.15rem;
-  font-weight: 700;
+  min-height: 1.85rem;
+  padding: 0.4rem 0.65rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.demand-check-value__label {
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: none;
-  color: #fff;
-  line-height: 1.2;
-  text-align: left;
-  text-shadow:
-    0 0 3px rgba(200, 200, 200, 0.45),
-    -0.4px 0 0 rgba(180, 180, 180, 0.35),
-    0.4px 0 0 rgba(180, 180, 180, 0.35),
-    0 -0.4px 0 rgba(180, 180, 180, 0.35),
-    0 0.4px 0 rgba(180, 180, 180, 0.35);
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.demand-check-value__amount {
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1;
+  text-align: right;
 }
 
 .trading-btn {
@@ -5756,28 +5856,72 @@ a.trade-action-btn {
   }
 
   .demand-check-pet-card.trade-picker__pet-popout-card {
-    padding: 0.55rem 0.45rem 0.5rem;
+    display: grid;
+    grid-template-columns: 38% 1fr;
+    grid-template-rows: auto auto;
+    gap: 0.4rem 0.35rem;
+    padding: 0.55rem 0.5rem 0.5rem;
+    border-radius: 14px;
+    overflow: hidden;
   }
 
   .demand-check-pet-card__media {
-    width: clamp(4.1rem, 22vw, 5rem);
-    min-width: clamp(4.1rem, 22vw, 5rem);
+    display: contents;
   }
 
   .demand-check-pet-card .trade-picker__pet-bar-preview {
-    width: clamp(3.4rem, 18vw, 4.15rem);
-    height: clamp(3.4rem, 18vw, 4.15rem);
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .demand-check-pet-card .trade-picker__pet-bar-info {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .demand-check-pet-card .trade-picker__potions,
+  .demand-check-pet-card__potions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    gap: 0.25rem;
+    margin-top: 0.1rem;
+    justify-self: start;
   }
 
   .demand-check-pet-card .trade-picker__potion {
-    width: clamp(0.95rem, 4.8vw, 1.15rem);
-    height: clamp(0.95rem, 4.8vw, 1.15rem);
-    min-width: clamp(0.95rem, 4.8vw, 1.15rem);
-    font-size: clamp(0.48rem, 2.3vw, 0.58rem);
+    width: 1.85rem;
+    height: 1.85rem;
+    min-width: 1.85rem;
+    flex: 0 0 1.85rem;
+    max-width: none;
+    aspect-ratio: auto;
+    font-size: 0.72rem;
+    border-radius: 7px;
+    flex-shrink: 0;
   }
 
-  .demand-check-pet-card__stat {
-    font-size: clamp(0.58rem, 2.6vw, 0.7rem);
+  .demand-check-value {
+    min-height: 1.55rem;
+    padding: 0.32rem 0.45rem;
+    border-radius: 8px;
+  }
+
+  .demand-check-value__label {
+    font-size: clamp(0.52rem, 2.2vw, 0.6rem);
+  }
+
+  .demand-check-value__amount {
+    font-size: clamp(0.72rem, 3vw, 0.82rem);
   }
 
   .demand-check-pet-card .trade-picker__pet-bar-name {

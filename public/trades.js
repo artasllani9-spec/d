@@ -669,19 +669,24 @@ function getPostedTradeGridMeta(itemCount) {
 
 function buildPostedTradeSideHTML(items, label, options = {}) {
   const { showLabel = true } = options;
-  const safeLabel = escapeHtml(label);
-  const itemCount = items.length;
+  const safeItems = Array.isArray(items) ? items : [];
+  const hasUsdHelpers = typeof sumTradeSideUsd === 'function' && typeof formatTradeSideLabel === 'function';
+  const sideLabelText = hasUsdHelpers
+    ? formatTradeSideLabel(label, sumTradeSideUsd(safeItems))
+    : label;
+  const safeLabel = escapeHtml(sideLabelText);
+  const itemCount = safeItems.length;
   const { cols, rows, scrollable } = getPostedTradeGridMeta(itemCount);
   const scrollClass = scrollable ? ' posted-trade__grid-scroll--scrollable' : '';
   const gridStyle = `--posted-trade-cols: ${cols}; --posted-trade-rows: ${rows};`;
 
   const gridContent = itemCount
-    ? `<div class="trade-grid posted-trade__grid" style="${gridStyle}">${items.map(buildTradeSlotHTML).join('')}</div>`
+    ? `<div class="trade-grid posted-trade__grid" style="${gridStyle}">${safeItems.map(buildTradeSlotHTML).join('')}</div>`
     : '<div class="posted-trade__empty-side">Empty</div>';
 
   const labelHTML = showLabel
     ? `<h3 class="trade-side__label posted-trade__side-label">${safeLabel}</h3>`
-    : '';
+    : `<p class="posted-trade__side-usd">${safeLabel}</p>`;
 
   return `<div class="posted-trade__side" data-item-count="${itemCount}">
     ${labelHTML}

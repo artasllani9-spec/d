@@ -2,6 +2,8 @@
   const searchInput = document.getElementById('demand-check-search');
   const grid = document.getElementById('demand-check-grid');
   const hint = document.getElementById('demand-check-hint');
+  const countEl = document.getElementById('demand-check-count');
+  const categoryLabel = document.getElementById('demand-check-category-label');
   const itemsBtn = document.getElementById('demand-check-items-btn');
   const categoryMenu = document.getElementById('demand-check-category-menu');
   const categoryButtons = categoryMenu.querySelectorAll('.demand-check-category');
@@ -9,46 +11,55 @@
   const CATEGORY_CONFIG = {
     pets: {
       items: pets,
+      label: 'Pets',
       searchPlaceholder: 'Type pet name to search...',
       emptyLabel: 'pets',
     },
     'pet-wear': {
       items: petWear,
+      label: 'Pet Wear',
       searchPlaceholder: 'Type pet wear name to search...',
       emptyLabel: 'pet wear',
     },
     strollers: {
       items: strollers,
+      label: 'Strollers',
       searchPlaceholder: 'Type stroller name to search...',
       emptyLabel: 'strollers',
     },
     food: {
       items: food,
+      label: 'Food',
       searchPlaceholder: 'Type food name to search...',
       emptyLabel: 'food',
     },
     vehicles: {
       items: vehicles,
+      label: 'Vehicles',
       searchPlaceholder: 'Type vehicle name to search...',
       emptyLabel: 'vehicles',
     },
     toys: {
       items: toys,
+      label: 'Toys',
       searchPlaceholder: 'Type toy name to search...',
       emptyLabel: 'toys',
     },
     gifts: {
       items: gifts,
+      label: 'Gifts',
       searchPlaceholder: 'Type gift name to search...',
       emptyLabel: 'gifts',
     },
     stickers: {
       items: stickers,
+      label: 'Stickers',
       searchPlaceholder: 'Type sticker name to search...',
       emptyLabel: 'stickers',
     },
     houses: {
       items: houses,
+      label: 'Houses',
       searchPlaceholder: 'Type house name to search...',
       emptyLabel: 'houses',
     },
@@ -82,6 +93,14 @@
     badges.hidden = !badgeHTML;
   }
 
+  function updateCardUsd(card) {
+    const amountEl = card.querySelector('.demand-check-value__amount');
+    if (!amountEl) return;
+    const itemName = card.dataset.petName;
+    const potions = getCardPotions(card);
+    amountEl.textContent = formatUsdValue(getAmvggUsdValue(itemName, potions));
+  }
+
   function setPotionActive(button, isActive) {
     button.classList.toggle('trade-picker__potion--active', isActive);
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
@@ -103,13 +122,18 @@
         }
 
         updateCardBadges(card);
+        updateCardUsd(card);
       });
     });
   }
 
   function createItemCard(item) {
     const noPotions = activeCategory !== 'pets' || PETS_NO_POTIONS.has(item.name);
-    const showStats = activeCategory === 'pets';
+    const defaultPotions = { fly: true, ride: true, neon: false, mega: false };
+    const usdAmount = noPotions
+      ? getAmvggUsdValue(item.name)
+      : getAmvggUsdValue(item.name, defaultPotions);
+    const usdDisplay = formatUsdValue(usdAmount);
     const card = document.createElement('article');
     card.className = 'demand-check-pet-card trade-picker__pet-popout-card';
     card.dataset.petName = item.name;
@@ -128,11 +152,12 @@
       </div>
       <div class="trade-picker__pet-bar-info">
         <span class="trade-picker__pet-bar-name">${item.name}</span>
-        ${showStats ? `
         <div class="demand-check-pet-card__stats">
-          <p class="demand-check-pet-card__stat">Demand:</p>
-          <p class="demand-check-pet-card__stat">Trend:</p>
-        </div>` : ''}
+          <div class="demand-check-value">
+            <span class="demand-check-value__label">USD Value:</span>
+            <span class="demand-check-value__amount">${usdDisplay}</span>
+          </div>
+        </div>
       </div>
     `;
 
@@ -158,16 +183,25 @@
 
     hint.hidden = matches.length > 0;
     hint.textContent = query ? `No ${config.emptyLabel} found` : `No ${config.emptyLabel} available`;
+
+    if (countEl) {
+      const noun = config.emptyLabel;
+      countEl.textContent = `${matches.length.toLocaleString()} ${noun}`;
+    }
   }
 
   function setActiveCategory(category) {
     if (!CATEGORY_CONFIG[category]) return;
 
     activeCategory = category;
+    const config = CATEGORY_CONFIG[category];
     categoryButtons.forEach((button) => {
       button.classList.toggle('demand-check-category--active', button.dataset.category === category);
     });
-    searchInput.placeholder = CATEGORY_CONFIG[category].searchPlaceholder;
+    if (categoryLabel) {
+      categoryLabel.textContent = config.label;
+    }
+    searchInput.placeholder = config.searchPlaceholder;
     searchInput.value = '';
     renderItems();
   }

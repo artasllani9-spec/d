@@ -150,7 +150,7 @@
   }
 
   .demand-check-grid {
-    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .layout {
@@ -1384,52 +1384,67 @@
   }
 
   .demand-check-pet-card.trade-picker__pet-popout-card {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 0.4rem;
-    padding: 0.55rem 0.45rem 0.5rem;
+    display: grid;
+    grid-template-columns: 38% 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 0.4rem 0.35rem;
+    padding: 0.55rem 0.5rem 0.5rem;
     text-align: left;
-    border-radius: 12px;
+    border-radius: 14px;
+    overflow: hidden;
   }
 
   .demand-check-pet-card__media {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: clamp(4.1rem, 22vw, 5rem);
-    min-width: clamp(4.1rem, 22vw, 5rem);
-    flex-shrink: 0;
-    gap: 0.3rem;
+    display: contents;
   }
 
   .demand-check-pet-card .trade-picker__pet-bar-preview {
-    width: clamp(3.4rem, 18vw, 4.15rem);
-    height: clamp(3.4rem, 18vw, 4.15rem);
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    align-self: center;
+  }
+
+  .demand-check-pet-card .trade-picker__pet-bar-info {
+    grid-column: 2;
+    grid-row: 1;
+    flex: none;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.35rem;
+    padding-top: 0;
   }
 
   .demand-check-pet-card .trade-picker__potions,
   .demand-check-pet-card__potions {
-    width: 100%;
-    justify-content: center;
-    gap: 0.14rem;
-    margin-top: 0;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    gap: 0.25rem;
+    margin-top: 0.1rem;
+    justify-self: start;
   }
 
   .demand-check-pet-card .trade-picker__potion {
-    width: clamp(0.95rem, 4.8vw, 1.15rem);
-    height: clamp(0.95rem, 4.8vw, 1.15rem);
-    min-width: clamp(0.95rem, 4.8vw, 1.15rem);
-    font-size: clamp(0.48rem, 2.3vw, 0.58rem);
-    border-radius: 4px;
-  }
-
-  .demand-check-pet-card .trade-picker__pet-bar-info {
-    flex: 1;
-    min-width: 0;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 0.35rem;
-    padding-top: 0.05rem;
+    width: 1.85rem;
+    height: 1.85rem;
+    min-width: 1.85rem;
+    flex: 0 0 1.85rem;
+    max-width: none;
+    aspect-ratio: auto;
+    font-size: 0.72rem;
+    border-radius: 7px;
+    flex-shrink: 0;
   }
 
   .demand-check-pet-card .trade-picker__pet-bar-name {
@@ -1441,11 +1456,20 @@
 
   .demand-check-pet-card__stats {
     margin-top: 0;
-    gap: 0.28rem;
   }
 
-  .demand-check-pet-card__stat {
-    font-size: clamp(0.58rem, 2.6vw, 0.7rem);
+  .demand-check-value {
+    min-height: 1.55rem;
+    padding: 0.32rem 0.45rem;
+    border-radius: 8px;
+  }
+
+  .demand-check-value__label {
+    font-size: clamp(0.52rem, 2.2vw, 0.6rem);
+  }
+
+  .demand-check-value__amount {
+    font-size: clamp(0.72rem, 3vw, 0.82rem);
   }
 
   .demand-check-pet-card .trade-picker__pet-bar-badges .trade-slot__badge {

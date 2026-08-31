@@ -51,7 +51,7 @@
     </a>
     <div class="trade-board">
       <div class="trade-side" data-trade-side="yours">
-        <h2 class="trade-side__label">Your Side</h2>
+        <h2 class="trade-side__label" data-trade-side-label="yours">Your Side</h2>
         <div class="trade-panel">
         <div class="trade-grid-scroll">
         <div class="trade-grid" aria-label="Your offer" data-capacity="9">
@@ -96,7 +96,7 @@
       </div>
 
       <div class="trade-side" data-trade-side="theirs">
-        <h2 class="trade-side__label">Their Side</h2>
+        <h2 class="trade-side__label" data-trade-side-label="theirs">Their Side</h2>
         <div class="trade-panel">
         <div class="trade-grid-scroll">
         <div class="trade-grid" aria-label="Your request" data-capacity="9">
@@ -295,7 +295,8 @@
     </div>
   </main>
 
-  <script src="pets-data.js"></script>
+  <script src="pets-data.js?v=20260831amvgg"></script>
+  <script src="amvgg-usd-values.js?v=20260831usd-variants"></script>
   <script src="trades.js"></script>
   <script>
     const tradePicker = document.getElementById('trade-picker');
@@ -461,6 +462,23 @@
       return `<div class="trade-slot__badges">${badges.join('')}</div>`;
     }
 
+    function getTradeSideLabel(side) {
+      return side === 'yours' ? 'Your Side' : 'Their Side';
+    }
+
+    function updateTradeSideTotals() {
+      ['yours', 'theirs'].forEach((side) => {
+        const grid = getTradeGrid(side);
+        const labelEl = document.querySelector(`[data-trade-side-label="${side}"]`);
+        if (!grid || !labelEl) return;
+        const items = [...grid.querySelectorAll('.trade-slot--filled')].map(parseFilledSlot);
+        const total = typeof sumTradeSideUsd === 'function' ? sumTradeSideUsd(items) : 0;
+        labelEl.textContent = typeof formatTradeSideLabel === 'function'
+          ? formatTradeSideLabel(getTradeSideLabel(side), total)
+          : getTradeSideLabel(side);
+      });
+    }
+
     function getTradeGrid(side) {
       return document.querySelector(`.trade-side[data-trade-side="${side}"] .trade-grid`);
     }
@@ -587,6 +605,7 @@
       filledSlot.remove();
       rebuildTradeGrid(grid);
       syncSignPickerSelection();
+      updateTradeSideTotals();
     }
 
     function scrollToAddButton(grid) {
@@ -662,6 +681,7 @@
       populateGrid(theirsGrid, yoursItems);
       syncSignPickerSelection();
       hidePetDetailBar();
+      updateTradeSideTotals();
     }
 
     function addSignToTrade(name, image) {
@@ -688,6 +708,7 @@
       syncSignPickerSelection();
       hidePetDetailBar();
       tradePicker.hidden = true;
+      updateTradeSideTotals();
       return true;
     }
 
@@ -726,6 +747,7 @@
       if (added > 0) {
         rebuildTradeGrid(grid);
         scrollToAddButton(grid);
+        updateTradeSideTotals();
       }
 
       return added > 0;
@@ -1065,6 +1087,8 @@
         filterPickerItems();
       });
     });
+
+    updateTradeSideTotals();
 
     document.getElementById('post-trade-btn').addEventListener('click', async () => {
       const postError = document.getElementById('post-trade-error');
