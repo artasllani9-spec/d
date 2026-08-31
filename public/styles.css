@@ -1678,7 +1678,7 @@ body.report-modal-open {
   width: 100%;
   max-width: 100%;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   align-self: stretch;
   overflow: visible;
 }
@@ -1813,15 +1813,16 @@ a.posted-trade-modal__offerer-name:hover {
 }
 
 .posted-trade__side-usd {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.4rem;
   text-align: center;
   font-family: "Outfit", system-ui, sans-serif;
-  font-size: clamp(0.62rem, 1.4vw, 0.72rem);
+  font-size: clamp(0.72rem, 1.5vw, 0.82rem);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
   white-space: nowrap;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .posted-trade__panel {
