@@ -3116,6 +3116,128 @@ body.view-trade-page .trade-glass-bar {
   transform: translateY(0);
 }
 
+.trade-value-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: min(100%, 1000px);
+  margin: 0 auto 1.25rem;
+  padding: 0 0.95rem;
+}
+
+.trade-value-compare__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.trade-value-compare__side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.trade-value-compare__side:last-child {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.trade-value-compare__label {
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: clamp(0.72rem, 1.6vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--trade-text-muted);
+}
+
+.trade-value-compare__amount {
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: clamp(1rem, 2.4vw, 1.15rem);
+  font-weight: 700;
+  color: var(--trade-text);
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.trade-value-compare__bar-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.trade-value-compare__bar {
+  display: flex;
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.trade-value-compare__fill {
+  min-width: 0;
+  transition: flex 0.25s ease;
+}
+
+.trade-value-compare__fill--yours {
+  background: rgba(var(--trade-accent-rgb), 0.9);
+}
+
+.trade-value-compare__fill--theirs {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.trade-value-compare__midline {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 2px;
+  height: 9px;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.trade-value-compare__verdict {
+  display: block;
+  margin-top: 0.4rem;
+  text-align: center;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--trade-text-muted);
+  line-height: 1;
+}
+
+.trade-value-compare--win .trade-value-compare__verdict {
+  color: #6dff9a;
+}
+
+.trade-value-compare--lose .trade-value-compare__verdict {
+  color: #ff8585;
+}
+
+.trade-value-compare--fair .trade-value-compare__verdict {
+  color: var(--trade-text-muted);
+}
+
+body.trade-calculator-page .trade-side__label,
+body.post-trade-page .trade-side__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .trade-board {
   display: flex;
   align-items: flex-end;

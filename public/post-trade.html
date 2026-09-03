@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260809l">
-  <link rel="stylesheet" href="responsive.css?v=20260809l">
+  <link rel="stylesheet" href="styles.css?v=20260902compare-mid">
+  <link rel="stylesheet" href="responsive.css?v=20260902compare-mid">
 </head>
 <body class="credits-page post-trade-page">
   <div class="credits-background" aria-hidden="true"></div>
@@ -49,6 +49,26 @@
         </svg>
       </span>
     </a>
+    <div class="trade-value-compare" id="trade-value-compare" aria-live="polite">
+      <div class="trade-value-compare__header">
+        <div class="trade-value-compare__side">
+          <span class="trade-value-compare__label">Your Side</span>
+          <span class="trade-value-compare__amount" id="trade-value-yours-amount">$0</span>
+        </div>
+        <div class="trade-value-compare__side">
+          <span class="trade-value-compare__label">Their Side</span>
+          <span class="trade-value-compare__amount" id="trade-value-theirs-amount">$0</span>
+        </div>
+      </div>
+      <div class="trade-value-compare__bar-wrap">
+        <div class="trade-value-compare__bar">
+          <div class="trade-value-compare__fill trade-value-compare__fill--yours" id="trade-value-yours-segment"></div>
+          <div class="trade-value-compare__fill trade-value-compare__fill--theirs" id="trade-value-theirs-segment"></div>
+        </div>
+        <span class="trade-value-compare__midline" aria-hidden="true"></span>
+        <span class="trade-value-compare__verdict" id="trade-value-verdict">Fair</span>
+      </div>
+    </div>
     <div class="trade-board">
       <div class="trade-side" data-trade-side="yours">
         <h2 class="trade-side__label" data-trade-side-label="yours">Your Side</h2>
@@ -297,6 +317,7 @@
 
   <script src="pets-data.js?v=20260831amvgg"></script>
   <script src="amvgg-usd-values.js?v=20260831eggs-usd"></script>
+  <script src="trade-value-compare.js?v=20260902compare-mid"></script>
   <script src="trades.js"></script>
   <script>
     const tradePicker = document.getElementById('trade-picker');
@@ -467,16 +488,26 @@
     }
 
     function updateTradeSideTotals() {
+      const totals = { yours: 0, theirs: 0 };
+      const counts = { yours: 0, theirs: 0 };
+
       ['yours', 'theirs'].forEach((side) => {
         const grid = getTradeGrid(side);
         const labelEl = document.querySelector(`[data-trade-side-label="${side}"]`);
         if (!grid || !labelEl) return;
         const items = [...grid.querySelectorAll('.trade-slot--filled')].map(parseFilledSlot);
         const total = typeof sumTradeSideUsd === 'function' ? sumTradeSideUsd(items) : 0;
-        labelEl.textContent = typeof formatTradeSideLabel === 'function'
-          ? formatTradeSideLabel(getTradeSideLabel(side), total)
-          : getTradeSideLabel(side);
+        totals[side] = total;
+        counts[side] = items.length;
+        labelEl.textContent = getTradeSideLabel(side);
       });
+
+      if (typeof updateTradeValueCompare === 'function') {
+        updateTradeValueCompare(totals.yours, totals.theirs, {
+          yoursCount: counts.yours,
+          theirsCount: counts.theirs,
+        });
+      }
     }
 
     function getTradeGrid(side) {
