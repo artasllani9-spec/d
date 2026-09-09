@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const loading = document.querySelector('.profile-loading');
   const card = document.querySelector('.profile-card');
   const heading = document.querySelector('.tos-heading');

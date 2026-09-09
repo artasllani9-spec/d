@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const { registerRobloxAuth, getSessionUser } = require('./roblox-auth');
 const {
   MAX_STORED_TRADES,
