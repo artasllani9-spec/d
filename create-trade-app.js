@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const { registerRobloxAuth, getSessionUser } = require('./roblox-auth');
 const {
   MAX_STORED_TRADES,
@@ -68,7 +68,7 @@ async function rejectIfBanned(req, res) {
   if (!sessionUser) return { sessionUser: null, store: null, banned: false };
   const store = await readStore();
   if (isBannedUser(store, sessionUser.id)) {
-    res.status(403).json({ message: 'You are banned from demand.gg.', banned: true });
+    res.status(403).json({ message: 'You are banned from valuedex.', banned: true });
     return { sessionUser, store, banned: true };
   }
   return { sessionUser, store, banned: false };

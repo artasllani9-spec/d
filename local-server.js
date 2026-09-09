@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 const express = require('express');
 
@@ -41,6 +41,6 @@ app.use(express.static(PUBLIC_DIR, {
 }));
 
 app.listen(PORT, () => {
-  console.log(`demand.gg running at http://localhost:${PORT}`);
+  console.log(`valuedex running at http://localhost:${PORT}`);
   console.log(`Roblox login: http://localhost:${PORT}/api/auth/roblox`);
 });

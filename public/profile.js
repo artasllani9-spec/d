@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const loading = document.querySelector('.profile-loading');
   const card = document.querySelector('.profile-card');
   const heading = document.querySelector('.tos-heading');
@@ -168,7 +168,7 @@
 
     loading.hidden = true;
     card.hidden = false;
-    document.title = `${label} — demand.gg`;
+    document.title = `${label} — valuedex`;
     if (heading) heading.textContent = 'Profile';
 
     if (avatar && imageUrl) {

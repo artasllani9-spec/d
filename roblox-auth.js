@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+﻿const crypto = require('crypto');
 const {
   readStore,
   isBannedUser,
@@ -158,7 +158,7 @@ function getRequestOrigin(req) {
     .toLowerCase();
 
   // Keep production redirects stable even if a preview host is used.
-  if (host.includes('vercel.app') || host === 'demand.gg' || host === 'www.demand.gg') {
+  if (host.includes('vercel.app') || host === 'valuedex' || host === 'www.valuedex' || host === 'demand.gg' || host === 'www.demand.gg') {
     return DEFAULT_SITE_URL;
   }
 
@@ -307,7 +307,7 @@ function htmlErrorPage(title, message) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} — demand.gg</title>
+  <title>${title} — valuedex</title>
   <style>
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0b1220; color: #e8eefc; font-family: system-ui, sans-serif; }
     .card { max-width: 28rem; padding: 1.5rem; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: rgba(255,255,255,.04); }
@@ -318,7 +318,7 @@ function htmlErrorPage(title, message) {
   <div class="card">
     <h1 style="margin:0 0 .75rem;font-size:1.25rem;">${title}</h1>
     <p style="margin:0 0 1rem;line-height:1.5;opacity:.9;">${message}</p>
-    <a href="/">Back to demand.gg</a>
+    <a href="/">Back to valuedex</a>
   </div>
 </body>
 </html>`;
