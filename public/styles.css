@@ -1524,8 +1524,10 @@ body.report-modal-open {
 }
 
 .trading-feed-headbar > *:first-child {
+  justify-content: center;
   padding-left: 0.55rem;
   padding-right: 0.85rem;
+  text-align: center;
 }
 
 .trading-feed-headbar > *:nth-child(2),
@@ -1636,7 +1638,7 @@ body.report-modal-open {
 }
 
 .trading-feed-headbar__label:first-child {
-  text-align: left;
+  text-align: center;
 }
 
 .trading-feed-headbar__spacer {
