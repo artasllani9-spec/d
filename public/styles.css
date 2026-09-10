@@ -2126,90 +2126,45 @@ a.posted-trade-modal__offerer-name:hover {
   transform: translateY(-1px);
 }
 
-.posted-trade__btn--accept {
+.posted-trade__btn--accept,
+.posted-trade__btn--mark-completed {
   background: rgba(40, 140, 90, 0.45);
   border-color: rgba(120, 220, 160, 0.5);
 }
 
-.posted-trade__btn--accept:hover {
+.posted-trade__btn--accept:hover,
+.posted-trade__btn--mark-completed:hover {
   background: rgba(50, 165, 105, 0.62);
   border-color: rgba(140, 235, 180, 0.72);
+  box-shadow: none;
 }
 
-.posted-trade__btn--delete {
+.posted-trade__btn--delete,
+.posted-trade__btn--mark-failed {
   background: rgba(170, 45, 45, 0.45);
   border-color: rgba(255, 120, 120, 0.5);
 }
 
-.posted-trade__btn--delete:hover {
+.posted-trade__btn--delete:hover,
+.posted-trade__btn--mark-failed:hover {
   background: rgba(190, 55, 55, 0.62);
   border-color: rgba(255, 140, 140, 0.72);
+  box-shadow: none;
 }
 
 .posted-trade__btn--mark-completed {
   position: relative;
   overflow: hidden;
-  background: rgba(40, 140, 90, 0.45);
-  border-color: rgba(120, 220, 160, 0.5);
 }
 
-.posted-trade__btn--mark-completed::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.22s ease;
-  background: radial-gradient(circle at 50% 50%, rgba(120, 235, 170, 0.55), rgba(50, 165, 105, 0.18) 55%, transparent 78%);
-}
-
-.posted-trade__btn--mark-completed:hover {
-  background: rgba(50, 165, 105, 0.62);
-  border-color: rgba(140, 235, 180, 0.85);
-  box-shadow:
-    inset 0 0 22px rgba(100, 220, 150, 0.5),
-    inset 0 0 10px rgba(60, 180, 110, 0.35),
-    0 0 18px rgba(80, 220, 130, 0.65),
-    0 0 36px rgba(40, 160, 90, 0.4),
-    0 6px 22px rgba(30, 130, 75, 0.45);
-}
-
-.posted-trade__btn--mark-completed:hover::before {
-  opacity: 1;
+.posted-trade__btn--mark-completed::before,
+.posted-trade__btn--mark-failed::before {
+  content: none;
 }
 
 .posted-trade__btn--mark-failed {
   position: relative;
   overflow: hidden;
-  background: rgba(170, 45, 45, 0.45);
-  border-color: rgba(255, 120, 120, 0.5);
-}
-
-.posted-trade__btn--mark-failed::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.22s ease;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 120, 120, 0.55), rgba(220, 60, 60, 0.18) 55%, transparent 78%);
-}
-
-.posted-trade__btn--mark-failed:hover {
-  background: rgba(190, 55, 55, 0.62);
-  border-color: rgba(255, 140, 140, 0.85);
-  box-shadow:
-    inset 0 0 22px rgba(255, 100, 100, 0.5),
-    inset 0 0 10px rgba(230, 70, 70, 0.35),
-    0 0 18px rgba(255, 80, 80, 0.65),
-    0 0 36px rgba(220, 50, 50, 0.4),
-    0 6px 22px rgba(180, 35, 35, 0.45);
-}
-
-.posted-trade__btn--mark-failed:hover::before {
-  opacity: 1;
 }
 
 body.trade-confirm-open {
@@ -2244,13 +2199,13 @@ body.trade-confirm-open {
   width: min(100%, 28rem);
   padding: 1.35rem 1.4rem 1.25rem;
   border-radius: 16px;
-  background: rgba(30, 100, 200, 0.38);
+  background: rgba(12, 24, 40, 0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(120, 180, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    0 16px 40px rgba(12, 40, 90, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 16px 40px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .trade-confirm__bar--black {
@@ -2897,21 +2852,7 @@ a.view-trade-offerer__name:hover {
 .trade-action-btn--accept::before,
 .trade-action-btn--delete::before,
 .trade-action-btn--return::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.22s ease;
-}
-
-.trade-action-btn--accept::before {
-  background: radial-gradient(circle at 50% 50%, rgba(120, 255, 170, 0.55), rgba(60, 200, 110, 0.18) 55%, transparent 78%);
-}
-
-.trade-action-btn--delete::before {
-  background: radial-gradient(circle at 50% 50%, rgba(255, 120, 120, 0.55), rgba(220, 60, 60, 0.18) 55%, transparent 78%);
+  content: none;
 }
 
 .trade-action-btn--return {
@@ -2919,53 +2860,22 @@ a.view-trade-offerer__name:hover {
   overflow: hidden;
 }
 
-.trade-action-btn--return::before {
-  background: radial-gradient(circle at 50% 50%, rgba(255, 120, 120, 0.55), rgba(220, 60, 60, 0.18) 55%, transparent 78%);
-}
-
 .trade-action-btn--accept:hover {
   background: rgba(50, 165, 105, 0.62);
-  border-color: rgba(140, 235, 180, 0.85);
-  box-shadow:
-    inset 0 0 22px rgba(90, 255, 150, 0.5),
-    inset 0 0 10px rgba(70, 220, 120, 0.35),
-    0 0 18px rgba(80, 230, 140, 0.65),
-    0 0 36px rgba(50, 200, 110, 0.4),
-    0 6px 22px rgba(40, 160, 90, 0.45);
-}
-
-.trade-action-btn--accept:hover::before {
-  opacity: 1;
+  border-color: rgba(140, 235, 180, 0.72);
+  box-shadow: 0 6px 22px rgba(40, 140, 90, 0.28);
 }
 
 .trade-action-btn--delete:hover {
   background: rgba(190, 55, 55, 0.62);
-  border-color: rgba(255, 140, 140, 0.85);
-  box-shadow:
-    inset 0 0 22px rgba(255, 100, 100, 0.5),
-    inset 0 0 10px rgba(230, 70, 70, 0.35),
-    0 0 18px rgba(255, 80, 80, 0.65),
-    0 0 36px rgba(220, 50, 50, 0.4),
-    0 6px 22px rgba(180, 35, 35, 0.45);
-}
-
-.trade-action-btn--delete:hover::before {
-  opacity: 1;
+  border-color: rgba(255, 140, 140, 0.72);
+  box-shadow: 0 6px 22px rgba(170, 45, 45, 0.28);
 }
 
 .trade-action-btn--return:hover {
-  background: rgba(170, 45, 45, 0.55);
-  border-color: rgba(255, 120, 120, 0.8);
-  box-shadow:
-    inset 0 0 22px rgba(255, 100, 100, 0.5),
-    inset 0 0 10px rgba(230, 70, 70, 0.35),
-    0 0 18px rgba(255, 80, 80, 0.65),
-    0 0 36px rgba(220, 50, 50, 0.4),
-    0 6px 22px rgba(180, 35, 35, 0.45);
-}
-
-.trade-action-btn--return:hover::before {
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.32);
 }
 
 .trade-action-btn--accept .trade-action-btn__label,
