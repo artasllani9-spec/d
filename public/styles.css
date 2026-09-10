@@ -2763,10 +2763,43 @@ body.view-trade-page .trade-slot--add:hover {
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
 }
 
+body.post-trade-page .trade-slot,
+body.trade-calculator-page .trade-slot,
+body.view-trade-page .trade-slot,
+body.post-trade-page .trade-slot__card,
+body.trade-calculator-page .trade-slot__card,
+body.view-trade-page .trade-slot__card {
+  border-radius: 18px;
+}
+
+body.post-trade-page .trade-board .trade-slot__badges,
+body.trade-calculator-page .trade-board .trade-slot__badges,
+body.view-trade-page .trade-board .trade-slot__badges {
+  right: 5px;
+}
+
 body.post-trade-page .trade-value-compare__fill--yours,
 body.trade-calculator-page .trade-value-compare__fill--yours,
 body.view-trade-page .trade-value-compare__fill--yours {
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+body.post-trade-page .trade-value-compare--win .trade-value-compare__fill--yours,
+body.trade-calculator-page .trade-value-compare--win .trade-value-compare__fill--yours,
+body.view-trade-page .trade-value-compare--win .trade-value-compare__fill--yours {
+  background: rgba(50, 185, 110, 0.95);
+}
+
+body.post-trade-page .trade-value-compare--lose .trade-value-compare__fill--yours,
+body.trade-calculator-page .trade-value-compare--lose .trade-value-compare__fill--yours,
+body.view-trade-page .trade-value-compare--lose .trade-value-compare__fill--yours {
+  background: rgba(230, 75, 75, 0.95);
+}
+
+body.post-trade-page .trade-value-compare--fair .trade-value-compare__fill--yours,
+body.trade-calculator-page .trade-value-compare--fair .trade-value-compare__fill--yours,
+body.view-trade-page .trade-value-compare--fair .trade-value-compare__fill--yours {
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .view-trade-meta {
@@ -3436,11 +3469,35 @@ body.view-trade-page .trade-glass-bar {
 }
 
 .trade-value-compare__fill--yours {
-  background: rgba(var(--trade-accent-rgb), 0.9);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .trade-value-compare__fill--theirs {
-  background: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.trade-value-compare--win .trade-value-compare__fill--yours {
+  background: rgba(50, 185, 110, 0.95);
+}
+
+.trade-value-compare--win .trade-value-compare__fill--theirs {
+  background: rgba(40, 150, 90, 0.55);
+}
+
+.trade-value-compare--lose .trade-value-compare__fill--yours {
+  background: rgba(230, 75, 75, 0.95);
+}
+
+.trade-value-compare--lose .trade-value-compare__fill--theirs {
+  background: rgba(180, 50, 50, 0.55);
+}
+
+.trade-value-compare--fair .trade-value-compare__fill--yours {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.trade-value-compare--fair .trade-value-compare__fill--theirs {
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .trade-value-compare__midline {

@@ -915,6 +915,15 @@
     border-radius: 10px;
   }
 
+  body.post-trade-page .trade-slot,
+  body.trade-calculator-page .trade-slot,
+  body.view-trade-page .trade-slot,
+  body.post-trade-page .trade-slot__card,
+  body.trade-calculator-page .trade-slot__card,
+  body.view-trade-page .trade-slot__card {
+    border-radius: 10px;
+  }
+
   body.post-trade-page .trade-grid-scroll,
   body.trade-calculator-page .trade-grid-scroll {
     overflow: hidden;
@@ -995,7 +1004,7 @@
   body.post-trade-page .trade-board .trade-slot__badges,
   body.trade-calculator-page .trade-board .trade-slot__badges,
   body.view-trade-page .trade-board .trade-slot__badges {
-    right: 1px;
+    right: 3px;
     bottom: 1px;
     gap: 0.07rem;
   }

@@ -6,6 +6,14 @@
     return '$' + amount.toLocaleString('en-US');
   }
 
+  function formatDelta(amount) {
+    const abs = Math.abs(amount);
+    const formatted = formatAmount(abs);
+    if (amount > 0) return '+' + formatted;
+    if (amount < 0) return '-' + formatted;
+    return formatAmount(0);
+  }
+
   function updateTradeValueCompare(yoursUsd, theirsUsd) {
     const root = document.getElementById('trade-value-compare');
     if (!root) return;
@@ -15,6 +23,7 @@
     const yours = Math.max(0, Number.isFinite(yoursUsd) ? yoursUsd : 0);
     const theirs = Math.max(0, Number.isFinite(theirsUsd) ? theirsUsd : 0);
     const total = yours + theirs;
+    const diff = theirs - yours;
 
     const yoursAmount = document.getElementById('trade-value-yours-amount');
     const theirsAmount = document.getElementById('trade-value-theirs-amount');
@@ -37,16 +46,15 @@
 
     root.classList.remove('trade-value-compare--win', 'trade-value-compare--lose', 'trade-value-compare--fair');
 
-    if (theirs > yours) {
+    if (diff > 0) {
       root.classList.add('trade-value-compare--win');
-      if (verdictEl) verdictEl.textContent = 'Win';
-    } else if (yours > theirs) {
+    } else if (diff < 0) {
       root.classList.add('trade-value-compare--lose');
-      if (verdictEl) verdictEl.textContent = 'Lose';
     } else {
       root.classList.add('trade-value-compare--fair');
-      if (verdictEl) verdictEl.textContent = 'Fair';
     }
+
+    if (verdictEl) verdictEl.textContent = formatDelta(diff);
   }
 
   window.updateTradeValueCompare = updateTradeValueCompare;
