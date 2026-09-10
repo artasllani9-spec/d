@@ -2488,6 +2488,44 @@ body.trading-page .posted-trades-feed .posted-trade:hover .posted-trade__bar {
   background: rgba(10, 22, 38, 0.82);
 }
 
+body.trading-page .posted-trades-feed .posted-trade--accepted .posted-trade__bar,
+body.trading-page .posted-trades-feed .posted-trade--completed .posted-trade__bar {
+  background: rgba(25, 90, 55, 0.48);
+  border-color: rgba(100, 220, 150, 0.58);
+  box-shadow: 0 4px 18px rgba(25, 90, 55, 0.28);
+}
+
+body.trading-page .posted-trades-feed .posted-trade--accepted:hover .posted-trade__bar,
+body.trading-page .posted-trades-feed .posted-trade--completed:hover .posted-trade__bar {
+  background: rgba(30, 110, 68, 0.58);
+  border-color: rgba(120, 235, 170, 0.72);
+  box-shadow: 0 10px 28px rgba(25, 90, 55, 0.38);
+}
+
+body.trading-page .posted-trades-feed .posted-trade--failed .posted-trade__bar {
+  background: rgba(120, 30, 30, 0.48);
+  border-color: rgba(255, 100, 100, 0.58);
+  box-shadow: 0 4px 18px rgba(120, 30, 30, 0.28);
+}
+
+body.trading-page .posted-trades-feed .posted-trade--failed:hover .posted-trade__bar {
+  background: rgba(145, 40, 40, 0.58);
+  border-color: rgba(255, 130, 130, 0.72);
+  box-shadow: 0 10px 28px rgba(120, 30, 30, 0.38);
+}
+
+body.trading-page .posted-trades-feed .posted-trade--accepted .posted-trade__offerer-name,
+body.trading-page .posted-trades-feed .posted-trade--accepted .posted-trade__timer,
+body.trading-page .posted-trades-feed .posted-trade--completed .posted-trade__offerer-name,
+body.trading-page .posted-trades-feed .posted-trade--completed .posted-trade__timer {
+  color: rgba(220, 255, 235, 0.95);
+}
+
+body.trading-page .posted-trades-feed .posted-trade--failed .posted-trade__offerer-name,
+body.trading-page .posted-trades-feed .posted-trade--failed .posted-trade__timer {
+  color: rgba(255, 220, 220, 0.95);
+}
+
 body.trading-page .posted-trade__btn--accept {
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -3290,6 +3328,17 @@ a.trading-btn {
 
 .posted-trade--completed .posted-trade__offerer-name,
 .posted-trade--completed .posted-trade__timer {
+  color: rgba(220, 255, 235, 0.95);
+}
+
+.posted-trade--accepted .posted-trade__bar {
+  background: rgba(25, 90, 55, 0.42);
+  border-color: rgba(100, 220, 150, 0.58);
+  box-shadow: 0 4px 18px rgba(25, 90, 55, 0.28);
+}
+
+.posted-trade--accepted .posted-trade__offerer-name,
+.posted-trade--accepted .posted-trade__timer {
   color: rgba(220, 255, 235, 0.95);
 }
 
