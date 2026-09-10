@@ -1,6 +1,10 @@
 (function () {
   const feed = document.getElementById('posted-trades-feed');
   const emptyState = document.getElementById('posted-trades-empty');
+  const emptyTitle = document.getElementById('posted-trades-empty-title');
+  const emptyText = document.getElementById('posted-trades-empty-text');
+  const emptyCta = document.getElementById('posted-trades-empty-cta');
+  const feedStatus = document.getElementById('trading-feed-status');
   const headbar = document.getElementById('trading-feed-headbar');
   const personLabel = document.getElementById('trading-feed-person-label');
   const acceptedBtn = document.getElementById('accepted-trades-btn');
@@ -29,6 +33,17 @@
     : null;
 
   if (!feed || !emptyState) return;
+
+  function setEmptyState({ title, text, showCta }) {
+    emptyState.hidden = false;
+    if (emptyTitle) emptyTitle.textContent = title;
+    if (emptyText) emptyText.textContent = text;
+    if (emptyCta) emptyCta.hidden = !showCta;
+  }
+
+  function setFeedStatus(text) {
+    if (feedStatus) feedStatus.textContent = text;
+  }
 
   let showingAccepted = new URLSearchParams(window.location.search).get('accepted') === '1';
   let lastFingerprint = '';
@@ -311,8 +326,12 @@
 
       if (!allTrades.length) {
         feed.innerHTML = '';
-        emptyState.hidden = false;
-        emptyState.textContent = 'No accepted trades yet.';
+        setEmptyState({
+          title: 'No accepted trades',
+          text: 'Accept an offer from the feed and it will show up here.',
+          showCta: false,
+        });
+        setFeedStatus('Accepted trades');
         if (headbar) headbar.hidden = true;
         syncFilterButtonState();
         return;
@@ -320,8 +339,12 @@
 
       if (!trades.length) {
         feed.innerHTML = '';
-        emptyState.hidden = false;
-        emptyState.textContent = emptyFilterMessage || 'No accepted trades yet.';
+        setEmptyState({
+          title: 'No matches',
+          text: emptyFilterMessage || 'No accepted trades match your filters.',
+          showCta: false,
+        });
+        setFeedStatus(`${allTrades.length} accepted · filtered`);
         if (headbar) headbar.hidden = false;
         syncFilterButtonState();
         return;
@@ -329,6 +352,7 @@
 
       emptyState.hidden = true;
       if (headbar) headbar.hidden = false;
+      setFeedStatus(`${trades.length} accepted trade${trades.length === 1 ? '' : 's'}`);
       feed.innerHTML = trades.map(buildAcceptedTradeHTML).join('');
       syncFilterButtonState();
       return;
@@ -342,8 +366,12 @@
 
     if (!allTrades.length) {
       feed.innerHTML = '';
-      emptyState.hidden = false;
-      emptyState.textContent = 'No trades posted yet.';
+      setEmptyState({
+        title: 'No trades yet',
+        text: 'Be the first to post an offer to the community.',
+        showCta: true,
+      });
+      setFeedStatus('Browse live offers from the community');
       if (headbar) headbar.hidden = true;
       syncFilterButtonState();
       return;
@@ -351,8 +379,12 @@
 
     if (!trades.length) {
       feed.innerHTML = '';
-      emptyState.hidden = false;
-      emptyState.textContent = emptyFilterMessage || 'No trades posted yet.';
+      setEmptyState({
+        title: 'No matches',
+        text: emptyFilterMessage || 'No posted trades match your filters.',
+        showCta: false,
+      });
+      setFeedStatus(`${allTrades.length} live · filtered`);
       if (headbar) headbar.hidden = false;
       syncFilterButtonState();
       return;
@@ -360,6 +392,7 @@
 
     emptyState.hidden = true;
     if (headbar) headbar.hidden = false;
+    setFeedStatus(`${trades.length} live offer${trades.length === 1 ? '' : 's'}`);
     feed.innerHTML = trades.map((trade) => buildPostedTradeHTML(trade)).join('');
     syncFilterButtonState();
   }

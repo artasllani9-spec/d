@@ -178,14 +178,22 @@
   }
 
   .trading-toolbar {
-    flex-wrap: nowrap;
-    justify-content: center;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.65rem 0.75rem;
     width: 100%;
   }
 
-  .trading-toolbar > .trading-btn,
-  .trading-toolbar > .trading-btn--with-icon {
+  .trading-toolbar__intro {
+    width: 100%;
+  }
+
+  .trading-toolbar__actions {
+    width: 100%;
+  }
+
+  .trading-toolbar__actions > .trading-btn,
+  .trading-toolbar__actions > .trading-btn--with-icon {
     flex: 1 1 0;
     min-width: 0;
     justify-content: center;
@@ -675,7 +683,15 @@
   .trading-feed-headbar > *:nth-child(3) {
     grid-area: theirs;
     justify-content: center;
-    border-left: 1px solid rgba(200, 230, 255, 0.28);
+    border-left: none;
+  }
+
+  .trading-feed-headbar > * + *::before {
+    display: none;
+  }
+
+  .trading-feed-headbar > *:nth-child(3)::before {
+    display: block;
   }
 
   .trading-feed-headbar__spacer {
@@ -842,6 +858,12 @@
     margin-top: 5rem;
     padding: clamp(1.35rem, 4.5vw, 1.75rem) clamp(0.4rem, 1.8vw, 0.6rem) clamp(0.45rem, 1.5vh, 0.65rem);
     border-radius: 14px;
+  }
+
+  /* Keep value labels clear of the absolute return button */
+  body.post-trade-page .trade-glass-bar,
+  body.trade-calculator-page .trade-glass-bar {
+    padding-top: 3.15rem;
   }
 
   body.post-trade-page .trade-return-btn,
@@ -1539,11 +1561,15 @@
 @media (max-width: 600px) {
   .trading-toolbar {
     width: 100%;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 0.45rem;
   }
 
-  .trading-btn--with-icon {
+  .trading-toolbar__actions {
+    width: 100%;
+  }
+
+  .trading-toolbar__actions > .trading-btn--with-icon {
     flex: 1 1 0;
     min-width: 0;
     justify-content: center;

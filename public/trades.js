@@ -668,7 +668,7 @@ function getPostedTradeGridMeta(itemCount) {
 }
 
 function buildPostedTradeSideHTML(items, label, options = {}) {
-  const { showLabel = true } = options;
+  const { showLabel = true, usdClass = '' } = options;
   const safeItems = Array.isArray(items) ? items : [];
   const hasUsdHelpers = typeof sumTradeSideUsd === 'function' && typeof formatUsdValue === 'function';
   const usdDisplay = hasUsdHelpers ? formatUsdValue(sumTradeSideUsd(safeItems)) : null;
@@ -681,6 +681,7 @@ function buildPostedTradeSideHTML(items, label, options = {}) {
     ? `<div class="trade-grid posted-trade__grid" style="${gridStyle}">${safeItems.map(buildTradeSlotHTML).join('')}</div>`
     : '<div class="posted-trade__empty-side">Empty</div>';
 
+  const usdClassAttr = usdClass ? ` ${usdClass}` : '';
   const labelHTML = showLabel
     ? `<h3 class="trade-side__label posted-trade__side-label">${escapeHtml(
       hasUsdHelpers && typeof formatTradeSideLabel === 'function'
@@ -688,7 +689,7 @@ function buildPostedTradeSideHTML(items, label, options = {}) {
         : label,
     )}</h3>`
     : (usdDisplay
-      ? `<p class="posted-trade__side-usd">${escapeHtml(usdDisplay)}</p>`
+      ? `<p class="posted-trade__side-usd${usdClassAttr}">${escapeHtml(usdDisplay)}</p>`
       : '');
 
   return `<div class="posted-trade__side" data-item-count="${itemCount}">
@@ -788,6 +789,27 @@ function buildPostedTradeHTML(trade, options = {}) {
   const maxRows = Math.max(yourMeta.rows, theirMeta.rows, 1);
   const barStyle = `--posted-trade-max-rows: ${maxRows};`;
 
+  const hasUsdHelpers = typeof sumTradeSideUsd === 'function' && typeof formatUsdValue === 'function';
+  const yoursUsd = hasUsdHelpers ? sumTradeSideUsd(viewerYourSide) : 0;
+  const theirsUsd = hasUsdHelpers ? sumTradeSideUsd(viewerTheirSide) : 0;
+  const valueDiff = theirsUsd - yoursUsd;
+  let valueDeltaHtml = '';
+  let yoursUsdClass = '';
+  let theirsUsdClass = '';
+  if (hasUsdHelpers && (viewerYourSide.length || viewerTheirSide.length)) {
+    if (valueDiff > 0) {
+      yoursUsdClass = 'posted-trade__side-usd--lower';
+      theirsUsdClass = 'posted-trade__side-usd--higher';
+      valueDeltaHtml = `<span class="posted-trade__value-delta posted-trade__value-delta--win">+${escapeHtml(formatUsdValue(valueDiff))}</span>`;
+    } else if (valueDiff < 0) {
+      yoursUsdClass = 'posted-trade__side-usd--higher';
+      theirsUsdClass = 'posted-trade__side-usd--lower';
+      valueDeltaHtml = `<span class="posted-trade__value-delta posted-trade__value-delta--lose">-${escapeHtml(formatUsdValue(Math.abs(valueDiff)))}</span>`;
+    } else {
+      valueDeltaHtml = '<span class="posted-trade__value-delta posted-trade__value-delta--fair">Fair</span>';
+    }
+  }
+
   let roleBadge = '';
   if (failed) {
     roleBadge = '<span class="posted-trade__role posted-trade__role--failed">Failed</span>';
@@ -841,10 +863,11 @@ function buildPostedTradeHTML(trade, options = {}) {
   return `<article class="posted-trade${articleModifier}" data-trade-id="${trade.id}" data-trade-source="${viewSource}">
     <div class="posted-trade__bar" style="${barStyle}">
       ${personBlockHtml}
-      ${buildPostedTradeSideHTML(viewerYourSide, 'Your Side', { showLabel: false })}
-      ${buildPostedTradeSideHTML(viewerTheirSide, 'Their Side', { showLabel: false })}
+      ${buildPostedTradeSideHTML(viewerYourSide, 'Your Side', { showLabel: false, usdClass: yoursUsdClass })}
+      ${buildPostedTradeSideHTML(viewerTheirSide, 'Their Side', { showLabel: false, usdClass: theirsUsdClass })}
       <div class="posted-trade__meta">
         ${roleBadge}
+        ${valueDeltaHtml}
         <time class="posted-trade__timer" datetime="${new Date(timerDate).toISOString()}">${timer}</time>
         <div class="posted-trade__actions">
           ${deleteBtn}
