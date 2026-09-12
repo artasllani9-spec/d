@@ -1,12 +1,10 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile",
+    "buildCommand": "npm install --prefix discord-bot",
     "watchPatterns": [
       "discord-bot/**",
       "public/**",
-      "Dockerfile",
       "railway.json"
     ]
   },
