@@ -16,6 +16,7 @@
       items: (data && data.items) || {},
       updatedAt: data && data.updatedAt != null ? data.updatedAt : null,
     };
+    globalThis.__ITEM_ACRONYMS = (data && data.acronyms) || {};
     rebuildPetsByUsd();
   }
 
@@ -23,14 +24,14 @@
     try {
       const response = await fetch('/api/values/overrides', { cache: 'no-store' });
       if (!response.ok) {
-        applyOverrides({ pets: {}, items: {} });
+        applyOverrides({ pets: {}, items: {}, acronyms: {} });
         return null;
       }
       const data = await response.json();
       applyOverrides(data);
       return data;
     } catch (err) {
-      applyOverrides({ pets: {}, items: {} });
+      applyOverrides({ pets: {}, items: {}, acronyms: {} });
       return null;
     } finally {
       window.dispatchEvent(new Event('valueoverridesready'));

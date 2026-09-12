@@ -18,7 +18,13 @@ let writeQueue = Promise.resolve();
 const MEMORY_TTL_MS = 2000;
 
 function emptyOverrides() {
-  return { pets: {}, items: {}, updatedAt: null };
+  return { pets: {}, items: {}, acronyms: {}, updatedAt: null };
+}
+
+function normalizeAcronymKey(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
 }
 
 function normalizeOverrides(raw) {
@@ -27,6 +33,9 @@ function normalizeOverrides(raw) {
     : {};
   const items = raw && raw.items && typeof raw.items === 'object' && !Array.isArray(raw.items)
     ? raw.items
+    : {};
+  const acronyms = raw && raw.acronyms && typeof raw.acronyms === 'object' && !Array.isArray(raw.acronyms)
+    ? raw.acronyms
     : {};
 
   const cleanPets = {};
@@ -46,9 +55,18 @@ function normalizeOverrides(raw) {
     cleanItems[name] = amount;
   }
 
+  const cleanAcronyms = {};
+  for (const [acro, itemName] of Object.entries(acronyms)) {
+    const key = normalizeAcronymKey(acro);
+    const name = String(itemName || '').trim();
+    if (!key || !name) continue;
+    cleanAcronyms[key] = name;
+  }
+
   return {
     pets: cleanPets,
     items: cleanItems,
+    acronyms: cleanAcronyms,
     updatedAt: raw && raw.updatedAt != null ? Number(raw.updatedAt) || null : null,
   };
 }
@@ -58,6 +76,7 @@ function cloneOverrides(data) {
   return {
     pets: { ...normalized.pets },
     items: { ...normalized.items },
+    acronyms: { ...normalized.acronyms },
     updatedAt: normalized.updatedAt,
   };
 }

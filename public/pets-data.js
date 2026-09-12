@@ -1849,7 +1849,20 @@ function matchesSearchQuery(name, query) {
   if (compactQuery && compactName.includes(compactQuery)) return true;
 
   if (/^[a-z0-9]+$/i.test(normalizedQuery)) {
-    return getNameAcronym(name).startsWith(normalizedQuery);
+    if (getNameAcronym(name).startsWith(normalizedQuery)) return true;
+  }
+
+  const customAcronyms = typeof globalThis !== 'undefined' ? globalThis.__ITEM_ACRONYMS : null;
+  if (customAcronyms && typeof customAcronyms === 'object') {
+    const queryKey = compactQuery || normalizedQuery.replace(/[^a-z0-9]/g, '');
+    for (const [acro, itemName] of Object.entries(customAcronyms)) {
+      if (itemName !== name) continue;
+      const acroKey = String(acro || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!acroKey || !queryKey) continue;
+      if (acroKey === queryKey || acroKey.startsWith(queryKey) || queryKey.startsWith(acroKey)) {
+        return true;
+      }
+    }
   }
 
   return false;
