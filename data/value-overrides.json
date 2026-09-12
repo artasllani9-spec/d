@@ -14,11 +14,16 @@
       "fr": 140,
       "nfr": 275,
       "mfr": 678
+    },
+    "Giraffe": {
+      "fr": 96,
+      "nfr": 177,
+      "mfr": 591
     }
   },
   "items": {
     "Rainbow Rattle": 355,
     "Safari Egg": 41
   },
-  "updatedAt": 1789232570973
+  "updatedAt": 1789233078173
 }
