@@ -1,3 +1,5 @@
 node_modules/
 .env
 .env.local
+discord-bot/.env
+discord-bot/value-overrides.json

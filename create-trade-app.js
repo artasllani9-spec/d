@@ -16,6 +16,7 @@ const {
   hasUserBlocked,
   getBlockedIdsForUser,
 } = require('./trade-store');
+const { readValueOverrides, writeValueOverrides } = require('./value-overrides-store');
 
 function resolveUserId(req, fallbackId) {
   const sessionUser = getSessionUser(req);
@@ -716,6 +717,38 @@ function createTradeApp() {
       });
     } catch (error) {
       sendError(res, error, 'Could not load profile.');
+    }
+  });
+
+  app.get('/api/values/overrides', async (_req, res) => {
+    try {
+      const overrides = await readValueOverrides();
+      res.set('Cache-Control', 'no-store');
+      res.json(overrides);
+    } catch (error) {
+      sendError(res, error, 'Could not load value overrides.');
+    }
+  });
+
+  app.put('/api/values/overrides', async (req, res) => {
+    try {
+      const expected = process.env.VALUES_EDIT_TOKEN || process.env.DISCORD_VALUES_TOKEN || '';
+      const provided = String(
+        req.get('x-values-token') ||
+          (String(req.get('authorization') || '').match(/^Bearer\s+(.+)$/i) || [])[1] ||
+          ''
+      ).trim();
+
+      if (!expected || provided !== expected) {
+        res.status(401).json({ message: 'Unauthorized.' });
+        return;
+      }
+
+      const saved = await writeValueOverrides(req.body || {});
+      res.set('Cache-Control', 'no-store');
+      res.json(saved);
+    } catch (error) {
+      sendError(res, error, 'Could not save value overrides.');
     }
   });
 

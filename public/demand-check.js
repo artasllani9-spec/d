@@ -249,5 +249,18 @@
   });
 
   searchInput.addEventListener('input', renderItems);
-  renderItems();
+
+  function bootDemandCheck() {
+    if (CATEGORY_CONFIG.pets) {
+      CATEGORY_CONFIG.pets.items = typeof petsByUsd !== 'undefined' ? petsByUsd : CATEGORY_CONFIG.pets.items;
+    }
+    renderItems();
+  }
+
+  const ready = window.valueOverridesReady;
+  if (ready && typeof ready.then === 'function') {
+    ready.then(bootDemandCheck).catch(bootDemandCheck);
+  } else {
+    bootDemandCheck();
+  }
 })();

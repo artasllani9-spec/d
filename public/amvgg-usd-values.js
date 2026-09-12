@@ -2149,6 +2149,16 @@ function formatUsdValue(amount) {
 }
 
 function getAmvggUsdValue(itemName, potions) {
+  const overrides = typeof globalThis !== 'undefined' ? globalThis.__VALUE_OVERRIDES : null;
+  if (overrides && overrides.pets && Object.prototype.hasOwnProperty.call(overrides.pets, itemName)) {
+    const petOverride = overrides.pets[itemName];
+    if (potions && potions.mega) return petOverride.mfr;
+    if (potions && potions.neon) return petOverride.nfr;
+    return petOverride.fr;
+  }
+  if (overrides && overrides.items && Object.prototype.hasOwnProperty.call(overrides.items, itemName)) {
+    return overrides.items[itemName];
+  }
   if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, itemName)) {
     return getPetUsdValue(AMVGG_PET_PRICING[itemName], potions || { fly: true, ride: true, neon: false, mega: false });
   }
@@ -2163,7 +2173,7 @@ function getTradeItemUsdValue(item) {
   if (!name) return 0;
   if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, name)) {
     const potions = item.potions || { fly: false, ride: false, neon: false, mega: false };
-    return getPetUsdValue(AMVGG_PET_PRICING[name], potions) || 0;
+    return getAmvggUsdValue(name, potions) || 0;
   }
   return getAmvggUsdValue(name) || 0;
 }
@@ -2178,6 +2188,13 @@ function formatTradeSideLabel(label, total) {
 }
 
 function getItemListSortUsd(name) {
+  const overrides = typeof globalThis !== 'undefined' ? globalThis.__VALUE_OVERRIDES : null;
+  if (overrides && overrides.pets && Object.prototype.hasOwnProperty.call(overrides.pets, name)) {
+    return overrides.pets[name].fr;
+  }
+  if (overrides && overrides.items && Object.prototype.hasOwnProperty.call(overrides.items, name)) {
+    return overrides.items[name];
+  }
   if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, name)) {
     const usd = getPetUsdValue(AMVGG_PET_PRICING[name], { fly: true, ride: true, neon: false, mega: false });
     return usd == null ? -1 : usd;

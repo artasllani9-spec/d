@@ -1,0 +1,19 @@
+{
+  "pets": {
+    "Bat Dragon": {
+      "fr": 195,
+      "nfr": 450,
+      "mfr": 1410
+    },
+    "Frost Dragon": {
+      "fr": 67,
+      "nfr": 114,
+      "mfr": 285
+    }
+  },
+  "items": {
+    "Rainbow Rattle": 355,
+    "Safari Egg": 41
+  },
+  "updatedAt": 1789230297977
+}
