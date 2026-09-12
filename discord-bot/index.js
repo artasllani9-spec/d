@@ -740,17 +740,19 @@ const client = new Client({
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`valuedex bot online as ${readyClient.user.tag}`);
-  try {
-    await refreshOverridesFromRemote();
-    // Push local/GitHub overrides to the live site API so the website matches.
-    await syncOverridesToSite().catch((err) => console.warn(err.message));
-  } catch (err) {
-    console.error('Failed to refresh overrides on startup:', err.message);
-  }
+
+  // Register commands first so slash commands recover even if sync is slow.
   try {
     await registerCommands(readyClient);
   } catch (err) {
     console.error('Failed to register slash commands:', err.message);
+  }
+
+  try {
+    await refreshOverridesFromRemote();
+    await syncOverridesToSite().catch((err) => console.warn(err.message));
+  } catch (err) {
+    console.error('Failed to refresh overrides on startup:', err.message);
   }
 });
 
