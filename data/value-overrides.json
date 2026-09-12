@@ -2,7 +2,7 @@
   "pets": {
     "Bat Dragon": {
       "fr": 195,
-      "nfr": 6767,
+      "nfr": 0,
       "mfr": 1410
     },
     "Frost Dragon": {
@@ -32,5 +32,5 @@
     "rr": "Rainbow Rattle",
     "bd": "Bat Dragon"
   },
-  "updatedAt": 1789250575908
+  "updatedAt": 1789250890818
 }
