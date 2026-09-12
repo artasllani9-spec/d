@@ -9,11 +9,16 @@
       "fr": 67,
       "nfr": 114,
       "mfr": 285
+    },
+    "Shadow Dragon": {
+      "fr": 140,
+      "nfr": 275,
+      "mfr": 678
     }
   },
   "items": {
     "Rainbow Rattle": 355,
     "Safari Egg": 41
   },
-  "updatedAt": 1789230297977
+  "updatedAt": 1789232570973
 }
