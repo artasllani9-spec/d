@@ -1,0 +1,18 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile",
+    "watchPatterns": [
+      "discord-bot/**",
+      "public/**",
+      "Dockerfile",
+      "railway.json"
+    ]
+  },
+  "deploy": {
+    "startCommand": "npm start --prefix discord-bot",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
