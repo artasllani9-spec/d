@@ -722,14 +722,16 @@ async function registerCommands(readyClient) {
       body: allCommands,
     });
     const guildName = readyClient.guilds.cache.get(targetGuildId)?.name || targetGuildId;
-    console.log(`Registered slash commands for guild ${guildName} (${targetGuildId})`);
+    const names = allCommands.map((cmd) => `/${cmd.name}`).join(', ');
+    console.log(`Registered slash commands for guild ${guildName} (${targetGuildId}): ${names}`);
     return;
   }
 
   await rest.put(Routes.applicationCommands(clientId), {
     body: allCommands,
   });
-  console.log('Registered global slash commands (can take up to ~1 hour to appear)');
+  const names = allCommands.map((cmd) => `/${cmd.name}`).join(', ');
+  console.log(`Registered global slash commands: ${names} (can take up to ~1 hour to appear)`);
 }
 
 const client = new Client({
