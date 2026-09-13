@@ -1,14 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const { spawn } = require('child_process');
 const express = require('express');
 
-function loadEnvFile() {
-  const envPath = path.join(__dirname, '.env');
-  if (!fs.existsSync(envPath)) return;
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
 
-  fs.readFileSync(envPath, 'utf8')
+  fs.readFileSync(filePath, 'utf8')
     .split(/\r?\n/)
     .forEach((line) => {
       const trimmed = line.trim();
@@ -28,13 +26,12 @@ function loadEnvFile() {
     });
 }
 
-loadEnvFile();
+loadEnvFile(path.join(__dirname, '.env'));
+loadEnvFile(path.join(__dirname, 'discord-bot', '.env'));
 
 function shouldRunDiscordBot() {
-  // Force website mode on Railway only if explicitly requested
   if (process.env.RUN_SITE_SERVER === '1') return false;
   if (process.env.RUN_DISCORD_BOT === '1') return true;
-  // This Railway service is for the always-on Discord bot (site stays on Vercel)
   return Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID);
 }
 
@@ -50,17 +47,7 @@ if (shouldRunDiscordBot()) {
     });
 
   console.log('Starting ValueDex Discord bot...');
-  const child = spawn('npm', ['start', '--prefix', 'discord-bot'], {
-    cwd: __dirname,
-    stdio: 'inherit',
-    shell: true,
-    env: process.env,
-  });
-
-  child.on('exit', (code, signal) => {
-    console.error(`Discord bot exited (code=${code}, signal=${signal || 'none'})`);
-    process.exit(code == null ? 1 : code);
-  });
+  require(path.join(__dirname, 'discord-bot', 'index.js'));
 } else {
   const { createTradeApp } = require('./create-trade-app');
 

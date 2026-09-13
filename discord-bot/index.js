@@ -24,12 +24,16 @@ const guildId = process.env.DISCORD_GUILD_ID; // optional: faster guild-only com
 const editorRoleId = process.env.DISCORD_EDITOR_ROLE_ID || '1547733340633702481';
 
 if (!token || token === 'your_bot_token_here') {
-  console.error('Missing DISCORD_BOT_TOKEN in discord-bot/.env');
+  console.error(
+    'Missing DISCORD_BOT_TOKEN. Set it in Railway Variables (or discord-bot/.env for local).'
+  );
   process.exit(1);
 }
 
 if (!clientId) {
-  console.error('Missing DISCORD_CLIENT_ID in discord-bot/.env (Application ID from Developer Portal)');
+  console.error(
+    'Missing DISCORD_CLIENT_ID. Set it in Railway Variables (or discord-bot/.env for local).'
+  );
   process.exit(1);
 }
 

@@ -6,12 +6,14 @@
     "node": "22.x"
   },
   "scripts": {
-    "build": "npm install --prefix discord-bot --omit=dev",
-    "start": "npm start --prefix discord-bot",
+    "start": "node discord-bot/index.js",
     "start:site": "node local-server.js",
+    "start:bot": "node local-server.js",
     "dev": "node local-server.js"
   },
   "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2"
   }
 }
