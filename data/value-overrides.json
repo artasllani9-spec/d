@@ -23,7 +23,8 @@
   },
   "items": {
     "Rainbow Rattle": 355,
-    "Safari Egg": 41
+    "Safari Egg": 41,
+    "Candy Cannon": 100
   },
   "acronyms": {
     "ssbd": "Strawberry Shortcake Bat Dragon",
@@ -34,5 +35,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1789301658884
+  "updatedAt": 1789336339230
 }
