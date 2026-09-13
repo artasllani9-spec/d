@@ -23,8 +23,7 @@
   },
   "items": {
     "Rainbow Rattle": 355,
-    "Safari Egg": 41,
-    "Dildo": 999999
+    "Safari Egg": 41
   },
   "acronyms": {
     "ssbd": "Strawberry Shortcake Bat Dragon",
@@ -34,12 +33,6 @@
     "bd": "Bat Dragon"
   },
   "customPets": {},
-  "customItems": {
-    "Dildo": {
-      "image": "https://media.discordapp.net/attachments/891018788810670161/1548648277946146917/Pink-Dildo-Spiked-Dildo-Female-Sex-Toys-1.png?ex=6aa7d299&is=6aa68119&hm=f1c290816980dc534865e0bdce3c82a1edcf2aed1e38a28ef13e69db4df43e4b&=&format=webp&quality=lossless",
-      "category": "toys",
-      "value": 999999
-    }
-  },
-  "updatedAt": 1789296931628
+  "customItems": {},
+  "updatedAt": 1789297612137
 }
