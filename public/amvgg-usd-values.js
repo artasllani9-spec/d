@@ -2171,7 +2171,11 @@ function getTradeItemUsdValue(item) {
   if (!item || item.isSign) return 0;
   const name = item.name;
   if (!name) return 0;
-  if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, name)) {
+  const overrides = typeof globalThis !== 'undefined' ? globalThis.__VALUE_OVERRIDES : null;
+  const isOverridePet = Boolean(
+    overrides && overrides.pets && Object.prototype.hasOwnProperty.call(overrides.pets, name)
+  );
+  if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, name) || isOverridePet) {
     const potions = item.potions || { fly: false, ride: false, neon: false, mega: false };
     return getAmvggUsdValue(name, potions) || 0;
   }

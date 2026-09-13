@@ -136,6 +136,8 @@ function parseOverridesObject(raw) {
     pets: raw && raw.pets && typeof raw.pets === 'object' ? raw.pets : {},
     items: raw && raw.items && typeof raw.items === 'object' ? raw.items : {},
     acronyms: raw && raw.acronyms && typeof raw.acronyms === 'object' ? raw.acronyms : {},
+    customPets: raw && raw.customPets && typeof raw.customPets === 'object' ? raw.customPets : {},
+    customItems: raw && raw.customItems && typeof raw.customItems === 'object' ? raw.customItems : {},
     updatedAt: raw && raw.updatedAt != null ? Number(raw.updatedAt) || null : null,
   };
 }
@@ -152,7 +154,16 @@ function readOverridesFile(filePath) {
 
 function pickNewestOverrides(...candidates) {
   const valid = candidates.filter(Boolean);
-  if (!valid.length) return { pets: {}, items: {}, acronyms: {}, updatedAt: null };
+  if (!valid.length) {
+    return {
+      pets: {},
+      items: {},
+      acronyms: {},
+      customPets: {},
+      customItems: {},
+      updatedAt: null,
+    };
+  }
   return valid.sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0))[0];
 }
 
@@ -196,10 +207,19 @@ async function refreshOverridesFromRemote() {
     pets: remote.pets || {},
     items: remote.items || {},
     acronyms: remote.acronyms || {},
+    customPets: remote.customPets || {},
+    customItems: remote.customItems || {},
     updatedAt: remote.updatedAt || null,
   };
+  // Keep pricing maps in sync with custom catalog entries
+  for (const [name, entry] of Object.entries(overrides.customPets || {})) {
+    overrides.pets[name] = { fr: entry.fr, nfr: entry.nfr, mfr: entry.mfr };
+  }
+  for (const [name, entry] of Object.entries(overrides.customItems || {})) {
+    overrides.items[name] = entry.value;
+  }
   console.log(
-    `Loaded overrides: ${Object.keys(overrides.pets).length} pets, ${Object.keys(overrides.items).length} items, ${Object.keys(overrides.acronyms).length} acronyms`
+    `Loaded overrides: ${Object.keys(overrides.pets).length} pets, ${Object.keys(overrides.items).length} items, ${Object.keys(overrides.acronyms).length} acronyms, ${Object.keys(overrides.customPets).length} custom pets, ${Object.keys(overrides.customItems).length} custom items`
   );
 }
 
@@ -208,6 +228,8 @@ function saveOverridesLocal() {
     pets: overrides.pets,
     items: overrides.items,
     acronyms: overrides.acronyms,
+    customPets: overrides.customPets,
+    customItems: overrides.customItems,
     updatedAt: Date.now(),
   };
   const text = JSON.stringify(payload, null, 2) + '\n';
@@ -239,6 +261,8 @@ async function syncOverridesToSite() {
       pets: overrides.pets,
       items: overrides.items,
       acronyms: overrides.acronyms,
+      customPets: overrides.customPets,
+      customItems: overrides.customItems,
     }),
   });
 
@@ -373,14 +397,37 @@ async function saveOverrides() {
 const values = loadAmvggValues();
 const ITEM_IMAGES = loadItemImages();
 let overrides = loadOverrides();
-if (!overrides.acronyms || typeof overrides.acronyms !== 'object') {
-  overrides.acronyms = {};
+if (!overrides.acronyms || typeof overrides.acronyms !== 'object') overrides.acronyms = {};
+if (!overrides.customPets || typeof overrides.customPets !== 'object') overrides.customPets = {};
+if (!overrides.customItems || typeof overrides.customItems !== 'object') overrides.customItems = {};
+for (const [name, entry] of Object.entries(overrides.customPets)) {
+  overrides.pets[name] = { fr: entry.fr, nfr: entry.nfr, mfr: entry.mfr };
 }
-const PET_NAMES = Object.keys(values.AMVGG_PET_PRICING || {});
-const OTHER_ITEM_NAMES = Object.keys(values.AMVGG_USD_VALUES || {}).filter(
+for (const [name, entry] of Object.entries(overrides.customItems)) {
+  overrides.items[name] = entry.value;
+}
+
+const BUILTIN_PET_NAMES = Object.keys(values.AMVGG_PET_PRICING || {});
+const BUILTIN_ITEM_NAMES = Object.keys(values.AMVGG_USD_VALUES || {}).filter(
   (name) => !Object.prototype.hasOwnProperty.call(values.AMVGG_PET_PRICING, name)
 );
-const ALL_ITEM_NAMES = [...PET_NAMES, ...OTHER_ITEM_NAMES];
+
+function getPetNames() {
+  return [...new Set([...BUILTIN_PET_NAMES, ...Object.keys(overrides.customPets || {})])];
+}
+
+function getOtherItemNames() {
+  return [
+    ...new Set([
+      ...BUILTIN_ITEM_NAMES,
+      ...Object.keys(overrides.customItems || {}),
+    ]),
+  ];
+}
+
+function getAllItemNames() {
+  return [...new Set([...getPetNames(), ...getOtherItemNames()])];
+}
 
 function normalizeItemKey(text) {
   return String(text || '')
@@ -416,9 +463,17 @@ function buildUniqueAcronymMap(names) {
 }
 
 // First-letter shortcuts only when exactly one pet/item has that acronym.
-const UNIQUE_NAME_ACRONYMS = buildUniqueAcronymMap(ALL_ITEM_NAMES);
+function getUniqueNameAcronyms() {
+  return buildUniqueAcronymMap(getAllItemNames());
+}
 
 function getItemImage(name) {
+  if (overrides.customPets && overrides.customPets[name]?.image) {
+    return overrides.customPets[name].image;
+  }
+  if (overrides.customItems && overrides.customItems[name]?.image) {
+    return overrides.customItems[name].image;
+  }
   const mapped = ITEM_IMAGES.get(name);
   if (mapped) return toAbsoluteImageUrl(mapped);
   if (name === 'Tio De Nadal') {
@@ -460,17 +515,17 @@ function resolveFromAcronym(query) {
   if (!q) return null;
   const mapped = overrides.acronyms && overrides.acronyms[q];
   if (!mapped) return null;
-  if (isPet(mapped) || OTHER_ITEM_NAMES.includes(mapped)) return mapped;
+  if (isPet(mapped) || getOtherItemNames().includes(mapped)) return mapped;
   return (
-    matchNameInList(normalizeItemKey(mapped), PET_NAMES) ||
-    matchNameInList(normalizeItemKey(mapped), OTHER_ITEM_NAMES)
+    matchNameInList(normalizeItemKey(mapped), getPetNames()) ||
+    matchNameInList(normalizeItemKey(mapped), getOtherItemNames())
   );
 }
 
 function resolveByUniqueNameAcronym(query) {
   const q = normalizeItemKey(query);
   if (!q) return null;
-  return UNIQUE_NAME_ACRONYMS.get(q) || null;
+  return getUniqueNameAcronyms().get(q) || null;
 }
 
 function resolveItemName(query) {
@@ -482,7 +537,8 @@ function resolveItemName(query) {
   if (!q) return null;
 
   // 2) Normal name match (ignores spaces, ".", "-", etc.)
-  const fromName = matchNameInList(q, PET_NAMES) || matchNameInList(q, OTHER_ITEM_NAMES);
+  const fromName =
+    matchNameInList(q, getPetNames()) || matchNameInList(q, getOtherItemNames());
   if (fromName) return fromName;
 
   // 3) First-letter shortcut (ccbd → Chocolate Chip Bat Dragon),
@@ -495,7 +551,7 @@ function resolvePetOnly(query) {
   if (fromAcronym && isPet(fromAcronym)) return fromAcronym;
   const q = normalizeItemKey(query);
   if (!q) return null;
-  return matchNameInList(q, PET_NAMES);
+  return matchNameInList(q, getPetNames());
 }
 
 function resolveNonPetItem(query) {
@@ -503,12 +559,35 @@ function resolveNonPetItem(query) {
   if (fromAcronym && !isPet(fromAcronym)) return fromAcronym;
   const q = normalizeItemKey(query);
   if (!q) return null;
-  return matchNameInList(q, OTHER_ITEM_NAMES);
+  return matchNameInList(q, getOtherItemNames());
 }
 
 function isPet(name) {
-  return Object.prototype.hasOwnProperty.call(values.AMVGG_PET_PRICING || {}, name);
+  return (
+    Object.prototype.hasOwnProperty.call(values.AMVGG_PET_PRICING || {}, name) ||
+    Object.prototype.hasOwnProperty.call(overrides.customPets || {}, name)
+  );
 }
+
+function isValidImageUrl(url) {
+  try {
+    const parsed = new URL(String(url || '').trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+const ITEM_CATEGORY_CHOICES = [
+  { name: 'Pet wear', value: 'pet-wear' },
+  { name: 'Strollers', value: 'strollers' },
+  { name: 'Food', value: 'food' },
+  { name: 'Vehicles', value: 'vehicles' },
+  { name: 'Toys', value: 'toys' },
+  { name: 'Gifts', value: 'gifts' },
+  { name: 'Stickers', value: 'stickers' },
+  { name: 'Houses', value: 'houses' },
+];
 
 function petUsd(name, potions) {
   const override = overrides.pets[name];
@@ -755,6 +834,47 @@ const embedCommand = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
+const addPetCommand = new SlashCommandBuilder()
+  .setName('addpet')
+  .setDescription('Add a custom pet with FR / NFR / MFR values')
+  .addStringOption((option) =>
+    option.setName('name').setDescription('Pet name').setRequired(true)
+  )
+  .addStringOption((option) =>
+    option.setName('image').setDescription('Image URL').setRequired(true)
+  )
+  .addNumberOption((option) =>
+    option.setName('fr_value').setDescription('FR Value (USD)').setRequired(true).setMinValue(0)
+  )
+  .addNumberOption((option) =>
+    option.setName('nfr_value').setDescription('NFR Value (USD)').setRequired(true).setMinValue(0)
+  )
+  .addNumberOption((option) =>
+    option.setName('mfr_value').setDescription('MFR Value (USD)').setRequired(true).setMinValue(0)
+  )
+  .toJSON();
+
+const addItemCommand = new SlashCommandBuilder()
+  .setName('additem')
+  .setDescription('Add a custom non-pet item')
+  .addStringOption((option) =>
+    option.setName('name').setDescription('Item name').setRequired(true)
+  )
+  .addStringOption((option) =>
+    option.setName('image').setDescription('Image URL').setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('category')
+      .setDescription('Item category')
+      .setRequired(true)
+      .addChoices(...ITEM_CATEGORY_CHOICES)
+  )
+  .addNumberOption((option) =>
+    option.setName('value').setDescription('USD Value').setRequired(true).setMinValue(0)
+  )
+  .toJSON();
+
 const allCommands = [
   valueCommand,
   editPetValueCommand,
@@ -762,6 +882,8 @@ const allCommands = [
   acronymAddCommand,
   sayCommand,
   embedCommand,
+  addPetCommand,
+  addItemCommand,
 ];
 
 async function registerCommands(readyClient) {
@@ -1040,6 +1162,105 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       await interaction.channel.send({ embeds: [embed] });
       await interaction.reply({ content: 'Embed sent.', ephemeral: true });
+      return;
+    }
+
+    if (interaction.commandName === 'addpet') {
+      if (!canEditValues(interaction)) {
+        await interaction.reply({
+          content: 'You need the editor role to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const name = interaction.options.getString('name', true).trim();
+      const image = interaction.options.getString('image', true).trim();
+      const fr = interaction.options.getNumber('fr_value', true);
+      const nfr = interaction.options.getNumber('nfr_value', true);
+      const mfr = interaction.options.getNumber('mfr_value', true);
+
+      if (!name) {
+        await interaction.reply({ content: 'Pet name cannot be empty.', ephemeral: true });
+        return;
+      }
+      if (!isValidImageUrl(image)) {
+        await interaction.reply({
+          content: 'Image must be a valid http(s) URL.',
+          ephemeral: true,
+        });
+        return;
+      }
+      if (getOtherItemNames().includes(name) || overrides.customItems[name]) {
+        await interaction.reply({
+          content: `**${name}** already exists as a non-pet item.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      overrides.customPets[name] = { image, fr, nfr, mfr };
+      overrides.pets[name] = { fr, nfr, mfr };
+
+      await interaction.reply({
+        content: `Added pet **${name}**.`,
+        embeds: [buildValueEmbed(name)],
+      });
+
+      try {
+        await saveOverrides();
+      } catch (err) {
+        console.error('Failed after addpet reply:', err.message || err);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'additem') {
+      if (!canEditValues(interaction)) {
+        await interaction.reply({
+          content: 'You need the editor role to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const name = interaction.options.getString('name', true).trim();
+      const image = interaction.options.getString('image', true).trim();
+      const category = interaction.options.getString('category', true);
+      const value = interaction.options.getNumber('value', true);
+
+      if (!name) {
+        await interaction.reply({ content: 'Item name cannot be empty.', ephemeral: true });
+        return;
+      }
+      if (!isValidImageUrl(image)) {
+        await interaction.reply({
+          content: 'Image must be a valid http(s) URL.',
+          ephemeral: true,
+        });
+        return;
+      }
+      if (isPet(name) || overrides.customPets[name]) {
+        await interaction.reply({
+          content: `**${name}** already exists as a pet. Use \`/addpet\` / value edits for pets.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      overrides.customItems[name] = { image, category, value };
+      overrides.items[name] = value;
+
+      await interaction.reply({
+        content: `Added item **${name}** (${category}).`,
+        embeds: [buildValueEmbed(name)],
+      });
+
+      try {
+        await saveOverrides();
+      } catch (err) {
+        console.error('Failed after additem reply:', err.message || err);
+      }
     }
   } catch (err) {
     console.error('Command failed:', err);

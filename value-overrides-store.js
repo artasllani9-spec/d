@@ -18,7 +18,14 @@ let writeQueue = Promise.resolve();
 const MEMORY_TTL_MS = 2000;
 
 function emptyOverrides() {
-  return { pets: {}, items: {}, acronyms: {}, updatedAt: null };
+  return {
+    pets: {},
+    items: {},
+    acronyms: {},
+    customPets: {},
+    customItems: {},
+    updatedAt: null,
+  };
 }
 
 function normalizeAcronymKey(text) {
@@ -26,6 +33,17 @@ function normalizeAcronymKey(text) {
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
 }
+
+const CUSTOM_ITEM_CATEGORIES = new Set([
+  'pet-wear',
+  'strollers',
+  'food',
+  'vehicles',
+  'toys',
+  'gifts',
+  'stickers',
+  'houses',
+]);
 
 function normalizeOverrides(raw) {
   const pets = raw && raw.pets && typeof raw.pets === 'object' && !Array.isArray(raw.pets)
@@ -37,6 +55,14 @@ function normalizeOverrides(raw) {
   const acronyms = raw && raw.acronyms && typeof raw.acronyms === 'object' && !Array.isArray(raw.acronyms)
     ? raw.acronyms
     : {};
+  const customPets =
+    raw && raw.customPets && typeof raw.customPets === 'object' && !Array.isArray(raw.customPets)
+      ? raw.customPets
+      : {};
+  const customItems =
+    raw && raw.customItems && typeof raw.customItems === 'object' && !Array.isArray(raw.customItems)
+      ? raw.customItems
+      : {};
 
   const cleanPets = {};
   for (const [name, values] of Object.entries(pets)) {
@@ -58,15 +84,45 @@ function normalizeOverrides(raw) {
   const cleanAcronyms = {};
   for (const [acro, itemName] of Object.entries(acronyms)) {
     const key = normalizeAcronymKey(acro);
-    const name = String(itemName || '').trim();
-    if (!key || !name) continue;
-    cleanAcronyms[key] = name;
+    const mappedName = String(itemName || '').trim();
+    if (!key || !mappedName) continue;
+    cleanAcronyms[key] = mappedName;
+  }
+
+  const cleanCustomPets = {};
+  for (const [name, entry] of Object.entries(customPets)) {
+    const petName = String(name || '').trim();
+    if (!petName || !entry || typeof entry !== 'object') continue;
+    const image = String(entry.image || '').trim();
+    const fr = Number(entry.fr);
+    const nfr = Number(entry.nfr);
+    const mfr = Number(entry.mfr);
+    if (!image || !/^https?:\/\//i.test(image)) continue;
+    if (![fr, nfr, mfr].every((n) => Number.isFinite(n) && n >= 0)) continue;
+    cleanCustomPets[petName] = { image, fr, nfr, mfr };
+    cleanPets[petName] = { fr, nfr, mfr };
+  }
+
+  const cleanCustomItems = {};
+  for (const [name, entry] of Object.entries(customItems)) {
+    const itemName = String(name || '').trim();
+    if (!itemName || !entry || typeof entry !== 'object') continue;
+    const image = String(entry.image || '').trim();
+    const category = String(entry.category || '').trim().toLowerCase();
+    const value = Number(entry.value);
+    if (!image || !/^https?:\/\//i.test(image)) continue;
+    if (!CUSTOM_ITEM_CATEGORIES.has(category)) continue;
+    if (!Number.isFinite(value) || value < 0) continue;
+    cleanCustomItems[itemName] = { image, category, value };
+    cleanItems[itemName] = value;
   }
 
   return {
     pets: cleanPets,
     items: cleanItems,
     acronyms: cleanAcronyms,
+    customPets: cleanCustomPets,
+    customItems: cleanCustomItems,
     updatedAt: raw && raw.updatedAt != null ? Number(raw.updatedAt) || null : null,
   };
 }
@@ -77,6 +133,8 @@ function cloneOverrides(data) {
     pets: { ...normalized.pets },
     items: { ...normalized.items },
     acronyms: { ...normalized.acronyms },
+    customPets: { ...normalized.customPets },
+    customItems: { ...normalized.customItems },
     updatedAt: normalized.updatedAt,
   };
 }
