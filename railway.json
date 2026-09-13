@@ -1,7 +1,6 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "buildCommand": "npm install --prefix discord-bot --omit=dev",
     "watchPatterns": [
       "discord-bot/**",
       "public/**",
