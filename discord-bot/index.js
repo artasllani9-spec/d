@@ -413,20 +413,48 @@ const BUILTIN_ITEM_NAMES = Object.keys(values.AMVGG_USD_VALUES || {}).filter(
 );
 
 function getPetNames() {
-  return [...new Set([...BUILTIN_PET_NAMES, ...Object.keys(overrides.customPets || {})])];
-}
-
-function getOtherItemNames() {
   return [
     ...new Set([
-      ...BUILTIN_ITEM_NAMES,
-      ...Object.keys(overrides.customItems || {}),
+      ...BUILTIN_PET_NAMES,
+      ...Object.keys(overrides.customPets || {}),
+      ...Object.keys(overrides.pets || {}),
     ]),
   ];
 }
 
+function getOtherItemNames() {
+  const petSet = new Set(getPetNames());
+  return [
+    ...new Set([
+      ...BUILTIN_ITEM_NAMES,
+      ...Object.keys(overrides.customItems || {}),
+      ...Object.keys(overrides.items || {}),
+    ]),
+  ].filter((name) => !petSet.has(name));
+}
+
 function getAllItemNames() {
   return [...new Set([...getPetNames(), ...getOtherItemNames()])];
+}
+
+function filterNamesForAutocomplete(query, limit = 25) {
+  const names = getAllItemNames();
+  const q = normalizeItemKey(query);
+  if (!q) {
+    return names.slice(0, limit).map((name) => ({ name, value: name }));
+  }
+
+  const scored = [];
+  for (const name of names) {
+    const key = normalizeItemKey(name);
+    if (key === q) scored.push({ name, score: 0 });
+    else if (key.startsWith(q)) scored.push({ name, score: 1 });
+    else if (key.includes(q)) scored.push({ name, score: 2 });
+    else if (getNameAcronym(name) === q) scored.push({ name, score: 3 });
+  }
+
+  scored.sort((a, b) => a.score - b.score || a.name.length - b.name.length || a.name.localeCompare(b.name));
+  return scored.slice(0, limit).map(({ name }) => ({ name, value: name }));
 }
 
 function normalizeItemKey(text) {
@@ -563,9 +591,16 @@ function resolveNonPetItem(query) {
 }
 
 function isPet(name) {
-  return (
-    Object.prototype.hasOwnProperty.call(values.AMVGG_PET_PRICING || {}, name) ||
-    Object.prototype.hasOwnProperty.call(overrides.customPets || {}, name)
+  if (!name) return false;
+  if (Object.prototype.hasOwnProperty.call(values.AMVGG_PET_PRICING || {}, name)) return true;
+  if (Object.prototype.hasOwnProperty.call(overrides.customPets || {}, name)) return true;
+  const petOverride = overrides.pets && overrides.pets[name];
+  return Boolean(
+    petOverride &&
+      typeof petOverride === 'object' &&
+      Number.isFinite(Number(petOverride.fr)) &&
+      Number.isFinite(Number(petOverride.nfr)) &&
+      Number.isFinite(Number(petOverride.mfr))
   );
 }
 
@@ -747,6 +782,7 @@ const valueCommand = new SlashCommandBuilder()
       .setName('item')
       .setDescription('Pet or item name (example: Rainbow Rattle)')
       .setRequired(true)
+      .setAutocomplete(true)
   )
   .toJSON();
 
@@ -940,6 +976,19 @@ client.once(Events.ClientReady, async (readyClient) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isAutocomplete()) {
+    try {
+      if (interaction.commandName === 'value') {
+        const focused = interaction.options.getFocused(true);
+        const choices = filterNamesForAutocomplete(focused.value || '');
+        await interaction.respond(choices);
+      }
+    } catch (err) {
+      console.error('Autocomplete failed:', err.message || err);
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   try {
