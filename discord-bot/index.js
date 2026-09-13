@@ -52,8 +52,9 @@ const githubOverridesPath = process.env.VALUES_GITHUB_PATH || 'data/value-overri
 const OVERRIDES_PATH = path.join(__dirname, 'value-overrides.json');
 const SITE_OVERRIDES_PATH = path.join(__dirname, '..', 'data', 'value-overrides.json');
 const REPO_ROOT = path.join(__dirname, '..');
-const VALUE_UPDATE_CHANNEL_ID =
-  process.env.DISCORD_VALUE_UPDATE_CHANNEL_ID || '1548371067679023178';
+const VALUE_UPDATE_CHANNEL_ID = String(
+  process.env.DISCORD_VALUE_UPDATE_CHANNEL_ID || '1548371067679023178'
+).trim();
 
 function loadAmvggValues() {
   const filePath = path.join(__dirname, '..', 'public', 'amvgg-usd-values.js');
@@ -372,6 +373,13 @@ async function pushOverridesViaGitCli() {
 }
 
 async function pushOverridesToGitHub(fileText) {
+  // Railway images usually aren't a writable git checkout — use the API there.
+  const onRailway = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID);
+  if (onRailway) {
+    await pushOverridesViaGitHubApi(fileText);
+    return true;
+  }
+
   try {
     await pushOverridesViaGitCli();
     return true;
@@ -383,7 +391,24 @@ async function pushOverridesToGitHub(fileText) {
 }
 
 async function saveOverrides() {
-  const fileText = saveOverridesLocal();
+  let fileText;
+  try {
+    fileText = saveOverridesLocal();
+  } catch (err) {
+    console.error('Failed to write local overrides:', err.message || err);
+    fileText = JSON.stringify(
+      {
+        pets: overrides.pets,
+        items: overrides.items,
+        acronyms: overrides.acronyms,
+        customPets: overrides.customPets,
+        customItems: overrides.customItems,
+        updatedAt: Date.now(),
+      },
+      null,
+      2
+    ) + '\n';
+  }
 
   try {
     await syncOverridesToSite();
@@ -779,16 +804,32 @@ function buildPetValueChangeEmbed(petName, oldValues, newValues) {
     .setFooter({ text: 'ValueDex' });
 }
 
+async function getValueUpdateChannel() {
+  const channelId = VALUE_UPDATE_CHANNEL_ID;
+  if (!channelId) {
+    throw new Error('DISCORD_VALUE_UPDATE_CHANNEL_ID is empty');
+  }
+
+  let channel = client.channels.cache.get(channelId) || null;
+  if (!channel) {
+    channel = await client.channels.fetch(channelId);
+  }
+  if (!channel || !channel.isTextBased()) {
+    throw new Error(`Channel ${channelId} not found or not text-based`);
+  }
+  if (typeof channel.send !== 'function') {
+    throw new Error(`Channel ${channelId} cannot receive messages`);
+  }
+  return channel;
+}
+
 async function postPetValueUpdate(petName, oldValues, newValues) {
   try {
-    const channel = await client.channels.fetch(VALUE_UPDATE_CHANNEL_ID);
-    if (!channel || !channel.isTextBased()) {
-      console.error(`Value update channel ${VALUE_UPDATE_CHANNEL_ID} not found or not text-based`);
-      return;
-    }
+    const channel = await getValueUpdateChannel();
     await channel.send({ embeds: [buildPetValueChangeEmbed(petName, oldValues, newValues)] });
+    console.log(`Posted pet value update for ${petName} to #${VALUE_UPDATE_CHANNEL_ID}`);
   } catch (err) {
-    console.error('Failed to post pet value update:', err.message);
+    console.error('Failed to post pet value update:', err.message || err);
   }
 }
 
@@ -808,14 +849,11 @@ function buildItemValueChangeEmbed(itemName, oldValue, newValue) {
 
 async function postItemValueUpdate(itemName, oldValue, newValue) {
   try {
-    const channel = await client.channels.fetch(VALUE_UPDATE_CHANNEL_ID);
-    if (!channel || !channel.isTextBased()) {
-      console.error(`Value update channel ${VALUE_UPDATE_CHANNEL_ID} not found or not text-based`);
-      return;
-    }
+    const channel = await getValueUpdateChannel();
     await channel.send({ embeds: [buildItemValueChangeEmbed(itemName, oldValue, newValue)] });
+    console.log(`Posted item value update for ${itemName} to #${VALUE_UPDATE_CHANNEL_ID}`);
   } catch (err) {
-    console.error('Failed to post item value update:', err.message);
+    console.error('Failed to post item value update:', err.message || err);
   }
 }
 
@@ -1037,6 +1075,7 @@ const client = new Client({
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`valuedex bot online as ${readyClient.user.tag}`);
+  console.log(`Value update channel ID: ${VALUE_UPDATE_CHANNEL_ID}`);
 
   // Register commands first so slash commands recover even if sync is slow.
   try {
@@ -1146,9 +1185,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
         embeds: [buildValueEmbed(petName)],
       });
 
+      // Announce first — don't wait on GitHub/site sync (can hang on Railway).
+      await postPetValueUpdate(petName, oldValues, newValues);
       try {
         await saveOverrides();
-        await postPetValueUpdate(petName, oldValues, newValues);
       } catch (err) {
         console.error('Failed after pet value reply:', err.message || err);
       }
@@ -1184,12 +1224,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
         embeds: [buildValueEmbed(itemName)],
       });
 
+      await postItemValueUpdate(itemName, oldValue, amount);
       try {
         await saveOverrides();
-        await postItemValueUpdate(itemName, oldValue, amount);
       } catch (err) {
         console.error('Failed after item value reply:', err.message || err);
       }
+      return;
     }
 
     if (interaction.commandName === 'acronymadd') {
