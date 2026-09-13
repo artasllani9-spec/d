@@ -14,6 +14,7 @@ const {
   SlashCommandBuilder,
   REST,
   Routes,
+  PermissionFlagsBits,
 } = require('discord.js');
 
 const execFileAsync = promisify(execFile);
@@ -540,6 +541,10 @@ function canEditValues(interaction) {
   return memberHasRole(interaction, editorRoleId);
 }
 
+function canAdminister(interaction) {
+  return Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.Administrator));
+}
+
 function parseEmbedColor(input) {
   if (!input) return 0x1e64c8;
   const cleaned = String(input).trim().replace(/^#/, '');
@@ -723,6 +728,7 @@ const sayCommand = new SlashCommandBuilder()
   .addStringOption((option) =>
     option.setName('message').setDescription('What the bot should say').setRequired(true)
   )
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
 const embedCommand = new SlashCommandBuilder()
@@ -746,6 +752,7 @@ const embedCommand = new SlashCommandBuilder()
   .addStringOption((option) =>
     option.setName('footer').setDescription('Footer text').setRequired(false)
   )
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
 const allCommands = [
@@ -967,9 +974,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.commandName === 'say') {
-      if (!canEditValues(interaction)) {
+      if (!canAdminister(interaction)) {
         await interaction.reply({
-          content: 'You need the editor role to use this command.',
+          content: 'You need Administrator permission to use this command.',
           ephemeral: true,
         });
         return;
@@ -990,9 +997,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.commandName === 'embed') {
-      if (!canEditValues(interaction)) {
+      if (!canAdminister(interaction)) {
         await interaction.reply({
-          content: 'You need the editor role to use this command.',
+          content: 'You need Administrator permission to use this command.',
           ephemeral: true,
         });
         return;
