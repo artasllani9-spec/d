@@ -540,6 +540,22 @@ function canEditValues(interaction) {
   return memberHasRole(interaction, editorRoleId);
 }
 
+function parseEmbedColor(input) {
+  if (!input) return 0x1e64c8;
+  const cleaned = String(input).trim().replace(/^#/, '');
+  if (!/^[0-9a-fA-F]{6}$/.test(cleaned)) return null;
+  return Number.parseInt(cleaned, 16);
+}
+
+function buildCustomEmbed({ title, description, color, image, thumbnail, footer }) {
+  const embed = new EmbedBuilder().setColor(color).setDescription(description);
+  if (title) embed.setTitle(title);
+  if (image) embed.setImage(image);
+  if (thumbnail) embed.setThumbnail(thumbnail);
+  if (footer) embed.setFooter({ text: footer });
+  return embed;
+}
+
 function buildValueEmbed(itemName) {
   if (isPet(itemName)) {
     const fr = petUsd(itemName, { fly: true, ride: true, neon: false, mega: false });
@@ -701,7 +717,45 @@ const acronymAddCommand = new SlashCommandBuilder()
   )
   .toJSON();
 
-const allCommands = [valueCommand, editPetValueCommand, editItemValueCommand, acronymAddCommand];
+const sayCommand = new SlashCommandBuilder()
+  .setName('say')
+  .setDescription('Make the bot send a message')
+  .addStringOption((option) =>
+    option.setName('message').setDescription('What the bot should say').setRequired(true)
+  )
+  .toJSON();
+
+const embedCommand = new SlashCommandBuilder()
+  .setName('embed')
+  .setDescription('Make the bot send an embed')
+  .addStringOption((option) =>
+    option.setName('description').setDescription('Embed body text').setRequired(true)
+  )
+  .addStringOption((option) =>
+    option.setName('title').setDescription('Embed title').setRequired(false)
+  )
+  .addStringOption((option) =>
+    option.setName('color').setDescription('Hex color (example: #1e64c8)').setRequired(false)
+  )
+  .addStringOption((option) =>
+    option.setName('image').setDescription('Image URL').setRequired(false)
+  )
+  .addStringOption((option) =>
+    option.setName('thumbnail').setDescription('Thumbnail URL').setRequired(false)
+  )
+  .addStringOption((option) =>
+    option.setName('footer').setDescription('Footer text').setRequired(false)
+  )
+  .toJSON();
+
+const allCommands = [
+  valueCommand,
+  editPetValueCommand,
+  editItemValueCommand,
+  acronymAddCommand,
+  sayCommand,
+  embedCommand,
+];
 
 async function registerCommands(readyClient) {
   const rest = new REST({ version: '10' }).setToken(token);
@@ -910,6 +964,75 @@ client.on(Events.InteractionCreate, async (interaction) => {
       } catch (err) {
         console.error('Failed after acronym reply:', err.message || err);
       }
+    }
+
+    if (interaction.commandName === 'say') {
+      if (!canEditValues(interaction)) {
+        await interaction.reply({
+          content: 'You need the editor role to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const message = interaction.options.getString('message', true);
+      if (!interaction.channel || !interaction.channel.isTextBased()) {
+        await interaction.reply({
+          content: 'This command can only be used in a text channel.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      await interaction.channel.send({ content: message });
+      await interaction.reply({ content: 'Sent.', ephemeral: true });
+      return;
+    }
+
+    if (interaction.commandName === 'embed') {
+      if (!canEditValues(interaction)) {
+        await interaction.reply({
+          content: 'You need the editor role to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (!interaction.channel || !interaction.channel.isTextBased()) {
+        await interaction.reply({
+          content: 'This command can only be used in a text channel.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const description = interaction.options.getString('description', true);
+      const title = interaction.options.getString('title');
+      const colorInput = interaction.options.getString('color');
+      const image = interaction.options.getString('image');
+      const thumbnail = interaction.options.getString('thumbnail');
+      const footer = interaction.options.getString('footer');
+      const color = parseEmbedColor(colorInput);
+
+      if (color == null) {
+        await interaction.reply({
+          content: 'Color must be a hex code like `#1e64c8`.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const embed = buildCustomEmbed({
+        title,
+        description,
+        color,
+        image,
+        thumbnail,
+        footer,
+      });
+
+      await interaction.channel.send({ embeds: [embed] });
+      await interaction.reply({ content: 'Embed sent.', ephemeral: true });
     }
   } catch (err) {
     console.error('Command failed:', err);
