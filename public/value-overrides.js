@@ -50,6 +50,10 @@
   }
 
   function rebuildPetsByUsd() {
+    if (typeof sortAllCatalogListsByUsd === 'function') {
+      sortAllCatalogListsByUsd();
+      return;
+    }
     if (typeof pets === 'undefined' || typeof sortItemsByUsdDesc !== 'function') return;
     const sorted = sortItemsByUsdDesc(pets);
     if (typeof petsByUsd !== 'undefined' && Array.isArray(petsByUsd)) {

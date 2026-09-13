@@ -59,7 +59,7 @@
   let pendingConfirm = null;
 
   const CATEGORY_ITEMS = {
-    pets: typeof pets !== 'undefined' ? pets : [],
+    pets: typeof petsByUsd !== 'undefined' ? petsByUsd : typeof pets !== 'undefined' ? pets : [],
     'pet-wear': typeof petWear !== 'undefined' ? petWear : [],
     strollers: typeof strollers !== 'undefined' ? strollers : [],
     food: typeof food !== 'undefined' ? food : [],
@@ -740,4 +740,9 @@
   setInterval(() => {
     renderFeed(false);
   }, 60000);
+
+  window.addEventListener('valueoverridesready', () => {
+    CATEGORY_ITEMS.pets = typeof petsByUsd !== 'undefined' ? petsByUsd : CATEGORY_ITEMS.pets;
+    if (filterPicker && !filterPicker.hidden) renderFilterItems();
+  });
 })();

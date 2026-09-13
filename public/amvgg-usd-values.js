@@ -2216,4 +2216,30 @@ function sortItemsByUsdDesc(items) {
   });
 }
 
+function sortNamedListInPlaceByUsd(list) {
+  if (!Array.isArray(list)) return;
+  const sorted = sortItemsByUsdDesc(list);
+  list.splice(0, list.length, ...sorted);
+}
+
+function sortAllCatalogListsByUsd() {
+  if (typeof pets !== 'undefined') sortNamedListInPlaceByUsd(pets);
+  if (typeof petWear !== 'undefined') sortNamedListInPlaceByUsd(petWear);
+  if (typeof strollers !== 'undefined') sortNamedListInPlaceByUsd(strollers);
+  if (typeof food !== 'undefined') sortNamedListInPlaceByUsd(food);
+  if (typeof vehicles !== 'undefined') sortNamedListInPlaceByUsd(vehicles);
+  if (typeof toys !== 'undefined') sortNamedListInPlaceByUsd(toys);
+  if (typeof gifts !== 'undefined') sortNamedListInPlaceByUsd(gifts);
+  if (typeof stickers !== 'undefined') sortNamedListInPlaceByUsd(stickers);
+  if (typeof houses !== 'undefined') sortNamedListInPlaceByUsd(houses);
+
+  const sortedPets = typeof pets !== 'undefined' ? sortItemsByUsdDesc(pets) : [];
+  if (typeof petsByUsd !== 'undefined' && Array.isArray(petsByUsd)) {
+    petsByUsd.splice(0, petsByUsd.length, ...sortedPets);
+  } else if (typeof globalThis !== 'undefined') {
+    globalThis.petsByUsd = sortedPets;
+  }
+}
+
 var petsByUsd = typeof pets !== 'undefined' ? sortItemsByUsdDesc(pets) : [];
+sortAllCatalogListsByUsd();

@@ -977,6 +977,10 @@
       renderActiveCategory();
     }
 
+    window.addEventListener('valueoverridesready', () => {
+      if (!tradePicker.hidden) renderActiveCategory();
+    });
+
     function openPicker(side) {
       activeTradeSide = side;
       tradePickerPanel.dataset.side = side;
