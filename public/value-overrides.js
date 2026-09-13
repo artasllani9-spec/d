@@ -23,29 +23,75 @@
   }
 
   function upsertNamedItem(list, name, image) {
-    if (!Array.isArray(list)) return;
+    if (!Array.isArray(list)) return false;
     const existing = list.find((item) => item && item.name === name);
     if (existing) {
       existing.image = image || existing.image;
-      return;
+      return false;
     }
     list.push({ name, image: image || '' });
+    return true;
   }
+
+  function removeNamedItem(list, name) {
+    if (!Array.isArray(list)) return;
+    const index = list.findIndex((item) => item && item.name === name);
+    if (index >= 0) list.splice(index, 1);
+  }
+
+  function isBuiltinPetName(name) {
+    return (
+      typeof AMVGG_PET_PRICING !== 'undefined' &&
+      Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, name)
+    );
+  }
+
+  function isBuiltinFlatItemName(name) {
+    return (
+      typeof AMVGG_USD_VALUES !== 'undefined' &&
+      Object.prototype.hasOwnProperty.call(AMVGG_USD_VALUES, name) &&
+      !isBuiltinPetName(name)
+    );
+  }
+
+  const injectedCustomPets = new Set();
+  const injectedCustomItems = new Map();
 
   function applyCustomCatalog(data) {
     const customPets = (data && data.customPets) || {};
     const customItems = (data && data.customItems) || {};
 
+    for (const name of [...injectedCustomPets]) {
+      if (!Object.prototype.hasOwnProperty.call(customPets, name)) {
+        if (!isBuiltinPetName(name)) {
+          removeNamedItem(typeof pets !== 'undefined' ? pets : null, name);
+        }
+        injectedCustomPets.delete(name);
+      }
+    }
+
+    for (const [name, category] of [...injectedCustomItems.entries()]) {
+      const entry = customItems[name];
+      if (!entry || entry.category !== category) {
+        if (!isBuiltinFlatItemName(name)) {
+          removeNamedItem(getCategoryList(category), name);
+        }
+        injectedCustomItems.delete(name);
+      }
+    }
+
     Object.keys(customPets).forEach((name) => {
       const entry = customPets[name];
       if (!entry) return;
       upsertNamedItem(typeof pets !== 'undefined' ? pets : null, name, entry.image);
+      injectedCustomPets.add(name);
     });
 
     Object.keys(customItems).forEach((name) => {
       const entry = customItems[name];
       if (!entry) return;
       upsertNamedItem(getCategoryList(entry.category), name, entry.image);
+      injectedCustomItems.set(name, entry.category);
     });
   }
 

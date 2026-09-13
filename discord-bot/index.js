@@ -457,6 +457,47 @@ function filterNamesForAutocomplete(query, limit = 25) {
   return scored.slice(0, limit).map(({ name }) => ({ name, value: name }));
 }
 
+function filterCustomNamesForAutocomplete(query, names, limit = 25) {
+  const list = [...new Set(names || [])].sort((a, b) => a.localeCompare(b));
+  const q = normalizeItemKey(query);
+  const filtered = q
+    ? list.filter((name) => {
+        const key = normalizeItemKey(name);
+        return key.includes(q) || getNameAcronym(name) === q;
+      })
+    : list;
+  return filtered.slice(0, limit).map((name) => ({ name, value: name }));
+}
+
+function removeAcronymsForItem(itemName) {
+  if (!overrides.acronyms || typeof overrides.acronyms !== 'object') return;
+  for (const [acro, mapped] of Object.entries(overrides.acronyms)) {
+    if (mapped === itemName) delete overrides.acronyms[acro];
+  }
+}
+
+function deleteCustomPet(name) {
+  const entry = overrides.customPets && overrides.customPets[name];
+  if (!entry) return false;
+  delete overrides.customPets[name];
+  if (overrides.pets) delete overrides.pets[name];
+  removeAcronymsForItem(name);
+  return true;
+}
+
+function deleteCustomItem(name, category) {
+  const entry = overrides.customItems && overrides.customItems[name];
+  if (!entry) return { ok: false, reason: 'missing' };
+  if (entry.category !== category) {
+    return { ok: false, reason: 'category', actual: entry.category };
+  }
+  delete overrides.customItems[name];
+  if (overrides.items) delete overrides.items[name];
+  removeAcronymsForItem(name);
+  return { ok: true };
+}
+
+
 function normalizeItemKey(text) {
   return String(text || '')
     .toLowerCase()
@@ -911,6 +952,37 @@ const addItemCommand = new SlashCommandBuilder()
   )
   .toJSON();
 
+const deletePetCommand = new SlashCommandBuilder()
+  .setName('deletepet')
+  .setDescription('Delete a custom pet added with /addpet')
+  .addStringOption((option) =>
+    option
+      .setName('name')
+      .setDescription('Custom pet name')
+      .setRequired(true)
+      .setAutocomplete(true)
+  )
+  .toJSON();
+
+const deleteItemCommand = new SlashCommandBuilder()
+  .setName('deleteitem')
+  .setDescription('Delete a custom item added with /additem')
+  .addStringOption((option) =>
+    option
+      .setName('name')
+      .setDescription('Custom item name')
+      .setRequired(true)
+      .setAutocomplete(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('category')
+      .setDescription('Item category')
+      .setRequired(true)
+      .addChoices(...ITEM_CATEGORY_CHOICES)
+  )
+  .toJSON();
+
 const allCommands = [
   valueCommand,
   editPetValueCommand,
@@ -920,6 +992,8 @@ const allCommands = [
   embedCommand,
   addPetCommand,
   addItemCommand,
+  deletePetCommand,
+  deleteItemCommand,
 ];
 
 async function registerCommands(readyClient) {
@@ -981,6 +1055,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (interaction.commandName === 'value') {
         const focused = interaction.options.getFocused(true);
         const choices = filterNamesForAutocomplete(focused.value || '');
+        await interaction.respond(choices);
+      } else if (interaction.commandName === 'deletepet') {
+        const focused = interaction.options.getFocused(true);
+        const choices = filterCustomNamesForAutocomplete(
+          focused.value || '',
+          Object.keys(overrides.customPets || {})
+        );
+        await interaction.respond(choices);
+      } else if (interaction.commandName === 'deleteitem') {
+        const focused = interaction.options.getFocused(true);
+        const category = interaction.options.getString('category');
+        const names = Object.entries(overrides.customItems || {})
+          .filter(([, entry]) => !category || entry.category === category)
+          .map(([name]) => name);
+        const choices = filterCustomNamesForAutocomplete(focused.value || '', names);
         await interaction.respond(choices);
       }
     } catch (err) {
@@ -1309,6 +1398,101 @@ client.on(Events.InteractionCreate, async (interaction) => {
         await saveOverrides();
       } catch (err) {
         console.error('Failed after additem reply:', err.message || err);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'deletepet') {
+      if (!canEditValues(interaction)) {
+        await interaction.reply({
+          content: 'You need the editor role to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const query = interaction.options.getString('name', true).trim();
+      const exact =
+        (overrides.customPets && overrides.customPets[query] && query) ||
+        Object.keys(overrides.customPets || {}).find(
+          (name) => normalizeItemKey(name) === normalizeItemKey(query)
+        ) ||
+        null;
+
+      if (!exact) {
+        await interaction.reply({
+          content:
+            `Could not find a custom pet named **${query}**. Only pets added with \`/addpet\` can be deleted.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      deleteCustomPet(exact);
+
+      await interaction.reply({
+        content: `Deleted custom pet **${exact}**. It is removed from the site and \`/value\`.`,
+      });
+
+      try {
+        await saveOverrides();
+      } catch (err) {
+        console.error('Failed after deletepet reply:', err.message || err);
+      }
+      return;
+    }
+
+    if (interaction.commandName === 'deleteitem') {
+      if (!canEditValues(interaction)) {
+        await interaction.reply({
+          content: 'You need the editor role to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const query = interaction.options.getString('name', true).trim();
+      const category = interaction.options.getString('category', true);
+      const exact =
+        (overrides.customItems && overrides.customItems[query] && query) ||
+        Object.keys(overrides.customItems || {}).find(
+          (name) => normalizeItemKey(name) === normalizeItemKey(query)
+        ) ||
+        null;
+
+      if (!exact) {
+        await interaction.reply({
+          content:
+            `Could not find a custom item named **${query}**. Only items added with \`/additem\` can be deleted.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const result = deleteCustomItem(exact, category);
+      if (!result.ok) {
+        if (result.reason === 'category') {
+          await interaction.reply({
+            content: `**${exact}** is in **${result.actual}**, not **${category}**.`,
+            ephemeral: true,
+          });
+          return;
+        }
+        await interaction.reply({
+          content: `Could not delete **${exact}**.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      await interaction.reply({
+        content: `Deleted custom item **${exact}** (${category}). It is removed from the site and \`/value\`.`,
+      });
+
+      try {
+        await saveOverrides();
+      } catch (err) {
+        console.error('Failed after deleteitem reply:', err.message || err);
       }
     }
   } catch (err) {
