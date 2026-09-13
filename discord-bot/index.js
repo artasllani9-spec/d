@@ -1514,6 +1514,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+if (process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID) {
+  const http = require('http');
+  const port = Number(process.env.PORT) || 8080;
+  http
+    .createServer((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('ValueDex Discord bot is running\n');
+    })
+    .listen(port, () => {
+      console.log(`Bot health check listening on :${port}`);
+    });
+}
+
 client.login(token).catch((err) => {
   console.error('Failed to log in. Check your bot token.', err.message);
   process.exit(1);
