@@ -6,7 +6,8 @@
     "node": "22.x"
   },
   "scripts": {
-    "start": "node local-server.js",
+    "start": "npm start --prefix discord-bot",
+    "start:site": "node local-server.js",
     "dev": "node local-server.js"
   },
   "dependencies": {
