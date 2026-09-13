@@ -3,7 +3,7 @@
     "Bat Dragon": {
       "fr": 195,
       "nfr": 450,
-      "mfr": 1410
+      "mfr": 1400
     },
     "Frost Dragon": {
       "fr": 67,
@@ -32,5 +32,5 @@
     "rr": "Rainbow Rattle",
     "bd": "Bat Dragon"
   },
-  "updatedAt": 1789250910542
+  "updatedAt": 1789294831179
 }
