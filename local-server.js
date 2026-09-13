@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+const { spawn } = require('child_process');
 const express = require('express');
 
 function loadEnvFile() {
@@ -28,19 +30,54 @@ function loadEnvFile() {
 
 loadEnvFile();
 
-const { createTradeApp } = require('./create-trade-app');
+function shouldRunDiscordBot() {
+  // Force website mode on Railway only if explicitly requested
+  if (process.env.RUN_SITE_SERVER === '1') return false;
+  if (process.env.RUN_DISCORD_BOT === '1') return true;
+  // This Railway service is for the always-on Discord bot (site stays on Vercel)
+  return Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID);
+}
 
-const PORT = process.env.PORT || 3000;
-const PUBLIC_DIR = path.join(__dirname, 'public');
-const app = createTradeApp();
+if (shouldRunDiscordBot()) {
+  const port = Number(process.env.PORT) || 8080;
+  http
+    .createServer((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('ValueDex Discord bot is running\n');
+    })
+    .listen(port, () => {
+      console.log(`Bot health check listening on :${port}`);
+    });
 
-app.use(express.static(PUBLIC_DIR, {
-  maxAge: process.env.NODE_ENV === 'production' ? '7d' : '1h',
-  etag: true,
-  lastModified: true,
-}));
+  console.log('Starting ValueDex Discord bot...');
+  const child = spawn('npm', ['start', '--prefix', 'discord-bot'], {
+    cwd: __dirname,
+    stdio: 'inherit',
+    shell: true,
+    env: process.env,
+  });
 
-app.listen(PORT, () => {
-  console.log(`valuedex running at http://localhost:${PORT}`);
-  console.log(`Roblox login: http://localhost:${PORT}/api/auth/roblox`);
-});
+  child.on('exit', (code, signal) => {
+    console.error(`Discord bot exited (code=${code}, signal=${signal || 'none'})`);
+    process.exit(code == null ? 1 : code);
+  });
+} else {
+  const { createTradeApp } = require('./create-trade-app');
+
+  const PORT = process.env.PORT || 3000;
+  const PUBLIC_DIR = path.join(__dirname, 'public');
+  const app = createTradeApp();
+
+  app.use(
+    express.static(PUBLIC_DIR, {
+      maxAge: process.env.NODE_ENV === 'production' ? '7d' : '1h',
+      etag: true,
+      lastModified: true,
+    })
+  );
+
+  app.listen(PORT, () => {
+    console.log(`valuedex running at http://localhost:${PORT}`);
+    console.log(`Roblox login: http://localhost:${PORT}/api/auth/roblox`);
+  });
+}
