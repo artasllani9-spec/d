@@ -1,7 +1,7 @@
 {
   "pets": {
     "Bat Dragon": {
-      "fr": 195,
+      "fr": 98,
       "nfr": 450,
       "mfr": 1400
     },
@@ -35,5 +35,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1789338817960
+  "updatedAt": 1789381304036
 }
