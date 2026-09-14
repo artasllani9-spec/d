@@ -36,18 +36,26 @@ function shouldRunDiscordBot() {
 }
 
 if (shouldRunDiscordBot()) {
+  console.log('Starting ValueDex Discord bot...');
+  const bot = require(path.join(__dirname, 'discord-bot', 'index.js'));
+
   const port = Number(process.env.PORT) || 8080;
   http
     .createServer((req, res) => {
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('ValueDex Discord bot is running\n');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          ok: true,
+          service: 'ValueDex Discord bot',
+          build: bot.BOT_BUILD || 'unknown',
+          loggedIn: Boolean(bot.client && bot.client.user),
+          user: bot.client && bot.client.user ? bot.client.user.tag : null,
+        })
+      );
     })
     .listen(port, () => {
       console.log(`Bot health check listening on :${port}`);
     });
-
-  console.log('Starting ValueDex Discord bot...');
-  require(path.join(__dirname, 'discord-bot', 'index.js'));
 } else {
   const { createTradeApp } = require('./create-trade-app');
 

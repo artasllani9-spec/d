@@ -1256,7 +1256,7 @@ async function registerCommands(readyClient) {
   }
 }
 
-const BOT_BUILD = 'railway-always-restart-20260914';
+const BOT_BUILD = 'fix-discord-login-railway-20260914';
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
@@ -1563,18 +1563,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.commandName === 'stick') {
+      await interaction.deferReply({ ephemeral: true });
+
       if (!canAdminister(interaction)) {
-        await interaction.reply({
+        await interaction.editReply({
           content: 'You need Administrator permission to use this command.',
-          ephemeral: true,
         });
         return;
       }
 
       if (!interaction.channel || !interaction.channel.isTextBased()) {
-        await interaction.reply({
+        await interaction.editReply({
           content: 'This command can only be used in a text channel.',
-          ephemeral: true,
         });
         return;
       }
@@ -1587,26 +1587,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       stickyByChannel.set(interaction.channel.id, { content: message, messageId: null });
       await postStickyMessage(interaction.channel, message);
-      await interaction.reply({
+      await interaction.editReply({
         content: 'Sticky set. It will stay as the newest message in this channel.',
-        ephemeral: true,
       });
       return;
     }
 
     if (interaction.commandName === 'unstick') {
+      await interaction.deferReply({ ephemeral: true });
+
       if (!canAdminister(interaction)) {
-        await interaction.reply({
+        await interaction.editReply({
           content: 'You need Administrator permission to use this command.',
-          ephemeral: true,
         });
         return;
       }
 
       if (!interaction.channel || !interaction.channel.isTextBased()) {
-        await interaction.reply({
+        await interaction.editReply({
           content: 'This command can only be used in a text channel.',
-          ephemeral: true,
         });
         return;
       }
@@ -1617,9 +1616,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
         await deleteStickyMessage(interaction.channel, previous.messageId);
       }
 
-      await interaction.reply({
+      await interaction.editReply({
         content: previous ? 'Sticky removed.' : 'No sticky message in this channel.',
-        ephemeral: true,
       });
       return;
     }
@@ -1909,7 +1907,10 @@ client.on(Events.MessageCreate, async (message) => {
   }
 });
 
-if (process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID) {
+if (
+  require.main === module &&
+  (process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID)
+) {
   const http = require('http');
   const port = Number(process.env.PORT) || 8080;
   http
@@ -1920,6 +1921,8 @@ if (process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_S
           ok: true,
           service: 'ValueDex Discord bot',
           build: BOT_BUILD,
+          loggedIn: Boolean(client.user),
+          user: client.user ? client.user.tag : null,
           commands: allCommands.map((cmd) => cmd.name),
           autoreactChannels: autoReactByChannel.size,
         })
@@ -1930,8 +1933,9 @@ if (process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_S
     });
 }
 
-// Only log in when this file is the process entrypoint (never when required by another script).
-if (require.main === module && process.env.DISCORD_SKIP_LOGIN !== '1') {
+// Always log in unless an explicit register-only script opts out.
+// (Must work when required from local-server.js on Railway too.)
+if (process.env.DISCORD_SKIP_LOGIN !== '1') {
   client.login(token).catch((err) => {
     console.error('Failed to log in. Check your bot token.', err.message);
     process.exit(1);
@@ -1942,4 +1946,5 @@ module.exports = {
   allCommands,
   registerCommands,
   BOT_BUILD,
+  client,
 };
