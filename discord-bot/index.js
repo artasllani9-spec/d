@@ -731,10 +731,14 @@ function canAdminister(interaction) {
   return Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.Administrator));
 }
 
-/** channelId -> { content, messageId } */
+/** channelId -> { content, messageId, generation } */
 const stickyByChannel = new Map();
-/** channelId -> Promise chain so rapid messages don't race */
-const stickyRefreshChain = new Map();
+/** channelId -> in-flight refresh Promise */
+const stickyRefreshLocks = new Map();
+/** channelId -> debounce timer */
+const stickyRefreshTimers = new Map();
+/** Known sticky message IDs so we never autoreact / re-trigger on them */
+const stickyMessageIds = new Set();
 /** channelId -> emoji identifier(s) for message.react() */
 const autoReactByChannel = new Map();
 
@@ -793,6 +797,7 @@ function collectAutoreactEmojis(interaction) {
 
 async function deleteStickyMessage(channel, messageId) {
   if (!messageId) return;
+  stickyMessageIds.delete(String(messageId));
   try {
     const existing = await channel.messages.fetch(messageId);
     await existing.delete();
@@ -801,35 +806,107 @@ async function deleteStickyMessage(channel, messageId) {
   }
 }
 
-async function postStickyMessage(channel, content) {
-  const sent = await channel.send({ content });
-  stickyByChannel.set(String(channel.id), { content, messageId: sent.id });
-  return sent;
-}
-
-async function refreshStickyForChannel(channel) {
+async function runStickyRefresh(channel) {
   const channelId = String(channel.id);
-  const state = stickyByChannel.get(channelId);
-  if (!state?.content || !channel?.isTextBased?.()) return;
+  if (!channel?.isTextBased?.()) return;
 
-  const previous = stickyRefreshChain.get(channelId) || Promise.resolve();
-  const next = previous
-    .catch(() => {})
-    .then(async () => {
-      const current = stickyByChannel.get(channelId);
-      if (!current?.content) return;
-      await deleteStickyMessage(channel, current.messageId);
-      if (!stickyByChannel.has(channelId)) return;
-      await postStickyMessage(channel, current.content);
-    })
-    .finally(() => {
-      if (stickyRefreshChain.get(channelId) === next) {
-        stickyRefreshChain.delete(channelId);
-      }
+  const run = async () => {
+    const state = stickyByChannel.get(channelId);
+    if (!state?.content) return;
+
+    const generation = (state.generation || 0) + 1;
+    const oldMessageId = state.messageId || null;
+    state.generation = generation;
+    state.messageId = null;
+    stickyByChannel.set(channelId, state);
+
+    if (oldMessageId) {
+      await deleteStickyMessage(channel, oldMessageId);
+    }
+
+    const still = stickyByChannel.get(channelId);
+    if (!still?.content || still.generation !== generation) return;
+
+    const sent = await channel.send({
+      content: still.content,
+      allowedMentions: { parse: [] },
     });
 
-  stickyRefreshChain.set(channelId, next);
-  await next;
+    const afterSend = stickyByChannel.get(channelId);
+    if (!afterSend?.content || afterSend.generation !== generation) {
+      stickyMessageIds.delete(String(sent.id));
+      await sent.delete().catch(() => {});
+      return;
+    }
+
+    afterSend.messageId = sent.id;
+    stickyByChannel.set(channelId, afterSend);
+    stickyMessageIds.add(String(sent.id));
+  };
+
+  const previous = stickyRefreshLocks.get(channelId) || Promise.resolve();
+  const next = previous.catch(() => {}).then(run);
+  stickyRefreshLocks.set(channelId, next);
+
+  try {
+    await next;
+  } catch (err) {
+    console.error('Sticky refresh failed:', err.message || err);
+  } finally {
+    if (stickyRefreshLocks.get(channelId) === next) {
+      stickyRefreshLocks.delete(channelId);
+    }
+  }
+}
+
+/** Collapse rapid chat into one sticky remount so it doesn't flicker/spam. */
+function scheduleStickyRefresh(channel) {
+  const channelId = String(channel.id);
+  if (!stickyByChannel.has(channelId)) return;
+
+  const existing = stickyRefreshTimers.get(channelId);
+  if (existing) clearTimeout(existing);
+
+  const timer = setTimeout(() => {
+    stickyRefreshTimers.delete(channelId);
+    runStickyRefresh(channel).catch((err) => {
+      console.error('Sticky refresh failed:', err.message || err);
+    });
+  }, 450);
+
+  stickyRefreshTimers.set(channelId, timer);
+}
+
+async function setStickyForChannel(channel, content) {
+  const channelId = String(channel.id);
+  const previous = stickyByChannel.get(channelId);
+  if (previous?.messageId) {
+    await deleteStickyMessage(channel, previous.messageId);
+  }
+
+  stickyByChannel.set(channelId, {
+    content,
+    messageId: null,
+    generation: (previous?.generation || 0) + 1,
+  });
+
+  await runStickyRefresh(channel);
+}
+
+async function clearStickyForChannel(channel) {
+  const channelId = String(channel.id);
+  const timer = stickyRefreshTimers.get(channelId);
+  if (timer) {
+    clearTimeout(timer);
+    stickyRefreshTimers.delete(channelId);
+  }
+
+  const previous = stickyByChannel.get(channelId);
+  stickyByChannel.delete(channelId);
+  if (previous?.messageId) {
+    await deleteStickyMessage(channel, previous.messageId);
+  }
+  return Boolean(previous);
 }
 
 function parseEmbedColor(input) {
@@ -1257,7 +1334,7 @@ async function registerCommands(readyClient) {
   }
 }
 
-const BOT_BUILD = 'stick-autoreact-coexist-20260914';
+const BOT_BUILD = 'sticky-debounce-stable-20260915';
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
@@ -1581,14 +1658,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       const message = interaction.options.getString('message', true);
-      const channelId = String(interaction.channel.id);
-      const previous = stickyByChannel.get(channelId);
-      if (previous?.messageId) {
-        await deleteStickyMessage(interaction.channel, previous.messageId);
-      }
-
-      stickyByChannel.set(channelId, { content: message, messageId: null });
-      await postStickyMessage(interaction.channel, message);
+      await setStickyForChannel(interaction.channel, message);
       await interaction.editReply({
         content: 'Sticky set. It will stay as the newest message in this channel.',
       });
@@ -1612,15 +1682,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
       }
 
-      const channelId = String(interaction.channel.id);
-      const previous = stickyByChannel.get(channelId);
-      stickyByChannel.delete(channelId);
-      if (previous?.messageId) {
-        await deleteStickyMessage(interaction.channel, previous.messageId);
-      }
-
+      const existed = await clearStickyForChannel(interaction.channel);
       await interaction.editReply({
-        content: previous ? 'Sticky removed.' : 'No sticky message in this channel.',
+        content: existed ? 'Sticky removed.' : 'No sticky message in this channel.',
       });
       return;
     }
@@ -1889,21 +1953,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.on(Events.MessageCreate, async (message) => {
   try {
-    if (!message.guild) return;
+    if (!message.guild || message.system) return;
 
     const channelId = String(message.channel.id);
-    const isOwnMessage = Boolean(client.user && message.author.id === client.user.id);
 
-    // Never let autoreact block sticky — both can run on the same channel.
-    if (!isOwnMessage && stickyByChannel.has(channelId)) {
-      refreshStickyForChannel(message.channel).catch((err) => {
-        console.error('Sticky refresh failed:', err.message || err);
-      });
-    }
+    // Ignore our sticky remounts completely (no react, no re-stick loop).
+    if (stickyMessageIds.has(String(message.id))) return;
+    if (client.user && message.author.id === client.user.id) return;
 
-    if (!isOwnMessage) {
-      const autoEmojis = autoReactByChannel.get(channelId);
-      if (Array.isArray(autoEmojis) && autoEmojis.length) {
+    const autoEmojis = autoReactByChannel.get(channelId);
+    if (Array.isArray(autoEmojis) && autoEmojis.length) {
+      // Fire reactions without blocking sticky scheduling.
+      void (async () => {
         for (const emoji of autoEmojis) {
           try {
             await message.react(emoji);
@@ -1911,7 +1972,11 @@ client.on(Events.MessageCreate, async (message) => {
             console.error('Autoreact failed:', err.message || err);
           }
         }
-      }
+      })();
+    }
+
+    if (stickyByChannel.has(channelId)) {
+      scheduleStickyRefresh(message.channel);
     }
   } catch (err) {
     console.error('MessageCreate handler failed:', err.message || err);
