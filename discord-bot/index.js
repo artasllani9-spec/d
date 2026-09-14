@@ -1300,6 +1300,14 @@ async function registerCommands(readyClient) {
   );
   if (guildId) guildIds.add(String(guildId));
 
+  // Clear global commands so they don't duplicate guild commands in the picker.
+  try {
+    await rest.put(Routes.applicationCommands(clientId), { body: [] });
+    console.log('Cleared global slash commands (guild-only registration).');
+  } catch (err) {
+    console.error('Failed to clear global slash commands:', err.message || err);
+  }
+
   if (guildIds.size === 0) {
     await rest.put(Routes.applicationCommands(clientId), { body: allCommands });
     console.log(`Registered global slash commands: ${names} (can take up to ~1 hour to appear)`);
@@ -1323,14 +1331,6 @@ async function registerCommands(readyClient) {
         err.message || err
       );
     }
-  }
-
-  // Also sync global so commands appear even if guild cache was wrong.
-  try {
-    await rest.put(Routes.applicationCommands(clientId), { body: allCommands });
-    console.log(`Also registered global slash commands: ${names}`);
-  } catch (err) {
-    console.error('Failed to register global slash commands:', err.message || err);
   }
 }
 

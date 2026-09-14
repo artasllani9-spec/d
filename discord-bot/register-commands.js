@@ -23,20 +23,26 @@ async function main() {
   const rest = new REST({ version: '10' }).setToken(token);
   const names = allCommands.map((cmd) => `/${cmd.name}`).join(', ');
 
-  if (guildId) {
-    await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-      body: allCommands,
-    });
-    console.log(`Registered guild commands (${guildId}): ${names}`);
-    const listed = await rest.get(Routes.applicationGuildCommands(clientId, guildId));
-    console.log(
-      'Verified:',
-      (Array.isArray(listed) ? listed : []).map((cmd) => `/${cmd.name}`).join(', ')
-    );
+  // Remove globals so Discord doesn't show each command twice.
+  await rest.put(Routes.applicationCommands(clientId), { body: [] });
+  console.log('Cleared global slash commands.');
+
+  if (!guildId) {
+    await rest.put(Routes.applicationCommands(clientId), { body: allCommands });
+    console.log(`No DISCORD_GUILD_ID set — registered global commands: ${names}`);
+    return;
   }
 
-  await rest.put(Routes.applicationCommands(clientId), { body: allCommands });
-  console.log(`Registered global commands: ${names}`);
+  await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+    body: allCommands,
+  });
+  console.log(`Registered guild commands (${guildId}): ${names}`);
+
+  const listed = await rest.get(Routes.applicationGuildCommands(clientId, guildId));
+  console.log(
+    'Verified:',
+    (Array.isArray(listed) ? listed : []).map((cmd) => `/${cmd.name}`).join(', ')
+  );
 }
 
 main().catch((err) => {
