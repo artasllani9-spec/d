@@ -31,9 +31,10 @@
     "bcp": "Black-Chested Pheasant",
     "gp": "Giant Panda",
     "rr": "Rainbow Rattle",
-    "bd": "Bat Dragon"
+    "bd": "Bat Dragon",
+    "hassan": "Goat"
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1789427154969
+  "updatedAt": 1789427178642
 }
