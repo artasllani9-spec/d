@@ -1256,7 +1256,7 @@ async function registerCommands(readyClient) {
   }
 }
 
-const BOT_BUILD = 'autoreact-optional-channel-20260914';
+const BOT_BUILD = 'autoreact-fix-zombie-session-20260914';
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
@@ -1930,7 +1930,16 @@ if (process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_S
     });
 }
 
-client.login(token).catch((err) => {
-  console.error('Failed to log in. Check your bot token.', err.message);
-  process.exit(1);
-});
+// Only log in when this file is the process entrypoint (never when required by another script).
+if (require.main === module && process.env.DISCORD_SKIP_LOGIN !== '1') {
+  client.login(token).catch((err) => {
+    console.error('Failed to log in. Check your bot token.', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  allCommands,
+  registerCommands,
+  BOT_BUILD,
+};
