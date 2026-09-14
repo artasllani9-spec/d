@@ -1047,20 +1047,6 @@ const unstickCommand = new SlashCommandBuilder()
 const autoreactCommand = new SlashCommandBuilder()
   .setName('autoreact')
   .setDescription('Auto-react to every message in a channel with an emoji')
-  .addChannelOption((option) =>
-    option
-      .setName('channel')
-      .setDescription('Channel to auto-react in')
-      .addChannelTypes(
-        ChannelType.GuildText,
-        ChannelType.GuildAnnouncement,
-        ChannelType.GuildForum,
-        ChannelType.PublicThread,
-        ChannelType.PrivateThread,
-        ChannelType.AnnouncementThread
-      )
-      .setRequired(true)
-  )
   .addStringOption((option) =>
     option
       .setName('emoji')
@@ -1079,15 +1065,10 @@ const autoreactCommand = new SlashCommandBuilder()
       .setDescription('Optional third emoji')
       .setRequired(false)
   )
-  .toJSON();
-
-const autoreactOffCommand = new SlashCommandBuilder()
-  .setName('autoreactoff')
-  .setDescription('Stop auto-reacting in a channel')
   .addChannelOption((option) =>
     option
       .setName('channel')
-      .setDescription('Channel to stop auto-reacting in')
+      .setDescription('Channel to auto-react in (defaults to this channel)')
       .addChannelTypes(
         ChannelType.GuildText,
         ChannelType.GuildAnnouncement,
@@ -1096,7 +1077,26 @@ const autoreactOffCommand = new SlashCommandBuilder()
         ChannelType.PrivateThread,
         ChannelType.AnnouncementThread
       )
-      .setRequired(true)
+      .setRequired(false)
+  )
+  .toJSON();
+
+const autoreactOffCommand = new SlashCommandBuilder()
+  .setName('autoreactoff')
+  .setDescription('Stop auto-reacting in a channel')
+  .addChannelOption((option) =>
+    option
+      .setName('channel')
+      .setDescription('Channel to stop auto-reacting in (defaults to this channel)')
+      .addChannelTypes(
+        ChannelType.GuildText,
+        ChannelType.GuildAnnouncement,
+        ChannelType.GuildForum,
+        ChannelType.PublicThread,
+        ChannelType.PrivateThread,
+        ChannelType.AnnouncementThread
+      )
+      .setRequired(false)
   )
   .toJSON();
 
@@ -1256,12 +1256,15 @@ async function registerCommands(readyClient) {
   }
 }
 
+const BOT_BUILD = 'autoreact-optional-channel-20260914';
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`valuedex bot online as ${readyClient.user.tag}`);
+  console.log(`Bot build: ${BOT_BUILD}`);
   console.log(`Value update channel ID: ${VALUE_UPDATE_CHANNEL_ID}`);
 
   // Register commands first so slash commands recover even if sync is slow.
@@ -1317,7 +1320,71 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   if (!interaction.isChatInputCommand()) return;
 
+  console.log(`Slash command received: /${interaction.commandName} [${BOT_BUILD}]`);
+
   try {
+    // Handle autoreact first so Discord always gets a fast ACK.
+    if (interaction.commandName === 'autoreact') {
+      await interaction.deferReply({ ephemeral: true });
+
+      if (!canAdminister(interaction)) {
+        await interaction.editReply({
+          content: 'You need Administrator permission to use this command.',
+        });
+        return;
+      }
+
+      const channel = interaction.options.getChannel('channel') || interaction.channel;
+      const { emojis, labels } = collectAutoreactEmojis(interaction);
+
+      if (!canAutoReactInChannel(channel)) {
+        await interaction.editReply({
+          content: 'Pick a text channel for auto-react, or run this in a text channel.',
+        });
+        return;
+      }
+
+      if (!emojis.length) {
+        await interaction.editReply({
+          content: 'Provide at least one valid emoji (example: ✅ or a custom emoji).',
+        });
+        return;
+      }
+
+      autoReactByChannel.set(String(channel.id), emojis);
+      await interaction.editReply({
+        content: `Auto-react enabled in <#${channel.id}>. Every new message will get: ${labels.join(' ')}`,
+      });
+      return;
+    }
+
+    if (interaction.commandName === 'autoreactoff') {
+      await interaction.deferReply({ ephemeral: true });
+
+      if (!canAdminister(interaction)) {
+        await interaction.editReply({
+          content: 'You need Administrator permission to use this command.',
+        });
+        return;
+      }
+
+      const channel = interaction.options.getChannel('channel') || interaction.channel;
+      if (!channel?.id) {
+        await interaction.editReply({
+          content: 'Pick a channel, or run this in a text channel.',
+        });
+        return;
+      }
+
+      const existed = autoReactByChannel.delete(String(channel.id));
+      await interaction.editReply({
+        content: existed
+          ? `Auto-react disabled in <#${channel.id}>.`
+          : `Auto-react was not enabled in <#${channel.id}>.`,
+      });
+      return;
+    }
+
     if (interaction.commandName === 'value') {
       const query = interaction.options.getString('item', true);
       const itemName = resolveItemName(query);
@@ -1553,61 +1620,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await interaction.reply({
         content: previous ? 'Sticky removed.' : 'No sticky message in this channel.',
         ephemeral: true,
-      });
-      return;
-    }
-
-    if (interaction.commandName === 'autoreact') {
-      await interaction.deferReply({ ephemeral: true });
-
-      if (!canAdminister(interaction)) {
-        await interaction.editReply({
-          content: 'You need Administrator permission to use this command.',
-        });
-        return;
-      }
-
-      const channel = interaction.options.getChannel('channel', true);
-      const { emojis, labels } = collectAutoreactEmojis(interaction);
-
-      if (!canAutoReactInChannel(channel)) {
-        await interaction.editReply({
-          content: 'Pick a text channel for auto-react.',
-        });
-        return;
-      }
-
-      if (!emojis.length) {
-        await interaction.editReply({
-          content: 'Provide at least one valid emoji (example: ✅ or a custom emoji).',
-        });
-        return;
-      }
-
-      autoReactByChannel.set(String(channel.id), emojis);
-      await interaction.editReply({
-        content: `Auto-react enabled in <#${channel.id}>. Every new message will get: ${labels.join(' ')}`,
-      });
-      return;
-    }
-
-    if (interaction.commandName === 'autoreactoff') {
-      await interaction.deferReply({ ephemeral: true });
-
-      if (!canAdminister(interaction)) {
-        await interaction.editReply({
-          content: 'You need Administrator permission to use this command.',
-        });
-        return;
-      }
-
-      const channel = interaction.options.getChannel('channel', true);
-      const existed = autoReactByChannel.delete(String(channel.id));
-
-      await interaction.editReply({
-        content: existed
-          ? `Auto-react disabled in <#${channel.id}>.`
-          : `Auto-react was not enabled in <#${channel.id}>.`,
       });
       return;
     }
@@ -1850,10 +1862,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
       } catch (err) {
         console.error('Failed after deleteitem reply:', err.message || err);
       }
+      return;
+    }
+
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: `No handler for \`/${interaction.commandName}\` on bot build \`${BOT_BUILD}\`. Redeploy the Railway bot service.`,
+        ephemeral: true,
+      });
     }
   } catch (err) {
     console.error('Command failed:', err);
-    const message = 'Something went wrong while running that command.';
+    const message = `Something went wrong while running that command. (\`${BOT_BUILD}\`)`;
     try {
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ content: message });
@@ -1894,11 +1914,19 @@ if (process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_S
   const port = Number(process.env.PORT) || 8080;
   http
     .createServer((req, res) => {
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('ValueDex Discord bot is running\n');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          ok: true,
+          service: 'ValueDex Discord bot',
+          build: BOT_BUILD,
+          commands: allCommands.map((cmd) => cmd.name),
+          autoreactChannels: autoReactByChannel.size,
+        })
+      );
     })
     .listen(port, () => {
-      console.log(`Bot health check listening on :${port}`);
+      console.log(`Bot health check listening on :${port} (${BOT_BUILD})`);
     });
 }
 
