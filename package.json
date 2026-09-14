@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node discord-bot/index.js",
     "start:site": "node local-server.js",
-    "start:bot": "node local-server.js",
+    "start:bot": "node discord-bot/index.js",
     "dev": "node local-server.js"
   },
   "dependencies": {

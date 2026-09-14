@@ -1256,7 +1256,7 @@ async function registerCommands(readyClient) {
   }
 }
 
-const BOT_BUILD = 'autoreact-fix-zombie-session-20260914';
+const BOT_BUILD = 'railway-always-restart-20260914';
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
