@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 const fs = require('fs');
@@ -997,13 +998,11 @@ const stickCommand = new SlashCommandBuilder()
   .addStringOption((option) =>
     option.setName('message').setDescription('Message to keep at the bottom').setRequired(true)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
 const unstickCommand = new SlashCommandBuilder()
   .setName('unstick')
   .setDescription('Remove the sticky message from this channel')
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
 const autoreactCommand = new SlashCommandBuilder()
@@ -1018,7 +1017,6 @@ const autoreactCommand = new SlashCommandBuilder()
       .setDescription('Emoji to react with (unicode or custom like <:name:id>)')
       .setRequired(true)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
 const autoreactOffCommand = new SlashCommandBuilder()
@@ -1027,7 +1025,6 @@ const autoreactOffCommand = new SlashCommandBuilder()
   .addChannelOption((option) =>
     option.setName('channel').setDescription('Channel to stop auto-reacting in').setRequired(true)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
 const embedCommand = new SlashCommandBuilder()
@@ -1165,12 +1162,24 @@ async function registerCommands(readyClient) {
       });
       const guildName = readyClient.guilds.cache.get(targetGuildId)?.name || targetGuildId;
       console.log(`Registered slash commands for guild ${guildName} (${targetGuildId}): ${names}`);
+
+      const listed = await rest.get(Routes.applicationGuildCommands(clientId, targetGuildId));
+      const listedNames = (Array.isArray(listed) ? listed : []).map((cmd) => `/${cmd.name}`).join(', ');
+      console.log(`Verified guild commands now on Discord: ${listedNames}`);
     } catch (err) {
       console.error(
         `Failed to register slash commands for guild ${targetGuildId}:`,
         err.message || err
       );
     }
+  }
+
+  // Also sync global so commands appear even if guild cache was wrong.
+  try {
+    await rest.put(Routes.applicationCommands(clientId), { body: allCommands });
+    console.log(`Also registered global slash commands: ${names}`);
+  } catch (err) {
+    console.error('Failed to register global slash commands:', err.message || err);
   }
 }
 
@@ -1187,6 +1196,13 @@ client.once(Events.ClientReady, async (readyClient) => {
     await registerCommands(readyClient);
   } catch (err) {
     console.error('Failed to register slash commands:', err.message);
+  }
+
+  if (process.env.DISCORD_REGISTER_ONLY === '1') {
+    console.log('DISCORD_REGISTER_ONLY=1 — exiting after command registration.');
+    readyClient.destroy();
+    process.exit(0);
+    return;
   }
 
   try {
