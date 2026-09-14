@@ -983,11 +983,19 @@
     align-self: flex-end;
   }
 
+  body.view-trade-page .trade-center {
+    align-self: stretch;
+    position: relative;
+  }
+
   body.post-trade-page .trade-center__icon,
-  body.trade-calculator-page .trade-center__icon,
-  body.view-trade-page .trade-center__icon {
+  body.trade-calculator-page .trade-center__icon {
     width: clamp(2.35rem, 10vw, 3.25rem);
     transform: translateY(clamp(-0.35rem, -1.5vh, -0.7rem));
+  }
+
+  body.view-trade-page .trade-center__icon {
+    width: clamp(2.35rem, 10vw, 3.25rem);
   }
 
   body.post-trade-page .trade-center__actions,
@@ -1961,10 +1969,13 @@
   }
 
   body.post-trade-page .trade-center__icon,
-  body.trade-calculator-page .trade-center__icon,
-  body.view-trade-page .trade-center__icon {
+  body.trade-calculator-page .trade-center__icon {
     width: clamp(2rem, 8vw, 2.75rem);
     transform: translateY(clamp(-0.25rem, -1vh, -0.5rem));
+  }
+
+  body.view-trade-page .trade-center__icon {
+    width: clamp(2rem, 8vw, 2.75rem);
   }
 
   body.post-trade-page .trade-action-btn,
@@ -2014,4 +2025,17 @@
   .sector:active {
     background: rgba(93, 184, 255, 0.32);
   }
+}
+
+body.view-trade-page .trade-center {
+  align-self: stretch;
+  position: relative;
+}
+
+body.view-trade-page .trade-center__icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }

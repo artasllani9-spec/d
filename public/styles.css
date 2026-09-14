@@ -2672,8 +2672,7 @@ body.trade-calculator-page .trade-action-btn--post {
   display: none;
 }
 
-body.trade-calculator-page .trade-center__icon,
-body.view-trade-page .trade-center__icon {
+body.trade-calculator-page .trade-center__icon {
   transform: translateY(-4.45rem);
 }
 
@@ -2722,6 +2721,20 @@ body.view-trade-page .trade-board {
   align-items: flex-end;
 }
 
+body.view-trade-page .trade-center {
+  align-self: stretch;
+  position: relative;
+  justify-content: flex-end;
+}
+
+body.view-trade-page .trade-center__icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 body.view-trade-page .trade-side {
   min-height: 0;
   display: flex;
@@ -2733,6 +2746,8 @@ body.view-trade-page .trade-side__label {
 }
 
 body.view-trade-page .trade-center__actions {
+  position: relative;
+  z-index: 1;
   margin-top: 0;
   flex-direction: column;
 }
@@ -6561,10 +6576,13 @@ a.trade-action-btn {
   }
 
   body.post-trade-page .trade-center__icon,
-  body.trade-calculator-page .trade-center__icon,
-  body.view-trade-page .trade-center__icon {
+  body.trade-calculator-page .trade-center__icon {
     width: clamp(2.35rem, 10vw, 3.25rem);
     transform: translateY(-0.5rem);
+  }
+
+  body.view-trade-page .trade-center__icon {
+    width: clamp(2.35rem, 10vw, 3.25rem);
   }
 
   body.post-trade-page .trade-board,
