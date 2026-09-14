@@ -16,6 +16,7 @@ const {
   REST,
   Routes,
   PermissionFlagsBits,
+  ChannelType,
 } = require('discord.js');
 
 const execFileAsync = promisify(execFile);
@@ -734,7 +735,7 @@ function canAdminister(interaction) {
 const stickyByChannel = new Map();
 /** channelId -> Promise chain so rapid messages don't race */
 const stickyRefreshChain = new Map();
-/** channelId -> emoji identifier for message.react() */
+/** channelId -> emoji identifier(s) for message.react() */
 const autoReactByChannel = new Map();
 
 function normalizeReactionEmoji(input) {
@@ -750,6 +751,44 @@ function normalizeReactionEmoji(input) {
   if (/^\d{17,20}$/.test(trimmed)) return trimmed;
 
   return trimmed;
+}
+
+function canAutoReactInChannel(channel) {
+  if (!channel?.id) return false;
+  if (typeof channel.isTextBased === 'function') {
+    try {
+      return Boolean(channel.isTextBased());
+    } catch {
+      // fall through to type check
+    }
+  }
+  return [
+    ChannelType.GuildText,
+    ChannelType.GuildAnnouncement,
+    ChannelType.PublicThread,
+    ChannelType.PrivateThread,
+    ChannelType.AnnouncementThread,
+    ChannelType.GuildForum,
+  ].includes(channel.type);
+}
+
+function collectAutoreactEmojis(interaction) {
+  const inputs = [
+    interaction.options.getString('emoji', true),
+    interaction.options.getString('emoji_2'),
+    interaction.options.getString('emoji_3'),
+  ].filter((value) => value != null && String(value).trim());
+
+  const emojis = [];
+  const labels = [];
+  for (const input of inputs) {
+    const normalized = normalizeReactionEmoji(input);
+    if (!normalized) continue;
+    if (emojis.includes(normalized)) continue;
+    emojis.push(normalized);
+    labels.push(String(input).trim());
+  }
+  return { emojis, labels };
 }
 
 async function deleteStickyMessage(channel, messageId) {
@@ -1009,13 +1048,36 @@ const autoreactCommand = new SlashCommandBuilder()
   .setName('autoreact')
   .setDescription('Auto-react to every message in a channel with an emoji')
   .addChannelOption((option) =>
-    option.setName('channel').setDescription('Channel to auto-react in').setRequired(true)
+    option
+      .setName('channel')
+      .setDescription('Channel to auto-react in')
+      .addChannelTypes(
+        ChannelType.GuildText,
+        ChannelType.GuildAnnouncement,
+        ChannelType.GuildForum,
+        ChannelType.PublicThread,
+        ChannelType.PrivateThread,
+        ChannelType.AnnouncementThread
+      )
+      .setRequired(true)
   )
   .addStringOption((option) =>
     option
       .setName('emoji')
-      .setDescription('Emoji to react with (unicode or custom like <:name:id>)')
+      .setDescription('Primary emoji to react with')
       .setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('emoji_2')
+      .setDescription('Optional second emoji')
+      .setRequired(false)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('emoji_3')
+      .setDescription('Optional third emoji')
+      .setRequired(false)
   )
   .toJSON();
 
@@ -1023,7 +1085,18 @@ const autoreactOffCommand = new SlashCommandBuilder()
   .setName('autoreactoff')
   .setDescription('Stop auto-reacting in a channel')
   .addChannelOption((option) =>
-    option.setName('channel').setDescription('Channel to stop auto-reacting in').setRequired(true)
+    option
+      .setName('channel')
+      .setDescription('Channel to stop auto-reacting in')
+      .addChannelTypes(
+        ChannelType.GuildText,
+        ChannelType.GuildAnnouncement,
+        ChannelType.GuildForum,
+        ChannelType.PublicThread,
+        ChannelType.PrivateThread,
+        ChannelType.AnnouncementThread
+      )
+      .setRequired(true)
   )
   .toJSON();
 
@@ -1485,59 +1558,56 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.commandName === 'autoreact') {
+      await interaction.deferReply({ ephemeral: true });
+
       if (!canAdminister(interaction)) {
-        await interaction.reply({
+        await interaction.editReply({
           content: 'You need Administrator permission to use this command.',
-          ephemeral: true,
         });
         return;
       }
 
       const channel = interaction.options.getChannel('channel', true);
-      const emojiInput = interaction.options.getString('emoji', true);
-      const emoji = normalizeReactionEmoji(emojiInput);
+      const { emojis, labels } = collectAutoreactEmojis(interaction);
 
-      if (!channel || typeof channel.isTextBased !== 'function' || !channel.isTextBased()) {
-        await interaction.reply({
+      if (!canAutoReactInChannel(channel)) {
+        await interaction.editReply({
           content: 'Pick a text channel for auto-react.',
-          ephemeral: true,
         });
         return;
       }
 
-      if (!emoji) {
-        await interaction.reply({
-          content: 'Provide a valid emoji (example: ✅ or a custom emoji).',
-          ephemeral: true,
+      if (!emojis.length) {
+        await interaction.editReply({
+          content: 'Provide at least one valid emoji (example: ✅ or a custom emoji).',
         });
         return;
       }
 
-      autoReactByChannel.set(channel.id, emoji);
-      await interaction.reply({
-        content: `Auto-react enabled in ${channel}. Every new message will get ${emojiInput}.`,
-        ephemeral: true,
+      autoReactByChannel.set(String(channel.id), emojis);
+      await interaction.editReply({
+        content: `Auto-react enabled in <#${channel.id}>. Every new message will get: ${labels.join(' ')}`,
       });
       return;
     }
 
     if (interaction.commandName === 'autoreactoff') {
+      await interaction.deferReply({ ephemeral: true });
+
       if (!canAdminister(interaction)) {
-        await interaction.reply({
+        await interaction.editReply({
           content: 'You need Administrator permission to use this command.',
-          ephemeral: true,
         });
         return;
       }
 
       const channel = interaction.options.getChannel('channel', true);
-      const existed = autoReactByChannel.delete(channel.id);
+      const existed = autoReactByChannel.delete(String(channel.id));
 
-      await interaction.reply({
+      await interaction.editReply({
         content: existed
-          ? `Auto-react disabled in ${channel}.`
-          : `Auto-react was not enabled in ${channel}.`,
-        ephemeral: true,
+          ? `Auto-react disabled in <#${channel.id}>.`
+          : `Auto-react was not enabled in <#${channel.id}>.`,
       });
       return;
     }
@@ -1800,12 +1870,14 @@ client.on(Events.MessageCreate, async (message) => {
   try {
     if (!message.guild) return;
 
-    const autoEmoji = autoReactByChannel.get(message.channel.id);
-    if (autoEmoji) {
-      try {
-        await message.react(autoEmoji);
-      } catch (err) {
-        console.error('Autoreact failed:', err.message || err);
+    const autoEmojis = autoReactByChannel.get(message.channel.id);
+    if (Array.isArray(autoEmojis) && autoEmojis.length) {
+      for (const emoji of autoEmojis) {
+        try {
+          await message.react(emoji);
+        } catch (err) {
+          console.error('Autoreact failed:', err.message || err);
+        }
       }
     }
 
