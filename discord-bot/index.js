@@ -1274,7 +1274,61 @@ const deleteItemCommand = new SlashCommandBuilder()
   )
   .toJSON();
 
+const helpCommand = new SlashCommandBuilder()
+  .setName('help')
+  .setDescription('Show all ValueDex bot commands and what they do')
+  .toJSON();
+
+const HELP_SECTIONS = [
+  {
+    name: 'Values',
+    lines: [
+      '`/value` — Show USD value for a pet or item',
+      '`/editpetvalue` — Edit FR / NFR / MFR values for a pet *(editor)*',
+      '`/edititemvalue` — Edit USD value for a non-pet item *(editor)*',
+      '`/acronymadd` — Add a search acronym (example: FD) *(editor)*',
+      '`/addpet` — Add a custom pet with values *(editor)*',
+      '`/additem` — Add a custom non-pet item *(editor)*',
+      '`/deletepet` — Delete a custom pet *(editor)*',
+      '`/deleteitem` — Delete a custom item *(editor)*',
+    ],
+  },
+  {
+    name: 'Chat tools',
+    lines: [
+      '`/say` — Make the bot send a plain message *(admin)*',
+      '`/embed` — Make the bot send an embed *(admin)*',
+      '`/stick` — Keep a message stuck at the bottom of this channel *(admin)*',
+      '`/unstick` — Remove the sticky message *(admin)*',
+      '`/autoreact` — Auto-react to every message (optional emoji_2 / emoji_3) *(admin)*',
+      '`/autoreactoff` — Stop auto-reacting in a channel *(admin)*',
+    ],
+  },
+  {
+    name: 'Help',
+    lines: ['`/help` — Show this command list'],
+  },
+];
+
+function buildHelpEmbed() {
+  const embed = new EmbedBuilder()
+    .setColor(0x1e64c8)
+    .setTitle('ValueDex Commands')
+    .setDescription('Slash commands for values, chat tools, and server helpers.')
+    .setFooter({ text: 'ValueDex' });
+
+  for (const section of HELP_SECTIONS) {
+    embed.addFields({
+      name: section.name,
+      value: section.lines.join('\n'),
+    });
+  }
+
+  return embed;
+}
+
 const allCommands = [
+  helpCommand,
   valueCommand,
   editPetValueCommand,
   editItemValueCommand,
@@ -1401,6 +1455,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
   console.log(`Slash command received: /${interaction.commandName} [${BOT_BUILD}]`);
 
   try {
+    if (interaction.commandName === 'help') {
+      await interaction.reply({ embeds: [buildHelpEmbed()], ephemeral: true });
+      return;
+    }
+
     // Handle autoreact first so Discord always gets a fast ACK.
     if (interaction.commandName === 'autoreact') {
       await interaction.deferReply({ ephemeral: true });
