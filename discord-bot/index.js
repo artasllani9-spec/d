@@ -729,6 +729,51 @@ function canAdminister(interaction) {
   return Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.Administrator));
 }
 
+/** channelId -> { content, messageId } */
+const stickyByChannel = new Map();
+/** channelId -> Promise chain so rapid messages don't race */
+const stickyRefreshChain = new Map();
+
+async function deleteStickyMessage(channel, messageId) {
+  if (!messageId) return;
+  try {
+    const existing = await channel.messages.fetch(messageId);
+    await existing.delete();
+  } catch {
+    // Already gone or missing permissions — ignore.
+  }
+}
+
+async function postStickyMessage(channel, content) {
+  const sent = await channel.send({ content });
+  stickyByChannel.set(channel.id, { content, messageId: sent.id });
+  return sent;
+}
+
+async function refreshStickyForChannel(channel) {
+  const state = stickyByChannel.get(channel.id);
+  if (!state?.content || !channel?.isTextBased?.()) return;
+
+  const previous = stickyRefreshChain.get(channel.id) || Promise.resolve();
+  const next = previous
+    .catch(() => {})
+    .then(async () => {
+      const current = stickyByChannel.get(channel.id);
+      if (!current?.content) return;
+      await deleteStickyMessage(channel, current.messageId);
+      if (!stickyByChannel.has(channel.id)) return;
+      await postStickyMessage(channel, current.content);
+    })
+    .finally(() => {
+      if (stickyRefreshChain.get(channel.id) === next) {
+        stickyRefreshChain.delete(channel.id);
+      }
+    });
+
+  stickyRefreshChain.set(channel.id, next);
+  await next;
+}
+
 function parseEmbedColor(input) {
   if (!input) return 0x1e64c8;
   const cleaned = String(input).trim().replace(/^#/, '');
@@ -929,6 +974,21 @@ const sayCommand = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
+const stickCommand = new SlashCommandBuilder()
+  .setName('stick')
+  .setDescription('Keep a message stuck as the newest in this channel')
+  .addStringOption((option) =>
+    option.setName('message').setDescription('Message to keep at the bottom').setRequired(true)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .toJSON();
+
+const unstickCommand = new SlashCommandBuilder()
+  .setName('unstick')
+  .setDescription('Remove the sticky message from this channel')
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .toJSON();
+
 const embedCommand = new SlashCommandBuilder()
   .setName('embed')
   .setDescription('Make the bot send an embed')
@@ -1031,6 +1091,8 @@ const allCommands = [
   editItemValueCommand,
   acronymAddCommand,
   sayCommand,
+  stickCommand,
+  unstickCommand,
   embedCommand,
   addPetCommand,
   addItemCommand,
@@ -1070,7 +1132,7 @@ async function registerCommands(readyClient) {
 }
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
 client.once(Events.ClientReady, async (readyClient) => {
@@ -1298,6 +1360,68 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       await interaction.channel.send({ content: message });
       await interaction.reply({ content: 'Sent.', ephemeral: true });
+      return;
+    }
+
+    if (interaction.commandName === 'stick') {
+      if (!canAdminister(interaction)) {
+        await interaction.reply({
+          content: 'You need Administrator permission to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (!interaction.channel || !interaction.channel.isTextBased()) {
+        await interaction.reply({
+          content: 'This command can only be used in a text channel.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const message = interaction.options.getString('message', true);
+      const previous = stickyByChannel.get(interaction.channel.id);
+      if (previous?.messageId) {
+        await deleteStickyMessage(interaction.channel, previous.messageId);
+      }
+
+      stickyByChannel.set(interaction.channel.id, { content: message, messageId: null });
+      await postStickyMessage(interaction.channel, message);
+      await interaction.reply({
+        content: 'Sticky set. It will stay as the newest message in this channel.',
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (interaction.commandName === 'unstick') {
+      if (!canAdminister(interaction)) {
+        await interaction.reply({
+          content: 'You need Administrator permission to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (!interaction.channel || !interaction.channel.isTextBased()) {
+        await interaction.reply({
+          content: 'This command can only be used in a text channel.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const previous = stickyByChannel.get(interaction.channel.id);
+      stickyByChannel.delete(interaction.channel.id);
+      if (previous?.messageId) {
+        await deleteStickyMessage(interaction.channel, previous.messageId);
+      }
+
+      await interaction.reply({
+        content: previous ? 'Sticky removed.' : 'No sticky message in this channel.',
+        ephemeral: true,
+      });
       return;
     }
 
@@ -1552,6 +1676,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } catch {
       // ignore follow-up failures
     }
+  }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+  try {
+    if (!message.guild || message.author.bot) return;
+    if (!stickyByChannel.has(message.channel.id)) return;
+    await refreshStickyForChannel(message.channel);
+  } catch (err) {
+    console.error('Sticky refresh failed:', err.message || err);
   }
 });
 
