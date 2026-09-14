@@ -733,6 +733,23 @@ function canAdminister(interaction) {
 const stickyByChannel = new Map();
 /** channelId -> Promise chain so rapid messages don't race */
 const stickyRefreshChain = new Map();
+/** channelId -> emoji identifier for message.react() */
+const autoReactByChannel = new Map();
+
+function normalizeReactionEmoji(input) {
+  const trimmed = String(input || '').trim();
+  if (!trimmed) return null;
+
+  const customMention = trimmed.match(/^<a?:([a-zA-Z0-9_]+):(\d+)>$/);
+  if (customMention) return customMention[2];
+
+  const nameId = trimmed.match(/^([a-zA-Z0-9_]+):(\d+)$/);
+  if (nameId) return nameId[2];
+
+  if (/^\d{17,20}$/.test(trimmed)) return trimmed;
+
+  return trimmed;
+}
 
 async function deleteStickyMessage(channel, messageId) {
   if (!messageId) return;
@@ -989,6 +1006,30 @@ const unstickCommand = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
+const autoreactCommand = new SlashCommandBuilder()
+  .setName('autoreact')
+  .setDescription('Auto-react to every message in a channel with an emoji')
+  .addChannelOption((option) =>
+    option.setName('channel').setDescription('Channel to auto-react in').setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('emoji')
+      .setDescription('Emoji to react with (unicode or custom like <:name:id>)')
+      .setRequired(true)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .toJSON();
+
+const autoreactOffCommand = new SlashCommandBuilder()
+  .setName('autoreactoff')
+  .setDescription('Stop auto-reacting in a channel')
+  .addChannelOption((option) =>
+    option.setName('channel').setDescription('Channel to stop auto-reacting in').setRequired(true)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .toJSON();
+
 const embedCommand = new SlashCommandBuilder()
   .setName('embed')
   .setDescription('Make the bot send an embed')
@@ -1093,6 +1134,8 @@ const allCommands = [
   sayCommand,
   stickCommand,
   unstickCommand,
+  autoreactCommand,
+  autoreactOffCommand,
   embedCommand,
   addPetCommand,
   addItemCommand,
@@ -1102,33 +1145,33 @@ const allCommands = [
 
 async function registerCommands(readyClient) {
   const rest = new REST({ version: '10' }).setToken(token);
+  const names = allCommands.map((cmd) => `/${cmd.name}`).join(', ');
 
-  let targetGuildId = guildId || null;
-  if (targetGuildId && !readyClient.guilds.cache.has(targetGuildId)) {
-    console.warn(
-      `DISCORD_GUILD_ID ${targetGuildId} is not a server this bot is in. Falling back to first joined server.`
-    );
-    targetGuildId = null;
-  }
-  if (!targetGuildId) {
-    targetGuildId = readyClient.guilds.cache.first()?.id || null;
-  }
+  const guildIds = new Set(
+    readyClient.guilds.cache.map((guild) => guild.id).filter(Boolean)
+  );
+  if (guildId) guildIds.add(String(guildId));
 
-  if (targetGuildId) {
-    await rest.put(Routes.applicationGuildCommands(clientId, targetGuildId), {
-      body: allCommands,
-    });
-    const guildName = readyClient.guilds.cache.get(targetGuildId)?.name || targetGuildId;
-    const names = allCommands.map((cmd) => `/${cmd.name}`).join(', ');
-    console.log(`Registered slash commands for guild ${guildName} (${targetGuildId}): ${names}`);
+  if (guildIds.size === 0) {
+    await rest.put(Routes.applicationCommands(clientId), { body: allCommands });
+    console.log(`Registered global slash commands: ${names} (can take up to ~1 hour to appear)`);
     return;
   }
 
-  await rest.put(Routes.applicationCommands(clientId), {
-    body: allCommands,
-  });
-  const names = allCommands.map((cmd) => `/${cmd.name}`).join(', ');
-  console.log(`Registered global slash commands: ${names} (can take up to ~1 hour to appear)`);
+  for (const targetGuildId of guildIds) {
+    try {
+      await rest.put(Routes.applicationGuildCommands(clientId, targetGuildId), {
+        body: allCommands,
+      });
+      const guildName = readyClient.guilds.cache.get(targetGuildId)?.name || targetGuildId;
+      console.log(`Registered slash commands for guild ${guildName} (${targetGuildId}): ${names}`);
+    } catch (err) {
+      console.error(
+        `Failed to register slash commands for guild ${targetGuildId}:`,
+        err.message || err
+      );
+    }
+  }
 }
 
 const client = new Client({
@@ -1425,6 +1468,64 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.commandName === 'autoreact') {
+      if (!canAdminister(interaction)) {
+        await interaction.reply({
+          content: 'You need Administrator permission to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const channel = interaction.options.getChannel('channel', true);
+      const emojiInput = interaction.options.getString('emoji', true);
+      const emoji = normalizeReactionEmoji(emojiInput);
+
+      if (!channel || typeof channel.isTextBased !== 'function' || !channel.isTextBased()) {
+        await interaction.reply({
+          content: 'Pick a text channel for auto-react.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (!emoji) {
+        await interaction.reply({
+          content: 'Provide a valid emoji (example: ✅ or a custom emoji).',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      autoReactByChannel.set(channel.id, emoji);
+      await interaction.reply({
+        content: `Auto-react enabled in ${channel}. Every new message will get ${emojiInput}.`,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (interaction.commandName === 'autoreactoff') {
+      if (!canAdminister(interaction)) {
+        await interaction.reply({
+          content: 'You need Administrator permission to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const channel = interaction.options.getChannel('channel', true);
+      const existed = autoReactByChannel.delete(channel.id);
+
+      await interaction.reply({
+        content: existed
+          ? `Auto-react disabled in ${channel}.`
+          : `Auto-react was not enabled in ${channel}.`,
+        ephemeral: true,
+      });
+      return;
+    }
+
     if (interaction.commandName === 'embed') {
       if (!canAdminister(interaction)) {
         await interaction.reply({
@@ -1681,11 +1782,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.on(Events.MessageCreate, async (message) => {
   try {
-    if (!message.guild || message.author.bot) return;
+    if (!message.guild) return;
+
+    const autoEmoji = autoReactByChannel.get(message.channel.id);
+    if (autoEmoji) {
+      try {
+        await message.react(autoEmoji);
+      } catch (err) {
+        console.error('Autoreact failed:', err.message || err);
+      }
+    }
+
+    if (message.author.bot) return;
     if (!stickyByChannel.has(message.channel.id)) return;
     await refreshStickyForChannel(message.channel);
   } catch (err) {
-    console.error('Sticky refresh failed:', err.message || err);
+    console.error('MessageCreate handler failed:', err.message || err);
   }
 });
 
