@@ -23,13 +23,24 @@
   /** @type {'accept' | 'delete' | null} */
   let pendingConfirmAction = null;
 
-  const yourItems = viewTrade.yourSide || [];
-  const theirItems = viewTrade.theirSide || [];
+  let yourItems = Array.isArray(viewTrade.yourSide) ? viewTrade.yourSide.slice() : [];
+  let theirItems = Array.isArray(viewTrade.theirSide) ? viewTrade.theirSide.slice() : [];
 
-  yoursGrid.innerHTML = buildReadOnlyTradeGridHTML(yourItems);
-  theirsGrid.innerHTML = buildReadOnlyTradeGridHTML(theirItems);
-  yoursGrid.dataset.capacity = String(getViewTradeGridCapacity(yourItems.length));
-  theirsGrid.dataset.capacity = String(getViewTradeGridCapacity(theirItems.length));
+  function updateViewTradeValues() {
+    if (typeof updateTradeValueCompare !== 'function' || typeof sumTradeSideUsd !== 'function') return;
+    updateTradeValueCompare(sumTradeSideUsd(yourItems), sumTradeSideUsd(theirItems));
+  }
+
+  function renderTradeGrids() {
+    yoursGrid.innerHTML = buildReadOnlyTradeGridHTML(yourItems);
+    theirsGrid.innerHTML = buildReadOnlyTradeGridHTML(theirItems);
+    yoursGrid.dataset.capacity = String(getViewTradeGridCapacity(yourItems.length));
+    theirsGrid.dataset.capacity = String(getViewTradeGridCapacity(theirItems.length));
+    updateViewTradeValues();
+  }
+
+  renderTradeGrids();
+  window.addEventListener('valueoverridesready', updateViewTradeValues);
 
   if (offererEl) {
     offererEl.textContent = viewTrade.offerer || '—';
@@ -48,6 +59,19 @@
       offererEl.style.textDecoration = 'none';
     }
   }
+
+  const offererName = (viewTrade.offerer && viewTrade.offerer !== '—') ? viewTrade.offerer : 'Their Side';
+  const theirsLabelEl = document.getElementById('view-trade-theirs-label');
+  const theirsValueLabelEl = document.getElementById('trade-value-theirs-label');
+  if (theirsLabelEl) {
+    theirsLabelEl.textContent = offererName;
+    theirsLabelEl.classList.toggle('trade-side__label--name', offererName !== 'Their Side');
+  }
+  if (theirsValueLabelEl) {
+    theirsValueLabelEl.textContent = offererName;
+    theirsValueLabelEl.classList.toggle('trade-value-compare__label--name', offererName !== 'Their Side');
+  }
+  theirsGrid.setAttribute('aria-label', offererName);
 
   if (offererAvatarEl) {
     const avatarUrl = viewTrade.offererAvatar || getOffererAvatarUrl(viewTrade);
@@ -132,37 +156,40 @@
   });
 
   if (acceptBtn || deleteBtn) {
+    await ensureAuthUser();
     const postedTrade = viewTrade.tradeId ? getPostedTradeById(viewTrade.tradeId) : null;
+    const permTrade = postedTrade || viewTrade;
+    const isOpenTrade = Boolean(viewTrade.source !== 'accepted' && (postedTrade || viewTrade.tradeId));
+    const isPoster = Boolean(isOpenTrade && typeof isOwnPostedTrade === 'function' && isOwnPostedTrade(permTrade));
+    const isMod = Boolean(typeof isAuthModerator === 'function' && isAuthModerator());
+
+    // Poster: delete only. Regular viewer: accept only. Site mod: both (unless they posted it).
     const canAccept = Boolean(
-      postedTrade
-      && viewTrade.source !== 'accepted'
-      && canUserAcceptTrade(postedTrade),
+      isOpenTrade
+      && !isPoster
+      && (typeof canUserAcceptTrade !== 'function' || canUserAcceptTrade(permTrade)),
     );
     const canDelete = Boolean(
-      postedTrade
-      && viewTrade.source !== 'accepted'
-      && canUserDeleteTrade(postedTrade),
+      isOpenTrade
+      && (isPoster || isMod)
+      && (typeof canUserDeleteTrade !== 'function' || canUserDeleteTrade(permTrade)),
     );
 
     if (acceptBtn) {
+      acceptBtn.hidden = !canAccept;
       if (canAccept) {
-        acceptBtn.hidden = false;
         acceptBtn.addEventListener('click', () => {
           openTradeConfirm('accept');
         });
-      } else {
-        acceptBtn.hidden = true;
       }
     }
 
     if (deleteBtn) {
+      deleteBtn.hidden = !canDelete;
       if (canDelete) {
-        deleteBtn.hidden = false;
         deleteBtn.addEventListener('click', () => {
           openTradeConfirm('delete');
         });
-      } else {
-        deleteBtn.hidden = true;
       }
     }
   }

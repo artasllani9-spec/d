@@ -279,12 +279,12 @@ function canUserAcceptTrade(trade) {
 
 function isOwnPostedTrade(trade) {
   const authUser = getAuthUser();
+  const userId = authUser && authUser.id ? String(authUser.id) : getCurrentUserId();
   return Boolean(
-    authUser &&
-    authUser.id &&
+    userId &&
     trade &&
     trade.postedBy &&
-    String(trade.postedBy) === String(authUser.id),
+    String(trade.postedBy) === String(userId),
   );
 }
 
