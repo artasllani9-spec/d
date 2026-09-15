@@ -1220,34 +1220,44 @@
   body.post-trade-page .trade-picker__pet-popout,
   body.trade-calculator-page .trade-picker__pet-popout,
   body.trading-page .trade-picker__pet-popout {
-    padding: 0.65rem;
+    padding: 0.55rem;
+    align-items: center;
   }
 
   body.post-trade-page .trade-picker__pet-popout-card,
   body.trade-calculator-page .trade-picker__pet-popout-card,
   body.trading-page .trade-picker__pet-popout-card {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "preview"
+      "name"
+      "qty"
+      "potions";
     align-items: center;
+    justify-items: center;
     min-width: 0;
-    width: min(100%, 18rem);
+    width: min(100%, 17.25rem);
     min-height: 0;
-    padding: 2.55rem 0.85rem 0.55rem;
-    gap: 0.45rem;
+    padding: 2.4rem 0.7rem 0.7rem;
+    gap: 0.4rem;
+    border-radius: 14px;
   }
 
   body.post-trade-page .trade-picker__pet-actions,
   body.trade-calculator-page .trade-picker__pet-actions,
   body.trading-page .trade-picker__pet-actions {
     position: absolute;
-    top: 0.5rem;
-    left: 0.55rem;
-    right: 0.55rem;
+    top: 0.45rem;
+    left: 0.5rem;
+    right: 0.5rem;
     bottom: auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0;
     width: auto;
+    z-index: 2;
   }
 
   body.post-trade-page .trade-picker__pet-cancel,
@@ -1256,8 +1266,8 @@
   body.trade-calculator-page .trade-picker__pet-confirm,
   body.trading-page .trade-picker__pet-cancel,
   body.trading-page .trade-picker__pet-confirm {
-    width: 2.15rem;
-    height: 2.15rem;
+    width: 2rem;
+    height: 2rem;
     border-radius: 8px;
   }
 
@@ -1267,37 +1277,79 @@
   body.trade-calculator-page .trade-picker__pet-cancel svg,
   body.trading-page .trade-picker__pet-confirm svg,
   body.trading-page .trade-picker__pet-cancel svg {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1rem;
+    height: 1rem;
   }
 
   body.post-trade-page .trade-picker__pet-bar-media,
   body.trade-calculator-page .trade-picker__pet-bar-media,
-  body.trading-page .trade-picker__pet-bar-media {
-    width: 100%;
-    min-width: 0;
-    gap: 0.35rem;
+  body.trading-page .trade-picker__pet-bar-media,
+  body.post-trade-page .trade-picker__pet-bar-info,
+  body.trade-calculator-page .trade-picker__pet-bar-info,
+  body.trading-page .trade-picker__pet-bar-info {
+    display: contents;
   }
 
   body.post-trade-page .trade-picker__pet-bar-preview,
   body.trade-calculator-page .trade-picker__pet-bar-preview,
   body.trading-page .trade-picker__pet-bar-preview {
-    width: 4.75rem;
-    height: 4.75rem;
+    grid-area: preview;
+    position: relative;
+    width: 6.75rem;
+    height: 6.75rem;
+    margin: 0;
+  }
+
+  body.post-trade-page .trade-picker__pet-bar-badges,
+  body.trade-calculator-page .trade-picker__pet-bar-badges,
+  body.trading-page .trade-picker__pet-bar-badges {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    gap: 0.14rem;
+  }
+
+  body.post-trade-page .trade-picker__pet-bar-badges .trade-slot__badge,
+  body.trade-calculator-page .trade-picker__pet-bar-badges .trade-slot__badge,
+  body.trading-page .trade-picker__pet-bar-badges .trade-slot__badge {
+    width: 1.15rem;
+    height: 1.15rem;
+    font-size: 0.68rem;
+  }
+
+  body.post-trade-page .trade-picker__pet-bar-name,
+  body.trade-calculator-page .trade-picker__pet-bar-name,
+  body.trading-page .trade-picker__pet-bar-name {
+    grid-area: name;
+    width: 100%;
+    max-width: 15rem;
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    text-align: center;
   }
 
   body.post-trade-page .trade-picker__quantity,
   body.trade-calculator-page .trade-picker__quantity,
   body.trading-page .trade-picker__quantity {
+    grid-area: qty;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem 0.55rem;
     width: 100%;
     min-width: 0;
-    gap: 0.25rem;
+    margin: 0;
   }
 
   body.post-trade-page .trade-picker__quantity-line,
   body.trade-calculator-page .trade-picker__quantity-line,
   body.trading-page .trade-picker__quantity-line {
-    min-height: 1.35rem;
+    min-height: 0;
+    width: auto;
+    gap: 0.25rem;
   }
 
   body.post-trade-page .trade-picker__quantity-label,
@@ -1306,53 +1358,51 @@
   body.trade-calculator-page .trade-picker__quantity-value,
   body.trading-page .trade-picker__quantity-label,
   body.trading-page .trade-picker__quantity-value {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
+  }
+
+  body.post-trade-page .trade-picker__quantity-actions,
+  body.trade-calculator-page .trade-picker__quantity-actions,
+  body.trading-page .trade-picker__quantity-actions {
+    width: auto;
+    min-height: 0;
+    gap: 0.3rem;
   }
 
   body.post-trade-page .trade-picker__quantity-btn,
   body.trade-calculator-page .trade-picker__quantity-btn,
   body.trading-page .trade-picker__quantity-btn {
-    width: 2rem;
-    height: 2rem;
+    width: 1.9rem;
+    height: 1.9rem;
+    min-width: 1.9rem;
+    min-height: 1.9rem;
+    border-radius: 8px;
   }
 
   body.post-trade-page .trade-picker__quantity-btn svg,
   body.trade-calculator-page .trade-picker__quantity-btn svg,
   body.trading-page .trade-picker__quantity-btn svg {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  body.post-trade-page .trade-picker__pet-bar-info,
-  body.trade-calculator-page .trade-picker__pet-bar-info,
-  body.trading-page .trade-picker__pet-bar-info {
-    gap: 0.4rem;
-    padding-top: 0;
-    align-items: center;
-  }
-
-  body.post-trade-page .trade-picker__pet-bar-name,
-  body.trade-calculator-page .trade-picker__pet-bar-name,
-  body.trading-page .trade-picker__pet-bar-name {
-    font-size: 1.05rem;
-    text-align: center;
+    width: 0.95rem;
+    height: 0.95rem;
   }
 
   body.post-trade-page .trade-picker__potions,
   body.trade-calculator-page .trade-picker__potions,
   body.trading-page .trade-picker__potions {
-    margin-top: 0;
-    gap: 0.35rem;
+    grid-area: potions;
+    margin-top: 0.1rem;
+    gap: 0.3rem;
     justify-content: center;
+    width: 100%;
   }
 
   body.post-trade-page .trade-picker__potion,
   body.trade-calculator-page .trade-picker__potion,
   body.trading-page .trade-picker__potion {
-    width: 2.15rem;
-    height: 2.15rem;
-    min-width: 2.15rem;
-    font-size: 0.9rem;
+    width: 2.05rem;
+    height: 2.05rem;
+    min-width: 2.05rem;
+    font-size: 0.85rem;
     border-radius: 8px;
   }
 
