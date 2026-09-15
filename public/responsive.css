@@ -1613,6 +1613,11 @@
     gap: 0.75rem;
   }
 
+  body.home-page .home-hero__mark-img {
+    width: min(46%, 11.5rem);
+    max-height: min(26vh, 11.5rem);
+  }
+
   body.home-page .home-hero__brand {
     font-size: clamp(2.4rem, 11vw, 3.6rem);
     letter-spacing: 0.05em;
@@ -1935,6 +1940,11 @@
   body.home-page .home-hero {
     padding-top: calc(var(--header-h) + 0.65rem);
     padding-bottom: calc(4.25rem + var(--safe-bottom));
+  }
+
+  body.home-page .home-hero__mark-img {
+    width: min(42%, 9.5rem);
+    max-height: min(22vh, 9.5rem);
   }
 
   body.home-page .home-hero__brand {
