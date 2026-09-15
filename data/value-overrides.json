@@ -32,9 +32,10 @@
     "gp": "Giant Panda",
     "rr": "Rainbow Rattle",
     "bd": "Bat Dragon",
-    "hassan": "Goat"
+    "hassan": "Goat",
+    "ace": "Dire Wolf"
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1789476603490
+  "updatedAt": 1789505487630
 }
