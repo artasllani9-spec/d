@@ -13,6 +13,14 @@ const CACHE_DIR = path.join(process.env.TEMP || '/tmp', 'amvgg-sync');
 const CATEGORY_MAPS = {
   pets: 'PET_IMAGES',
   petwear: 'PET_WEAR_IMAGES',
+  vehicles: 'PET_IMAGES',
+  strollers: 'PET_IMAGES',
+  toys: 'PET_IMAGES',
+  food: 'PET_IMAGES',
+  gifts: 'PET_IMAGES',
+  stickers: 'PET_IMAGES',
+  houses: 'PET_IMAGES',
+  eggs: 'PET_IMAGES',
 };
 
 function decodeEntities(text) {
