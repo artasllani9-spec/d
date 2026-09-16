@@ -1100,6 +1100,14 @@ const acronymAddCommand = new SlashCommandBuilder()
   )
   .toJSON();
 
+const acronymRemoveCommand = new SlashCommandBuilder()
+  .setName('acronymremove')
+  .setDescription('Remove a search acronym')
+  .addStringOption((option) =>
+    option.setName('acronym').setDescription('Acronym to remove (example: FD)').setRequired(true)
+  )
+  .toJSON();
+
 const sayCommand = new SlashCommandBuilder()
   .setName('say')
   .setDescription('Make the bot send a message')
@@ -1287,6 +1295,7 @@ const HELP_SECTIONS = [
       '`/editpetvalue` — Edit FR / NFR / MFR values for a pet *(editor)*',
       '`/edititemvalue` — Edit USD value for a non-pet item *(editor)*',
       '`/acronymadd` — Add a search acronym (example: FD) *(editor)*',
+      '`/acronymremove` — Remove a search acronym *(editor)*',
       '`/addpet` — Add a custom pet with values *(editor)*',
       '`/additem` — Add a custom non-pet item *(editor)*',
       '`/deletepet` — Delete a custom pet *(editor)*',
@@ -1333,6 +1342,7 @@ const allCommands = [
   editPetValueCommand,
   editItemValueCommand,
   acronymAddCommand,
+  acronymRemoveCommand,
   sayCommand,
   stickCommand,
   unstickCommand,
@@ -1674,6 +1684,53 @@ client.on(Events.InteractionCreate, async (interaction) => {
       } catch (err) {
         console.error('Failed after acronym reply:', err.message || err);
       }
+      return;
+    }
+
+    if (interaction.commandName === 'acronymremove') {
+      if (!canEditValues(interaction)) {
+        await interaction.reply({
+          content: 'You need the editor role to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const acronymRaw = interaction.options.getString('acronym', true);
+      const acronym = normalizeItemKey(acronymRaw);
+      if (!acronym) {
+        await interaction.reply({
+          content: 'Acronym must include at least one letter or number.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (!overrides.acronyms || typeof overrides.acronyms !== 'object') {
+        overrides.acronyms = {};
+      }
+
+      const mapped = overrides.acronyms[acronym];
+      if (!mapped) {
+        await interaction.reply({
+          content: `No acronym **${acronym}** is saved.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      delete overrides.acronyms[acronym];
+
+      await interaction.reply({
+        content: `Acronym **${acronym}** removed (was mapped to **${mapped}**).`,
+      });
+
+      try {
+        await saveOverrides();
+      } catch (err) {
+        console.error('Failed after acronym remove reply:', err.message || err);
+      }
+      return;
     }
 
     if (interaction.commandName === 'say') {
