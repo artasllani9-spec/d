@@ -67,6 +67,19 @@
 
   let activeCategory = 'pets';
 
+  function debounce(fn, wait) {
+    let timer = null;
+    return function debounced() {
+      const ctx = this;
+      const args = arguments;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        fn.apply(ctx, args);
+      }, wait);
+    };
+  }
+
   function buildPotionBadgesHTML(potions) {
     const badges = [];
     if (potions.mega) badges.push('<span class="trade-slot__badge trade-slot__badge--mega" aria-label="Mega">M</span>');
@@ -140,7 +153,7 @@
     card.innerHTML = `
       <div class="trade-picker__pet-bar-media demand-check-pet-card__media">
         <div class="trade-picker__pet-bar-preview">
-          <img class="trade-picker__pet-bar-img" src="${item.image}" alt="${item.name}" loading="lazy">
+          <img class="trade-picker__pet-bar-img" src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" width="88" height="88">
           <div class="trade-picker__pet-bar-badges trade-slot__badges" hidden></div>
         </div>
         <div class="trade-picker__potions demand-check-pet-card__potions"${noPotions ? ' hidden' : ''}>
@@ -176,10 +189,11 @@
       ? config.items.filter((item) => matchesSearchQuery(item.name, query))
       : config.items;
 
-    grid.innerHTML = '';
-    matches.forEach((item) => {
-      grid.appendChild(createItemCard(item));
-    });
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < matches.length; i += 1) {
+      fragment.appendChild(createItemCard(matches[i]));
+    }
+    grid.replaceChildren(fragment);
 
     hint.hidden = matches.length > 0;
     hint.textContent = query ? `No ${config.emptyLabel} found` : `No ${config.emptyLabel} available`;
@@ -248,7 +262,7 @@
     }
   });
 
-  searchInput.addEventListener('input', renderItems);
+  searchInput.addEventListener('input', debounce(renderItems, 120));
 
   function bootDemandCheck() {
     if (CATEGORY_CONFIG.pets) {

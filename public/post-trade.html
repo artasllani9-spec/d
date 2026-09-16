@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260915petcard">
-  <link rel="stylesheet" href="responsive.css?v=20260915petcard">
+  <link rel="stylesheet" href="styles.css?v=20260917perf">
+  <link rel="stylesheet" href="responsive.css?v=20260917perf">
 </head>
 <body class="tos-page post-trade-page">
   <div class="tos-background" aria-hidden="true"></div>
@@ -315,11 +315,11 @@
     </div>
   </main>
 
-  <script src="pets-data.js?v=20260831amvgg"></script>
-  <script src="amvgg-usd-values.js?v=20260831eggs-usd"></script>
-  <script src="value-overrides.js?v=20260912overrides"></script>
-  <script src="trade-value-compare.js?v=20260910delta-label"></script>
-  <script src="trades.js"></script>
+  <script src="pets-data.js?v=20260917perf"></script>
+  <script src="amvgg-usd-values.js?v=20260917perf"></script>
+  <script src="value-overrides.js?v=20260917perf"></script>
+  <script src="trade-value-compare.js?v=20260917perf"></script>
+  <script src="trades.js?v=20260917perf"></script>
   <script>
     const tradePicker = document.getElementById('trade-picker');
     const tradePickerPanel = tradePicker.querySelector('.trade-picker__panel');
@@ -787,8 +787,21 @@
 
     function renderPickerItem(item) {
       return `<button type="button" class="trade-picker__item" data-item-name="${item.name}" aria-label="${item.name}">
-        <img src="${item.image}" alt="${item.name}" loading="lazy">
+        <img src="${item.image}" alt="" loading="lazy" decoding="async" width="72" height="72">
       </button>`;
+    }
+
+    function debounce(fn, wait) {
+      let timer = null;
+      return function debounced() {
+        const ctx = this;
+        const args = arguments;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          timer = null;
+          fn.apply(ctx, args);
+        }, wait);
+      };
     }
 
     function renderCategoryItems({ items, container, hint, emptyHint, noResultsHint, showAllWhenEmpty }) {
@@ -1112,7 +1125,7 @@
       showPetDetailBar(itemName, itemImage, noPotions);
     });
 
-    pickerSearch.addEventListener('input', filterPickerItems);
+    pickerSearch.addEventListener('input', debounce(filterPickerItems, 100));
 
     categoryButtons.forEach((button) => {
       button.addEventListener('click', () => {

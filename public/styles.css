@@ -3078,6 +3078,7 @@ body.view-trade-page .trade-slot--add {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   padding-bottom: 0.5rem;
+  contain: content;
 }
 
 .demand-check-pet-card.trade-picker__pet-popout-card {
@@ -3098,6 +3099,8 @@ body.view-trade-page .trade-slot--add {
   box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 140px;
 }
 
 .demand-check-pet-card__media {
@@ -4261,6 +4264,7 @@ a.trade-action-btn {
   scrollbar-width: thin;
   scrollbar-color: rgba(160, 160, 160, 0.75) rgba(15, 15, 15, 0.85);
   box-sizing: border-box;
+  contain: content;
 }
 
 .trade-picker__items::-webkit-scrollbar {
@@ -7180,6 +7184,8 @@ body.home-page .home-below {
   z-index: 2;
   background: #000;
   padding: clamp(3.25rem, 8vh, 5.5rem) clamp(1.25rem, 4vw, 3rem) clamp(2.5rem, 5vh, 4rem);
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 1200px;
 }
 
 body.home-page .home-below__inner {

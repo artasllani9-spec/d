@@ -217,8 +217,13 @@
     });
   }
 
-  fetch('/api/auth/me', { credentials: 'same-origin' })
-    .then((response) => (response.ok ? response.json() : null))
+  if (!window.__demandggAuthMePromise) {
+    window.__demandggAuthMePromise = fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null);
+  }
+
+  window.__demandggAuthMePromise
     .then(async (data) => {
       if (data && data.banned) {
         window.location.replace('banned.html');

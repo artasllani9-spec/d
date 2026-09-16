@@ -139,13 +139,57 @@
   }
 
   window.valueOverridesReady = (async function loadValueOverrides() {
+    const CACHE_KEY = 'valuedex-overrides-cache-v1';
+    const CACHE_TTL_MS = 30000;
+
+    function readSessionCache() {
+      try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.data || !parsed.savedAt) return null;
+        if (Date.now() - parsed.savedAt > CACHE_TTL_MS) return null;
+        return parsed.data;
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function writeSessionCache(data) {
+      try {
+        sessionStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ savedAt: Date.now(), data })
+        );
+      } catch (_err) {
+        /* quota / private mode */
+      }
+    }
+
     try {
-      const response = await fetch('/api/values/overrides', { cache: 'no-store' });
+      const cached = readSessionCache();
+      if (cached) {
+        applyOverrides(cached);
+        // Refresh in background without blocking UI
+        fetch('/api/values/overrides')
+          .then((response) => (response.ok ? response.json() : null))
+          .then((data) => {
+            if (!data) return;
+            writeSessionCache(data);
+            applyOverrides(data);
+            window.dispatchEvent(new Event('valueoverridesready'));
+          })
+          .catch(() => {});
+        return cached;
+      }
+
+      const response = await fetch('/api/values/overrides');
       if (!response.ok) {
         applyOverrides({ pets: {}, items: {}, acronyms: {}, customPets: {}, customItems: {} });
         return null;
       }
       const data = await response.json();
+      writeSessionCache(data);
       applyOverrides(data);
       return data;
     } catch (err) {

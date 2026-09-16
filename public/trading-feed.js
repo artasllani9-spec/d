@@ -431,7 +431,7 @@
         ),
       );
       return `<button type="button" class="trade-picker__item${selected ? ' trade-picker__item--selected' : ''}" data-item-name="${escapeHtml(item.name)}" aria-label="${escapeHtml(item.name)}" aria-pressed="${selected ? 'true' : 'false'}">
-        <img src="${escapeHtml(item.image)}" alt="" loading="lazy">
+        <img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async" width="72" height="72">
       </button>`;
     }).join('');
 
@@ -686,8 +686,13 @@
   }
 
   if (filterSearch) {
+    let filterSearchTimer = null;
     filterSearch.addEventListener('input', () => {
-      renderFilterItems();
+      if (filterSearchTimer) clearTimeout(filterSearchTimer);
+      filterSearchTimer = setTimeout(() => {
+        filterSearchTimer = null;
+        renderFilterItems();
+      }, 100);
     });
   }
 
@@ -737,9 +742,28 @@
   setAcceptedMode(showingAccepted);
   syncFilterButtonState();
   renderFeed(true);
-  setInterval(() => {
-    renderFeed(false);
-  }, 60000);
+
+  let feedPollTimer = null;
+  function startFeedPoll() {
+    if (feedPollTimer != null) return;
+    feedPollTimer = window.setInterval(() => {
+      if (document.hidden) return;
+      renderFeed(false);
+    }, 60000);
+  }
+  function stopFeedPoll() {
+    if (feedPollTimer == null) return;
+    clearInterval(feedPollTimer);
+    feedPollTimer = null;
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopFeedPoll();
+    else {
+      renderFeed(false);
+      startFeedPoll();
+    }
+  });
+  startFeedPoll();
 
   window.addEventListener('valueoverridesready', () => {
     CATEGORY_ITEMS.pets = typeof petsByUsd !== 'undefined' ? petsByUsd : CATEGORY_ITEMS.pets;

@@ -234,6 +234,7 @@
       img.width = 40;
       img.height = 40;
       img.decoding = 'async';
+      img.fetchPriority = 'low';
       img.referrerPolicy = 'no-referrer';
       img.onerror = () => {
         loginBtn.classList.remove('login-btn--avatar');
