@@ -1287,6 +1287,11 @@ const helpCommand = new SlashCommandBuilder()
   .setDescription('Show all ValueDex bot commands and what they do')
   .toJSON();
 
+const serverInfoCommand = new SlashCommandBuilder()
+  .setName('serverinfo')
+  .setDescription('Show general information about this server')
+  .toJSON();
+
 const HELP_SECTIONS = [
   {
     name: 'Values',
@@ -1314,10 +1319,78 @@ const HELP_SECTIONS = [
     ],
   },
   {
+    name: 'Server',
+    lines: ['`/serverinfo` — Show general info about this server'],
+  },
+  {
     name: 'Help',
     lines: ['`/help` — Show this command list'],
   },
 ];
+
+function formatVerificationLevel(level) {
+  const labels = {
+    0: 'None',
+    1: 'Low',
+    2: 'Medium',
+    3: 'High',
+    4: 'Very High',
+  };
+  return labels[level] || String(level);
+}
+
+async function buildServerInfoEmbed(guild) {
+  let ownerLabel = guild.ownerId ? `<@${guild.ownerId}>` : 'Unknown';
+  try {
+    const owner = await guild.fetchOwner();
+    if (owner?.user) {
+      ownerLabel = `${owner.user.tag} (<@${owner.id}>)`;
+    }
+  } catch {
+    // Keep ID mention fallback if owner fetch fails.
+  }
+
+  const textChannels = guild.channels.cache.filter(
+    (channel) =>
+      channel.type === ChannelType.GuildText ||
+      channel.type === ChannelType.GuildAnnouncement ||
+      channel.type === ChannelType.GuildForum
+  ).size;
+  const voiceChannels = guild.channels.cache.filter(
+    (channel) =>
+      channel.type === ChannelType.GuildVoice ||
+      channel.type === ChannelType.GuildStageVoice
+  ).size;
+  const categories = guild.channels.cache.filter(
+    (channel) => channel.type === ChannelType.GuildCategory
+  ).size;
+  const boosts = guild.premiumSubscriptionCount || 0;
+  const boostTier = ['None', 'Tier 1', 'Tier 2', 'Tier 3'];
+  const boostTierLabel = boostTier[guild.premiumTier] || `Tier ${guild.premiumTier}`;
+
+  const embed = new EmbedBuilder()
+    .setColor(0x1e64c8)
+    .setTitle(guild.name)
+    .setDescription(
+      [
+        `**Owner:** ${ownerLabel}`,
+        `**Members:** ${guild.memberCount.toLocaleString()}`,
+        `**Created:** <t:${Math.floor(guild.createdTimestamp / 1000)}:D> (<t:${Math.floor(guild.createdTimestamp / 1000)}:R>)`,
+        `**Channels:** ${guild.channels.cache.size} (${textChannels} text · ${voiceChannels} voice · ${categories} categories)`,
+        `**Roles:** ${Math.max(0, guild.roles.cache.size - 1)}`,
+        `**Boosts:** ${boosts} (${boostTierLabel})`,
+        `**Verification:** ${formatVerificationLevel(guild.verificationLevel)}`,
+        `**Server ID:** ${guild.id}`,
+      ].join('\n')
+    )
+    .setFooter({ text: 'ValueDex' })
+    .setTimestamp();
+
+  const iconUrl = guild.iconURL({ size: 256 });
+  if (iconUrl) embed.setThumbnail(iconUrl);
+
+  return embed;
+}
 
 function buildHelpEmbed() {
   const embed = new EmbedBuilder()
@@ -1338,6 +1411,7 @@ function buildHelpEmbed() {
 
 const allCommands = [
   helpCommand,
+  serverInfoCommand,
   valueCommand,
   editPetValueCommand,
   editItemValueCommand,
@@ -1467,6 +1541,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (interaction.commandName === 'help') {
       await interaction.reply({ embeds: [buildHelpEmbed()], ephemeral: true });
+      return;
+    }
+
+    if (interaction.commandName === 'serverinfo') {
+      if (!interaction.guild) {
+        await interaction.reply({
+          content: 'This command can only be used in a server.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const embed = await buildServerInfoEmbed(interaction.guild);
+      await interaction.reply({ embeds: [embed] });
       return;
     }
 
