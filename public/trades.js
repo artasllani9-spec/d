@@ -614,13 +614,40 @@ function buildTradeSlotBadgesHTML(potions) {
   return `<div class="trade-slot__badges">${badges.join('')}</div>`;
 }
 
+function getCryptoNetworkIcon(network) {
+  const icons = {
+    'BSC - BEP20': 'icons/crypto/bsc.png?v=1',
+    'Ethereum - ERC20': 'icons/crypto/ethereum.png?v=2',
+    'Solana - SOL': 'icons/crypto/solana.png?v=4',
+  };
+  return icons[network] || '';
+}
+
+function buildTradeNetworkBadgeHTML(network) {
+  if (!network) return '';
+  const icon = getCryptoNetworkIcon(network);
+  if (!icon) return '';
+  const label = escapeHtml(network);
+  return `<img class="trade-slot__network-badge" src="${icon}" alt="${label}" title="${label}">`;
+}
+
 function buildTradeSlotHTML(item) {
   const name = escapeHtml(item.name);
   const signClass = item.isSign ? ' trade-slot--sign' : '';
-  return `<div class="trade-slot trade-slot--filled${signClass}">
+  const usdTag = typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)
+    ? `<span class="trade-slot__usd-tag">$${Number(item.usdValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>`
+    : '';
+  const networkBadge = buildTradeNetworkBadgeHTML(item.network);
+  const usdAttr = typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)
+    ? ` data-usd-value="${item.usdValue}"`
+    : '';
+  const networkAttr = item.network ? ` data-network="${escapeHtml(item.network)}"` : '';
+  return `<div class="trade-slot trade-slot--filled${signClass}"${usdAttr}${networkAttr}>
     <div class="trade-slot__card">
       <img class="trade-slot__img" src="${item.image}" alt="${name}">
       ${buildTradeSlotBadgesHTML(item.potions)}
+      ${networkBadge}
+      ${usdTag}
     </div>
   </div>`;
 }

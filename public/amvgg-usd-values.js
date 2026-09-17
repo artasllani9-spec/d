@@ -2235,6 +2235,9 @@ function getAmvggUsdValue(itemName, potions) {
 
 function getTradeItemUsdValue(item) {
   if (!item || item.isSign) return 0;
+  if (typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)) {
+    return item.usdValue;
+  }
   const name = item.name;
   if (!name) return 0;
   if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, name)) {

@@ -1051,6 +1051,25 @@
     border-radius: 1.5px;
   }
 
+  body.post-trade-page .trade-board .trade-slot__usd-tag,
+  body.trade-calculator-page .trade-board .trade-slot__usd-tag,
+  body.view-trade-page .trade-board .trade-slot__usd-tag,
+  body.trading-page .trade-slot__usd-tag {
+    font-size: 0.62rem;
+    padding: 0.1rem 0.3rem;
+    bottom: 0.15rem;
+  }
+
+  body.post-trade-page .trade-board .trade-slot__network-badge,
+  body.trade-calculator-page .trade-board .trade-slot__network-badge,
+  body.view-trade-page .trade-board .trade-slot__network-badge,
+  body.trading-page .trade-slot__network-badge {
+    width: 1.7rem;
+    height: 1.7rem;
+    top: 0.1rem;
+    right: 0.1rem;
+  }
+
   /* Trade picker: sidebar layout + 3 pets per row (mobile only) */
   body.post-trade-page .trade-picker,
   body.trade-calculator-page .trade-picker,

@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260917perf">
-  <link rel="stylesheet" href="responsive.css?v=20260917perf">
+  <link rel="stylesheet" href="styles.css?v=20260917crypto11">
+  <link rel="stylesheet" href="responsive.css?v=20260917crypto11">
 </head>
 <body class="tos-page post-trade-page">
   <div class="tos-background" aria-hidden="true"></div>
@@ -200,6 +200,15 @@
             </span>
             <span class="trade-picker__category-label">Houses</span>
           </button>
+          <button type="button" class="trade-picker__category" data-category="crypto">
+            <span class="trade-picker__category-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8.2 7.2a6.2 6.2 0 0 1 9.6-1.2L19.5 4.3v4.4h-4.4l1.7-1.7a4.4 4.4 0 0 0-7.1.7l-1.5-1.5z"/>
+                <path d="M15.8 16.8a6.2 6.2 0 0 1-9.6 1.2L4.5 19.7v-4.4h4.4l-1.7 1.7a4.4 4.4 0 0 0 7.1-.7l1.5 1.5z"/>
+              </svg>
+            </span>
+            <span class="trade-picker__category-label">Crypto</span>
+          </button>
           <button type="button" class="trade-picker__category trade-picker__category--theirs-only" data-category="signs">
             <span class="trade-picker__category-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="4" width="13" height="9.5" rx="1.2"/><path d="M12 13.5V20"/><path d="M9 20h6"/><path d="M8 7.5h8"/><path d="M8 10h5.5"/></svg>
@@ -256,6 +265,10 @@
               <p class="trade-picker__hint" id="houses-hint">Type a house name to search</p>
               <div class="trade-picker__items" id="houses-items" hidden></div>
             </div>
+            <div class="trade-picker__panel-content" data-panel="crypto">
+              <p class="trade-picker__hint" id="crypto-hint">Type a crypto name to search</p>
+              <div class="trade-picker__items" id="crypto-items" hidden></div>
+            </div>
             <div class="trade-picker__panel-content" data-panel="signs">
               <p class="trade-picker__hint" id="signs-hint">Click a sign to add it to their side</p>
               <div class="trade-picker__items" id="signs-items" hidden></div>
@@ -270,9 +283,20 @@
                 <div class="trade-picker__pet-bar-badges trade-slot__badges" hidden></div>
               </div>
               <div class="trade-picker__quantity">
-                <div class="trade-picker__quantity-line">
+                <div class="trade-picker__quantity-line trade-picker__quantity-line--count">
                   <span class="trade-picker__quantity-label">Quantity:</span>
                   <span class="trade-picker__quantity-value">1</span>
+                </div>
+                <div class="trade-picker__quantity-line trade-picker__quantity-line--usd" hidden>
+                  <span class="trade-picker__quantity-label">USD Value:</span>
+                  <input
+                    type="text"
+                    inputmode="decimal"
+                    class="trade-picker__usd-input"
+                    placeholder="0.00"
+                    aria-label="USD value"
+                    autocomplete="off"
+                  >
                 </div>
                 <div class="trade-picker__quantity-actions">
                   <button type="button" class="trade-picker__quantity-btn" data-quantity="minus" aria-label="Decrease quantity">
@@ -296,6 +320,20 @@
                 <button type="button" class="trade-picker__potion trade-picker__potion--neon" data-potion="neon" aria-label="Neon" aria-pressed="false">N</button>
                 <button type="button" class="trade-picker__potion trade-picker__potion--mega" data-potion="mega" aria-label="Mega" aria-pressed="false">M</button>
               </div>
+              <div class="trade-picker__networks" id="crypto-networks" hidden>
+                <span class="trade-picker__networks-label">Select network:</span>
+                <div class="trade-picker__networks-options" role="radiogroup" aria-label="Select network">
+                  <button type="button" class="trade-picker__network" data-network="BSC - BEP20" role="radio" aria-checked="false">
+                    BSC - BEP20
+                  </button>
+                  <button type="button" class="trade-picker__network" data-network="Ethereum - ERC20" role="radio" aria-checked="false">
+                    Ethereum - ERC20
+                  </button>
+                  <button type="button" class="trade-picker__network" data-network="Solana - SOL" role="radio" aria-checked="false">
+                    Solana - SOL
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="trade-picker__pet-actions">
               <button type="button" class="trade-picker__pet-cancel" aria-label="Cancel">
@@ -316,10 +354,10 @@
   </main>
 
   <script src="pets-data.js?v=20260917perf"></script>
-  <script src="amvgg-usd-values.js?v=20260917perf"></script>
+  <script src="amvgg-usd-values.js?v=20260917crypto3"></script>
   <script src="value-overrides.js?v=20260917perf"></script>
   <script src="trade-value-compare.js?v=20260917perf"></script>
-  <script src="trades.js?v=20260917perf"></script>
+  <script src="trades.js?v=20260917crypto10"></script>
   <script>
     const tradePicker = document.getElementById('trade-picker');
     const tradePickerPanel = tradePicker.querySelector('.trade-picker__panel');
@@ -345,6 +383,8 @@
     const stickersHint = document.getElementById('stickers-hint');
     const housesItems = document.getElementById('houses-items');
     const housesHint = document.getElementById('houses-hint');
+    const cryptoItems = document.getElementById('crypto-items');
+    const cryptoHint = document.getElementById('crypto-hint');
     const signsItems = document.getElementById('signs-items');
     const signsHint = document.getElementById('signs-hint');
     const petsDetailBar = document.getElementById('pets-detail-bar');
@@ -353,17 +393,82 @@
     const petsDetailBarBadges = petsDetailBar.querySelector('.trade-picker__pet-bar-badges');
     const petsDetailBarName = petsDetailBar.querySelector('.trade-picker__pet-bar-name');
     const petsQuantityValue = petsDetailBar.querySelector('.trade-picker__quantity-value');
+    const quantityCountLine = petsDetailBar.querySelector('.trade-picker__quantity-line--count');
+    const quantityUsdLine = petsDetailBar.querySelector('.trade-picker__quantity-line--usd');
+    const quantityActions = petsDetailBar.querySelector('.trade-picker__quantity-actions');
+    const cryptoUsdInput = petsDetailBar.querySelector('.trade-picker__usd-input');
+    const cryptoNetworks = document.getElementById('crypto-networks');
+    const networkButtons = cryptoNetworks
+      ? cryptoNetworks.querySelectorAll('.trade-picker__network')
+      : [];
     const quantityMinusBtn = petsDetailBar.querySelector('[data-quantity="minus"]');
     const quantityPlusBtn = petsDetailBar.querySelector('[data-quantity="plus"]');
     const potionButtons = petsDetailBar.querySelectorAll('.trade-picker__potion');
     let selectedPetName = null;
     let selectedPetImage = null;
     let selectedItemNoPotions = false;
+    let selectedCryptoNetwork = null;
     let activeTradeSide = null;
     let petQuantity = 1;
 
     const MIN_PET_QUANTITY = 1;
     const MAX_PET_QUANTITY = 18;
+    const CRYPTO_NETWORK_ITEMS = new Set(['USDT', 'USDC']);
+    const CRYPTO_NETWORKS = ['BSC - BEP20', 'Ethereum - ERC20', 'Solana - SOL'];
+    const CRYPTO_NETWORK_ICONS = {
+      'BSC - BEP20': 'icons/crypto/bsc.png?v=1',
+      'Ethereum - ERC20': 'icons/crypto/ethereum.png?v=2',
+      'Solana - SOL': 'icons/crypto/solana.png?v=4',
+    };
+
+    function getCryptoNetworkIcon(network) {
+      return CRYPTO_NETWORK_ICONS[network] || '';
+    }
+
+    function buildNetworkBadgeHTML(network) {
+      if (!network) return '';
+      const icon = getCryptoNetworkIcon(network);
+      if (!icon) return '';
+      const label = String(network)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+      return `<img class="trade-slot__network-badge" src="${icon}" alt="${label}" title="${label}">`;
+    }
+
+    const CRYPTO_ORDER = [
+      'Any Crypto',
+      'Bitcoin',
+      'Ethereum',
+      'Litecoin',
+      'Solana',
+      'USDT',
+      'USDC',
+    ];
+
+    const CRYPTO_ICONS = {
+      'Any Crypto': 'icons/crypto/any-crypto.png?v=1',
+      Bitcoin: 'icons/crypto/bitcoin.png?v=2',
+      Ethereum: 'icons/crypto/ethereum.png?v=2',
+      Litecoin: 'icons/crypto/litecoin.png?v=2',
+      Solana: 'icons/crypto/solana.png?v=4',
+      USDT: 'icons/crypto/usdt.png?v=2',
+      USDC: 'icons/crypto/usdc.png?v=2',
+    };
+
+    function getCryptoImage(name) {
+      if (CRYPTO_ICONS[name]) return CRYPTO_ICONS[name];
+      const label = String(name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const fontSize = name.length > 10 ? 12 : name.length > 7 ? 14 : 16;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="14" fill="#0f172a"/><text x="64" y="68" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="Outfit,Arial,sans-serif" font-size="${fontSize}" font-weight="700">${label}</text></svg>`;
+      return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    }
+
+    const crypto = CRYPTO_ORDER.map((name) => ({
+      name,
+      image: getCryptoImage(name),
+    }));
 
     function itemSupportsPotions(category, itemName) {
       return category === 'pets' && !PETS_NO_POTIONS.has(itemName);
@@ -383,6 +488,68 @@
     function resetQuantity() {
       petQuantity = 1;
       updateQuantityDisplay();
+      if (cryptoUsdInput) cryptoUsdInput.value = '';
+    }
+
+    function isCryptoCategory(category = getActiveCategory()) {
+      return category === 'crypto';
+    }
+
+    function parseCryptoUsdInput() {
+      if (!cryptoUsdInput) return NaN;
+      const raw = String(cryptoUsdInput.value || '').trim().replace(/,/g, '');
+      if (!raw) return NaN;
+      const value = Number(raw);
+      return Number.isFinite(value) ? value : NaN;
+    }
+
+    function needsCryptoNetwork(itemName = selectedPetName) {
+      return CRYPTO_NETWORK_ITEMS.has(itemName);
+    }
+
+    function resetCryptoNetwork() {
+      selectedCryptoNetwork = null;
+      networkButtons.forEach((button) => {
+        button.classList.remove('trade-picker__network--active', 'trade-picker__network--invalid');
+        button.setAttribute('aria-checked', 'false');
+      });
+      if (cryptoNetworks) cryptoNetworks.classList.remove('trade-picker__networks--invalid');
+    }
+
+    function setCryptoNetwork(network) {
+      if (!CRYPTO_NETWORKS.includes(network)) return;
+      selectedCryptoNetwork = network;
+      networkButtons.forEach((button) => {
+        const active = button.dataset.network === network;
+        button.classList.toggle('trade-picker__network--active', active);
+        button.classList.remove('trade-picker__network--invalid');
+        button.setAttribute('aria-checked', active ? 'true' : 'false');
+      });
+      if (cryptoNetworks) cryptoNetworks.classList.remove('trade-picker__networks--invalid');
+    }
+
+    function updateCryptoNetworkVisibility() {
+      const show = isCryptoCategory() && needsCryptoNetwork(selectedPetName);
+      if (cryptoNetworks) cryptoNetworks.hidden = !show;
+      if (!show) resetCryptoNetwork();
+    }
+
+    function setDetailBarMode(category, { resetUsd = false } = {}) {
+      const cryptoMode = category === 'crypto';
+      if (quantityCountLine) quantityCountLine.hidden = cryptoMode;
+      if (quantityActions) quantityActions.hidden = cryptoMode;
+      if (quantityUsdLine) quantityUsdLine.hidden = !cryptoMode;
+      if (!cryptoMode && cryptoUsdInput) {
+        cryptoUsdInput.value = '';
+        cryptoUsdInput.classList.remove('trade-picker__usd-input--invalid');
+      }
+      if (cryptoMode && cryptoUsdInput && resetUsd) {
+        cryptoUsdInput.value = '';
+        cryptoUsdInput.classList.remove('trade-picker__usd-input--invalid');
+        requestAnimationFrame(() => cryptoUsdInput.focus());
+      }
+      updateCryptoNetworkVisibility();
+      if (resetUsd) resetCryptoNetwork();
     }
 
     function resetPotions(applyDefaults = false) {
@@ -410,6 +577,8 @@
       selectedPetName = null;
       selectedPetImage = null;
       selectedItemNoPotions = false;
+      resetCryptoNetwork();
+      if (cryptoNetworks) cryptoNetworks.hidden = true;
       resetPotions();
       resetQuantity();
       petsDetailBar.hidden = true;
@@ -440,6 +609,9 @@
       housesItems.querySelectorAll('.trade-picker__item--selected').forEach((item) => {
         item.classList.remove('trade-picker__item--selected');
       });
+      cryptoItems.querySelectorAll('.trade-picker__item--selected').forEach((item) => {
+        item.classList.remove('trade-picker__item--selected');
+      });
       signsItems.querySelectorAll('.trade-picker__item--selected').forEach((item) => {
         item.classList.remove('trade-picker__item--selected');
       });
@@ -459,6 +631,7 @@
       petsDetailBarImg.src = petImage;
       petsDetailBarImg.alt = petName;
       petsDetailBarName.textContent = petName;
+      setDetailBarMode(getActiveCategory(), { resetUsd: true });
       petsDetailBar.hidden = false;
       updatePetDetailBadges();
     }
@@ -655,13 +828,28 @@
         filled.dataset.isSign = 'true';
       }
       filled.dataset.petName = item.name;
+      if (typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)) {
+        filled.dataset.usdValue = String(item.usdValue);
+      }
+      if (item.network) {
+        filled.dataset.network = item.network;
+      }
       filled.setAttribute('role', 'button');
       filled.setAttribute('tabindex', '0');
-      filled.setAttribute('aria-label', `Remove ${item.name}`);
+      const valueLabel = typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)
+        ? ` ($${item.usdValue})`
+        : '';
+      const networkLabel = item.network ? ` · ${item.network}` : '';
+      filled.setAttribute('aria-label', `Remove ${item.name}${valueLabel}${networkLabel}`);
+      const usdTag = typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)
+        ? `<span class="trade-slot__usd-tag">$${Number(item.usdValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>`
+        : '';
       filled.innerHTML = `
         <div class="trade-slot__card">
           <img class="trade-slot__img" src="${item.image}" alt="${item.name}">
           ${buildPotionBadgesHTML(item.potions)}
+          ${buildNetworkBadgeHTML(item.network)}
+          ${usdTag}
         </div>
       `;
       return filled;
@@ -682,12 +870,18 @@
         if (badge.classList.contains('trade-slot__badge--neon')) potions.neon = true;
         if (badge.classList.contains('trade-slot__badge--mega')) potions.mega = true;
       });
-      return {
+      const parsed = {
         name: slot.dataset.petName,
         image: img?.src ?? '',
         potions,
         isSign: isSignSlot(slot),
       };
+      if (slot.dataset.usdValue != null && slot.dataset.usdValue !== '') {
+        const usdValue = Number(slot.dataset.usdValue);
+        if (Number.isFinite(usdValue)) parsed.usdValue = usdValue;
+      }
+      if (slot.dataset.network) parsed.network = slot.dataset.network;
+      return parsed;
     }
 
     function populateGrid(grid, items) {
@@ -757,15 +951,38 @@
     function addSelectedPetToTrade() {
       if (!selectedPetName || !selectedPetImage || !activeTradeSide) return false;
 
+      const cryptoMode = isCryptoCategory();
+      let usdValue = null;
+      if (cryptoMode) {
+        usdValue = parseCryptoUsdInput();
+        if (!Number.isFinite(usdValue) || usdValue < 0) {
+          if (cryptoUsdInput) {
+            cryptoUsdInput.focus();
+            cryptoUsdInput.classList.add('trade-picker__usd-input--invalid');
+          }
+          return false;
+        }
+        if (cryptoUsdInput) cryptoUsdInput.classList.remove('trade-picker__usd-input--invalid');
+
+        if (needsCryptoNetwork(selectedPetName) && !selectedCryptoNetwork) {
+          if (cryptoNetworks) cryptoNetworks.classList.add('trade-picker__networks--invalid');
+          networkButtons.forEach((button) => button.classList.add('trade-picker__network--invalid'));
+          return false;
+        }
+      }
+
       const grid = getTradeGrid(activeTradeSide);
       const item = {
         name: selectedPetName,
         image: selectedPetImage,
         potions: getActivePotions(),
       };
+      if (cryptoMode) item.usdValue = usdValue;
+      if (cryptoMode && selectedCryptoNetwork) item.network = selectedCryptoNetwork;
 
+      const copies = cryptoMode ? 1 : petQuantity;
       let added = 0;
-      for (let i = 0; i < petQuantity; i += 1) {
+      for (let i = 0; i < copies; i += 1) {
         let addSlot = grid.querySelector('.trade-slot--add');
         if (!addSlot && !ensureAddSlot(grid)) break;
 
@@ -930,6 +1147,17 @@
       });
     }
 
+    function renderCrypto() {
+      renderCategoryItems({
+        items: crypto,
+        container: cryptoItems,
+        hint: cryptoHint,
+        emptyHint: 'Type a crypto name to search',
+        noResultsHint: 'No crypto found',
+        showAllWhenEmpty: true,
+      });
+    }
+
     function renderSigns() {
       if (signs.length === 0) {
         signsItems.innerHTML = '';
@@ -953,9 +1181,11 @@
     function updateDetailBarForCategory(category) {
       if (selectedPetName) {
         potionsRow.hidden = selectedItemNoPotions;
+        setDetailBarMode(category);
         return;
       }
       potionsRow.hidden = shouldHidePotions(category);
+      setDetailBarMode(category);
     }
 
     function renderActiveCategory() {
@@ -970,6 +1200,7 @@
       else if (category === 'gifts') renderGifts();
       else if (category === 'stickers') renderStickers();
       else if (category === 'houses') renderHouses();
+      else if (category === 'crypto') renderCrypto();
       else if (category === 'signs') renderSigns();
     }
 
@@ -1076,6 +1307,28 @@
         petQuantity += 1;
         updateQuantityDisplay();
       }
+    });
+
+    if (cryptoUsdInput) {
+      cryptoUsdInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (addSelectedPetToTrade()) {
+          hidePetDetailBar();
+          tradePicker.hidden = true;
+        }
+      });
+      cryptoUsdInput.addEventListener('input', () => {
+        cryptoUsdInput.classList.remove('trade-picker__usd-input--invalid');
+      });
+    }
+
+    networkButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setCryptoNetwork(button.dataset.network);
+      });
     });
 
     function setPotionActive(button, isActive) {
