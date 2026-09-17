@@ -1,6 +1,31 @@
 {
-  "pets": {},
-  "items": {},
+  "pets": {
+    "Bat Dragon": {
+      "fr": 196,
+      "nfr": 451,
+      "mfr": 1410
+    },
+    "Frost Dragon": {
+      "fr": 67,
+      "nfr": 114,
+      "mfr": 285
+    },
+    "Shadow Dragon": {
+      "fr": 140,
+      "nfr": 275,
+      "mfr": 678
+    },
+    "Giraffe": {
+      "fr": 96,
+      "nfr": 187,
+      "mfr": 592
+    }
+  },
+  "items": {
+    "Rainbow Rattle": 356,
+    "Safari Egg": 41,
+    "Candy Cannon": 100
+  },
   "acronyms": {
     "ssbd": "Strawberry Shortcake Bat Dragon",
     "bcp": "Black-Chested Pheasant",
@@ -10,5 +35,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1789682460000
+  "updatedAt": 1789682642683
 }
