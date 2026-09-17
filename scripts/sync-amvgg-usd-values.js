@@ -442,6 +442,23 @@ function formatUsdValue(amount) {
 }
 
 function getAmvggUsdValue(itemName, potions) {
+  const overrides = typeof globalThis !== 'undefined' ? globalThis.__VALUE_OVERRIDES : null;
+  if (overrides && itemName) {
+    if (overrides.pets && Object.prototype.hasOwnProperty.call(overrides.pets, itemName)) {
+      const entry = overrides.pets[itemName];
+      if (entry && typeof entry === 'object') {
+        const p = potions || { fly: true, ride: true, neon: false, mega: false };
+        if (p.mega) return Number.isFinite(Number(entry.mfr)) ? Number(entry.mfr) : null;
+        if (p.neon) return Number.isFinite(Number(entry.nfr)) ? Number(entry.nfr) : null;
+        return Number.isFinite(Number(entry.fr)) ? Number(entry.fr) : null;
+      }
+    }
+    if (overrides.items && Object.prototype.hasOwnProperty.call(overrides.items, itemName)) {
+      const flat = Number(overrides.items[itemName]);
+      return Number.isFinite(flat) ? flat : null;
+    }
+  }
+
   if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, itemName)) {
     return getPetUsdValue(AMVGG_PET_PRICING[itemName], potions || { fly: true, ride: true, neon: false, mega: false });
   }
@@ -452,13 +469,13 @@ function getAmvggUsdValue(itemName, potions) {
 
 function getTradeItemUsdValue(item) {
   if (!item || item.isSign) return 0;
+  if (typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)) {
+    return item.usdValue;
+  }
   const name = item.name;
   if (!name) return 0;
-  if (Object.prototype.hasOwnProperty.call(AMVGG_PET_PRICING, name)) {
-    const potions = item.potions || { fly: false, ride: false, neon: false, mega: false };
-    return getPetUsdValue(AMVGG_PET_PRICING[name], potions) || 0;
-  }
-  return getAmvggUsdValue(name) || 0;
+  const potions = item.potions || { fly: false, ride: false, neon: false, mega: false };
+  return getAmvggUsdValue(name, potions) || 0;
 }
 
 function sumTradeSideUsd(items) {

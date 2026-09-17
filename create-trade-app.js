@@ -8,6 +8,7 @@ const {
   httpError,
   canPostTrade,
   createTradeId,
+  findRecentDuplicatePostedTrade,
   isTradeParticipant,
   isSiteOwner,
   isSiteModerator,
@@ -440,22 +441,27 @@ function createTradeApp() {
         return;
       }
 
-      const trade = {
-        id: createTradeId(),
-        postedAt: Date.now(),
-        postedBy: String(access.sessionUser.id),
-        offerer: access.sessionUser.username || access.sessionUser.name || 'Player',
-        offererAvatar: access.sessionUser.avatarUrl || access.sessionUser.picture || null,
-        offererProfile: access.sessionUser.profile || null,
-        yourSide,
-        theirSide,
-      };
+      const postedBy = String(access.sessionUser.id);
+      const { result } = await updateStore((draft) => {
+        const duplicate = findRecentDuplicatePostedTrade(draft, postedBy, yourSide, theirSide);
+        if (duplicate) return { trade: duplicate, created: false };
 
-      await updateStore((draft) => {
-        draft.posted.unshift(trade);
+        const nextTrade = {
+          id: createTradeId(),
+          postedAt: Date.now(),
+          postedBy,
+          offerer: access.sessionUser.username || access.sessionUser.name || 'Player',
+          offererAvatar: access.sessionUser.avatarUrl || access.sessionUser.picture || null,
+          offererProfile: access.sessionUser.profile || null,
+          yourSide,
+          theirSide,
+        };
+        draft.posted.unshift(nextTrade);
         draft.posted = draft.posted.slice(0, MAX_STORED_TRADES);
+        return { trade: nextTrade, created: true };
       });
-      res.status(201).json(trade);
+
+      res.status(result && result.created ? 201 : 200).json(result && result.trade ? result.trade : result);
     } catch (error) {
       sendError(res, error, 'Could not post trade.');
     }

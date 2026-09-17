@@ -5183,22 +5183,8 @@ a.trade-action-btn {
   transform: translateY(-3px);
 }
 
-.credits-slot--shade:hover {
-  background: rgba(255, 77, 77, 0.08);
-  border-color: rgba(255, 100, 100, 0.28);
-  box-shadow:
-    0 12px 28px rgba(0, 0, 0, 0.22),
-    inset 0 0 36px rgba(255, 77, 77, 0.12);
-}
-
-.credits-slot--rayn:hover {
-  background: rgba(255, 77, 77, 0.08);
-  border-color: rgba(255, 100, 100, 0.28);
-  box-shadow:
-    0 12px 28px rgba(0, 0, 0, 0.22),
-    inset 0 0 36px rgba(255, 77, 77, 0.12);
-}
-
+.credits-slot--shade:hover,
+.credits-slot--rayn:hover,
 .credits-slot--ace:hover {
   background: rgba(255, 212, 59, 0.08);
   border-color: rgba(255, 212, 59, 0.28);
@@ -5267,34 +5253,8 @@ a.trade-action-btn {
   transition: text-shadow 0.25s ease, color 0.25s ease;
 }
 
-.credits-slot--shade:hover .credits-name {
-  color: #ff6b6b;
-  text-shadow:
-    0 0 12px rgba(255, 77, 77, 0.75),
-    0 0 24px rgba(255, 77, 77, 0.35);
-}
-
-.credits-slot--shade:hover .credits-profile-link {
-  color: #ff6b6b;
-  border-color: rgba(255, 100, 100, 0.45);
-  background: rgba(255, 77, 77, 0.1);
-  filter: none;
-}
-
-.credits-slot--rayn:hover .credits-name {
-  color: #ff6b6b;
-  text-shadow:
-    0 0 12px rgba(255, 77, 77, 0.75),
-    0 0 24px rgba(255, 77, 77, 0.35);
-}
-
-.credits-slot--rayn:hover .credits-profile-link {
-  color: #ff6b6b;
-  border-color: rgba(255, 100, 100, 0.45);
-  background: rgba(255, 77, 77, 0.1);
-  filter: none;
-}
-
+.credits-slot--shade:hover .credits-name,
+.credits-slot--rayn:hover .credits-name,
 .credits-slot--ace:hover .credits-name {
   color: #ffd43b;
   text-shadow:
@@ -5302,6 +5262,8 @@ a.trade-action-btn {
     0 0 24px rgba(255, 212, 59, 0.35);
 }
 
+.credits-slot--shade:hover .credits-profile-link,
+.credits-slot--rayn:hover .credits-profile-link,
 .credits-slot--ace:hover .credits-profile-link {
   color: #ffd43b;
   border-color: rgba(255, 212, 59, 0.45);
@@ -5402,41 +5364,8 @@ a.trade-action-btn {
   vertical-align: middle;
 }
 
-.credits-slot--shade:hover .credits-role--red {
-  border-color: rgba(255, 77, 77, 0.65);
-  box-shadow:
-    0 0 20px rgba(255, 77, 77, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  text-shadow:
-    0 0 16px rgba(255, 77, 77, 0.85),
-    0 0 30px rgba(255, 77, 77, 0.5);
-}
-
-.credits-slot--shade:hover .credits-role--red .credits-role-icon {
-  filter:
-    drop-shadow(0 0 12px rgba(255, 77, 77, 0.95))
-    drop-shadow(0 0 22px rgba(255, 77, 77, 0.65))
-    drop-shadow(0 0 32px rgba(255, 77, 77, 0.35));
-}
-
-.credits-slot--rayn:hover .credits-role--red {
-  border-color: rgba(255, 77, 77, 0.65);
-  box-shadow:
-    0 0 20px rgba(255, 77, 77, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  text-shadow:
-    0 0 16px rgba(255, 77, 77, 0.85),
-    0 0 30px rgba(255, 77, 77, 0.5);
-  color: #ff6b6b;
-}
-
-.credits-slot--rayn:hover .credits-role--red .credits-role-icon {
-  filter:
-    drop-shadow(0 0 12px rgba(255, 77, 77, 0.95))
-    drop-shadow(0 0 22px rgba(255, 77, 77, 0.65))
-    drop-shadow(0 0 32px rgba(255, 77, 77, 0.35));
-}
-
+.credits-slot--shade:hover .credits-role,
+.credits-slot--rayn:hover .credits-role,
 .credits-slot--ace:hover .credits-role {
   border-color: rgba(255, 212, 59, 0.65);
   box-shadow:
@@ -5447,6 +5376,8 @@ a.trade-action-btn {
     0 0 30px rgba(255, 212, 59, 0.5);
 }
 
+.credits-slot--shade:hover .credits-role .credits-role-icon,
+.credits-slot--rayn:hover .credits-role .credits-role-icon,
 .credits-slot--ace:hover .credits-role .credits-role-icon {
   filter:
     drop-shadow(0 0 12px rgba(255, 212, 59, 0.95))
@@ -5514,20 +5445,8 @@ a.trade-action-btn {
   transform: scale(1.03);
 }
 
-.credits-slot--shade:hover .credits-avatar {
-  border-color: rgba(255, 100, 100, 0.8);
-  box-shadow:
-    0 0 0 3px rgba(255, 77, 77, 0.12),
-    0 12px 28px rgba(255, 77, 77, 0.22);
-}
-
-.credits-slot--rayn:hover .credits-avatar {
-  border-color: rgba(255, 100, 100, 0.8);
-  box-shadow:
-    0 0 0 3px rgba(255, 77, 77, 0.12),
-    0 12px 28px rgba(255, 77, 77, 0.22);
-}
-
+.credits-slot--shade:hover .credits-avatar,
+.credits-slot--rayn:hover .credits-avatar,
 .credits-slot--ace:hover .credits-avatar {
   border-color: rgba(255, 212, 59, 0.8);
   box-shadow:

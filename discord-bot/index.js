@@ -75,14 +75,29 @@ function loadAmvggValues() {
     isNaN,
     Infinity,
     undefined,
+    globalThis: null,
   };
+  context.globalThis = context;
   vm.createContext(context);
   // const/let are not visible on the vm context object — export them explicitly
   vm.runInContext(
     `${code}\n;globalThis.__AMVGG = { AMVGG_PET_PRICING, AMVGG_USD_VALUES, getAmvggUsdValue, formatUsdValue };`,
     context
   );
-  return context.__AMVGG;
+  return { api: context.__AMVGG, context };
+}
+
+let amvggRuntime = loadAmvggValues();
+let values = amvggRuntime.api;
+
+function syncAmvggOverrides() {
+  if (!amvggRuntime || !amvggRuntime.context) return;
+  amvggRuntime.context.__VALUE_OVERRIDES = {
+    pets: (typeof overrides !== 'undefined' && overrides && overrides.pets) || {},
+    items: (typeof overrides !== 'undefined' && overrides && overrides.items) || {},
+    customPets: (typeof overrides !== 'undefined' && overrides && overrides.customPets) || {},
+    customItems: (typeof overrides !== 'undefined' && overrides && overrides.customItems) || {},
+  };
 }
 
 function loadItemImages() {
@@ -228,6 +243,7 @@ async function refreshOverridesFromRemote() {
   console.log(
     `Loaded overrides: ${Object.keys(overrides.pets).length} pets, ${Object.keys(overrides.items).length} items, ${Object.keys(overrides.acronyms).length} acronyms, ${Object.keys(overrides.customPets).length} custom pets, ${Object.keys(overrides.customItems).length} custom items`
   );
+  syncAmvggOverrides();
 }
 
 function saveOverridesLocal() {
@@ -239,6 +255,7 @@ function saveOverridesLocal() {
     customItems: overrides.customItems,
     updatedAt: Date.now(),
   };
+  syncAmvggOverrides();
   const text = JSON.stringify(payload, null, 2) + '\n';
   fs.writeFileSync(OVERRIDES_PATH, text, 'utf8');
   try {
@@ -425,7 +442,6 @@ async function saveOverrides() {
   }
 }
 
-const values = loadAmvggValues();
 const ITEM_IMAGES = loadItemImages();
 let overrides = loadOverrides();
 if (!overrides.acronyms || typeof overrides.acronyms !== 'object') overrides.acronyms = {};
@@ -437,6 +453,7 @@ for (const [name, entry] of Object.entries(overrides.customPets)) {
 for (const [name, entry] of Object.entries(overrides.customItems)) {
   overrides.items[name] = entry.value;
 }
+syncAmvggOverrides();
 
 const BUILTIN_PET_NAMES = Object.keys(values.AMVGG_PET_PRICING || {});
 const BUILTIN_ITEM_NAMES = Object.keys(values.AMVGG_USD_VALUES || {}).filter(
@@ -697,19 +714,15 @@ const ITEM_CATEGORY_CHOICES = [
 ];
 
 function petUsd(name, potions) {
-  const override = overrides.pets[name];
-  if (override) {
-    if (potions?.mega) return override.mfr;
-    if (potions?.neon) return override.nfr;
-    return override.fr;
-  }
-  return values.getAmvggUsdValue(name, potions);
+  syncAmvggOverrides();
+  return values.getAmvggUsdValue(
+    name,
+    potions || { fly: true, ride: true, neon: false, mega: false }
+  );
 }
 
 function itemUsd(name) {
-  if (Object.prototype.hasOwnProperty.call(overrides.items, name)) {
-    return overrides.items[name];
-  }
+  syncAmvggOverrides();
   return values.getAmvggUsdValue(name);
 }
 

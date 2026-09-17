@@ -354,7 +354,7 @@
   </main>
 
   <script src="pets-data.js?v=20260917perf"></script>
-  <script src="amvgg-usd-values.js?v=20260917crypto3"></script>
+  <script src="amvgg-usd-values.js?v=20260917valuesync"></script>
   <script src="value-overrides.js?v=20260917perf"></script>
   <script src="trade-value-compare.js?v=20260917perf"></script>
   <script src="trades.js?v=20260917crypto10"></script>
@@ -1392,7 +1392,12 @@
 
     updateTradeSideTotals();
 
-    document.getElementById('post-trade-btn').addEventListener('click', async () => {
+    const postTradeBtn = document.getElementById('post-trade-btn');
+    let isPostingTrade = false;
+
+    postTradeBtn.addEventListener('click', async () => {
+      if (isPostingTrade) return;
+
       const postError = document.getElementById('post-trade-error');
       const yoursGrid = getTradeGrid('yours');
       const theirsGrid = getTradeGrid('theirs');
@@ -1419,11 +1424,19 @@
 
       if (postError) postError.hidden = true;
 
+      isPostingTrade = true;
+      postTradeBtn.disabled = true;
+      postTradeBtn.setAttribute('aria-busy', 'true');
+      const originalPostLabel = postTradeBtn.textContent;
+      postTradeBtn.textContent = 'Posting...';
+
       try {
         const saved = await savePostedTrade({ yourSide, theirSide });
         if (saved) {
           window.location.href = 'trading.html';
-        } else if (postError) {
+          return;
+        }
+        if (postError) {
           postError.textContent = 'Could not post trade. Try again.';
           postError.hidden = false;
         }
@@ -1435,6 +1448,14 @@
             postError.textContent = (error && error.message) || 'Could not post trade. Try again.';
           }
           postError.hidden = false;
+        }
+      } finally {
+        // Keep disabled if we are navigating away after success.
+        if (document.visibilityState !== 'hidden') {
+          isPostingTrade = false;
+          postTradeBtn.disabled = false;
+          postTradeBtn.removeAttribute('aria-busy');
+          postTradeBtn.textContent = originalPostLabel || 'Post Trade';
         }
       }
     });

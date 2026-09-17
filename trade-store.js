@@ -622,6 +622,42 @@ function canPostTrade(yourSide, theirSide) {
   return isValidTradeSide(yourSide) && isValidTradeSide(theirSide);
 }
 
+function stableTradeSideFingerprint(side) {
+  if (!Array.isArray(side)) return '[]';
+  return JSON.stringify(
+    side.map((item) => ({
+      name: item && item.name != null ? String(item.name) : '',
+      image: item && item.image != null ? String(item.image) : '',
+      isSign: Boolean(item && item.isSign),
+      usdValue: typeof item?.usdValue === 'number' && Number.isFinite(item.usdValue) ? item.usdValue : null,
+      network: item && item.network != null ? String(item.network) : null,
+      potions: {
+        fly: Boolean(item && item.potions && item.potions.fly),
+        ride: Boolean(item && item.potions && item.potions.ride),
+        neon: Boolean(item && item.potions && item.potions.neon),
+        mega: Boolean(item && item.potions && item.potions.mega),
+      },
+    }))
+  );
+}
+
+function tradeContentFingerprint(yourSide, theirSide) {
+  return `${stableTradeSideFingerprint(yourSide)}||${stableTradeSideFingerprint(theirSide)}`;
+}
+
+function findRecentDuplicatePostedTrade(store, userId, yourSide, theirSide, withinMs = 15000) {
+  if (!store || !Array.isArray(store.posted) || userId == null || userId === '') return null;
+  const fingerprint = tradeContentFingerprint(yourSide, theirSide);
+  const cutoff = Date.now() - withinMs;
+  return (
+    store.posted.find((trade) => {
+      if (!trade || String(trade.postedBy) !== String(userId)) return false;
+      if (Number(trade.postedAt) < cutoff) return false;
+      return tradeContentFingerprint(trade.yourSide, trade.theirSide) === fingerprint;
+    }) || null
+  );
+}
+
 function createTradeId() {
   return Date.now() + Math.floor(Math.random() * 1000);
 }
@@ -648,6 +684,7 @@ module.exports = {
   httpError,
   canPostTrade,
   createTradeId,
+  findRecentDuplicatePostedTrade,
   isTradeParticipant,
   isSiteOwner,
   isSiteModerator,
