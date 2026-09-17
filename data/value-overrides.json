@@ -6,7 +6,7 @@
       "mfr": 1410
     },
     "Frost Dragon": {
-      "fr": 67,
+      "fr": 68,
       "nfr": 114,
       "mfr": 285
     },
@@ -35,5 +35,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1789682642432
+  "updatedAt": 1789682674289
 }
