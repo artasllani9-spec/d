@@ -1328,17 +1328,6 @@ const HELP_SECTIONS = [
   },
 ];
 
-function formatVerificationLevel(level) {
-  const labels = {
-    0: 'None',
-    1: 'Low',
-    2: 'Medium',
-    3: 'High',
-    4: 'Very High',
-  };
-  return labels[level] || String(level);
-}
-
 async function buildServerInfoEmbed(guild) {
   let ownerLabel = guild.ownerId ? `<@${guild.ownerId}>` : 'Unknown';
   try {
@@ -1379,7 +1368,6 @@ async function buildServerInfoEmbed(guild) {
         `**Channels:** ${guild.channels.cache.size} (${textChannels} text · ${voiceChannels} voice · ${categories} categories)`,
         `**Roles:** ${Math.max(0, guild.roles.cache.size - 1)}`,
         `**Boosts:** ${boosts} (${boostTierLabel})`,
-        `**Verification:** ${formatVerificationLevel(guild.verificationLevel)}`,
         `**Server ID:** ${guild.id}`,
       ].join('\n')
     )
