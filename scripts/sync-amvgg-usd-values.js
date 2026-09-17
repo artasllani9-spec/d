@@ -81,8 +81,12 @@ function roundUsd(raw) {
 }
 
 function computeUsdFromFrost(frostValue, demandStars) {
-  const multiplier = AMVGG_DEMAND_MULTIPLIER[demandStars];
+  const stars = Number(demandStars);
+  const multiplier =
+    AMVGG_DEMAND_MULTIPLIER[stars] ||
+    AMVGG_DEMAND_MULTIPLIER[String(stars)];
   if (!multiplier || !Number.isFinite(frostValue)) return null;
+  // 3★ → 67×value/1.725 | 2★ → 64×value/1.725 | 1★ → 61×value/1.725
   return roundUsd((frostValue * multiplier) / AMVGG_USD_SCALE);
 }
 
@@ -343,8 +347,10 @@ function roundUsd(raw) {
 }
 
 function computeUsd(frostValue, demand) {
-  const multiplier = DEMAND_MULTIPLIER[demand];
+  const stars = Number(demand);
+  const multiplier = DEMAND_MULTIPLIER[stars] || DEMAND_MULTIPLIER[String(stars)];
   if (!multiplier || !Number.isFinite(frostValue)) return null;
+  // 3★ → 67×value/1.725 | 2★ → 64×value/1.725 | 1★ → 61×value/1.725
   return roundUsd((frostValue * multiplier) / USD_SCALE);
 }
 
