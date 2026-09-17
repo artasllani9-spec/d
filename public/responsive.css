@@ -1030,8 +1030,8 @@
   body.view-trade-page .trade-board .trade-slot__network-badge,
   body.trading-page .trade-slot__network-badge,
   .posted-trades-feed .trade-slot__network-badge {
-    width: 1.02rem;
-    height: 1.02rem;
+    width: 0.85rem;
+    height: 0.85rem;
     top: 0.08rem;
     right: 0.08rem;
   }
