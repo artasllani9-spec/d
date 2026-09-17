@@ -1030,10 +1030,11 @@
   body.view-trade-page .trade-board .trade-slot__network-badge,
   body.trading-page .trade-slot__network-badge,
   .posted-trades-feed .trade-slot__network-badge {
-    width: 0.85rem;
-    height: 0.85rem;
+    width: 1.15rem;
+    height: 1.15rem;
     top: 0.08rem;
     right: 0.08rem;
+    border-width: 1px;
   }
 
   /* Trade picker: sidebar layout + 3 pets per row (mobile only) */
