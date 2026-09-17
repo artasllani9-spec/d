@@ -1,40 +1,6 @@
 {
   "posted": [
     {
-      "id": 1789680941726,
-      "postedAt": 1789680941266,
-      "postedBy": "1536417694",
-      "offerer": "yekilya",
-      "offererAvatar": "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-F9892CD4890B0F6BBA818FFCE315D4BA-Png/150/150/AvatarHeadshot/Png/noFilter",
-      "offererProfile": "https://www.roblox.com/users/1536417694/profile",
-      "yourSide": [
-        {
-          "name": "Frost Dragon",
-          "image": "https://d-seven-chi.vercel.app/pets/pet-11.png",
-          "potions": {
-            "fly": true,
-            "ride": true,
-            "neon": false,
-            "mega": true
-          },
-          "isSign": false
-        }
-      ],
-      "theirSide": [
-        {
-          "name": "Crow",
-          "image": "https://d-seven-chi.vercel.app/pets/pet-15.png",
-          "potions": {
-            "fly": true,
-            "ride": true,
-            "neon": false,
-            "mega": true
-          },
-          "isSign": false
-        }
-      ]
-    },
-    {
       "id": 1789680783774,
       "postedAt": 1789680783250,
       "postedBy": "1536417694",
