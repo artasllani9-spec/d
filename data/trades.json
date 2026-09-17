@@ -171,47 +171,47 @@
       ]
     },
     {
-      "id": 1789680379935,
-      "postedAt": 1789680379254,
-      "postedBy": "1536417694",
-      "offerer": "yekilya",
-      "offererAvatar": "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-F9892CD4890B0F6BBA818FFCE315D4BA-Png/150/150/AvatarHeadshot/Png/noFilter",
-      "offererProfile": "https://www.roblox.com/users/1536417694/profile",
+      "id": 1789680371612,
+      "postedAt": 1789680370633,
+      "postedBy": "3519737769",
+      "offerer": "casuaIIyace",
+      "offererAvatar": "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-BF4EDC3D00BA11C27D9DBBFAB4C102C3-Png/150/150/AvatarHeadshot/Png/noFilter",
+      "offererProfile": "https://www.roblox.com/users/3519737769/profile",
       "yourSide": [
         {
-          "name": "Frost Dragon",
-          "image": "https://d-seven-chi.vercel.app/pets/pet-11.png",
+          "name": "Bat Dragon",
+          "image": "https://d-seven-chi.vercel.app/pets/pet-01.png",
           "potions": {
             "fly": true,
             "ride": true,
             "neon": false,
-            "mega": true
-          },
-          "isSign": false
-        },
-        {
-          "name": "Frost Dragon",
-          "image": "https://d-seven-chi.vercel.app/pets/pet-11.png",
-          "potions": {
-            "fly": true,
-            "ride": true,
-            "neon": false,
-            "mega": true
+            "mega": false
           },
           "isSign": false
         }
       ],
       "theirSide": [
         {
-          "name": "Giant Panda",
-          "image": "https://d-seven-chi.vercel.app/pets/pet-05.png",
+          "name": "Owl",
+          "image": "https://d-seven-chi.vercel.app/pets/pet-12.png",
           "potions": {
             "fly": true,
             "ride": true,
-            "neon": false,
-            "mega": true
+            "neon": true,
+            "mega": false
           },
           "isSign": false
+        },
+        {
+          "name": "Adds",
+          "image": "https://d-seven-chi.vercel.app/pets/adds.png",
+          "potions": {
+            "fly": false,
+            "ride": false,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": true
         }
       ]
     }
