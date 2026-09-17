@@ -1,5 +1,65 @@
 {
-  "posted": [],
+  "posted": [
+    {
+      "id": 1789682121601,
+      "postedAt": 1789682121314,
+      "postedBy": "1536417694",
+      "offerer": "yekilya",
+      "offererAvatar": "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-F9892CD4890B0F6BBA818FFCE315D4BA-Png/150/150/AvatarHeadshot/Png/noFilter",
+      "offererProfile": "https://www.roblox.com/users/1536417694/profile",
+      "yourSide": [
+        {
+          "name": "Ethereum",
+          "image": "https://d-seven-chi.vercel.app/icons/crypto/ethereum.png?v=2",
+          "potions": {
+            "fly": false,
+            "ride": false,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": false,
+          "usdValue": 67
+        },
+        {
+          "name": "Frost Dragon",
+          "image": "https://d-seven-chi.vercel.app/pets/pet-11.png",
+          "potions": {
+            "fly": true,
+            "ride": true,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": false
+        }
+      ],
+      "theirSide": [
+        {
+          "name": "USDT",
+          "image": "https://d-seven-chi.vercel.app/icons/crypto/usdt.png?v=2",
+          "potions": {
+            "fly": false,
+            "ride": false,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": false,
+          "usdValue": 69,
+          "network": "BSC - BEP20"
+        },
+        {
+          "name": "Bat Dragon",
+          "image": "https://d-seven-chi.vercel.app/pets/pet-01.png",
+          "potions": {
+            "fly": true,
+            "ride": true,
+            "neon": false,
+            "mega": false
+          },
+          "isSign": false
+        }
+      ]
+    }
+  ],
   "accepted": [
     {
       "id": 1789585400110,
