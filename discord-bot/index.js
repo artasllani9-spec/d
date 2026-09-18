@@ -731,222 +731,125 @@ function itemUsd(name) {
   return values.getAmvggUsdValue(name);
 }
 
-function defaultPetPotions() {
-  return { fly: true, ride: true, neon: false, mega: false };
-}
-
-function potionLabel(potions) {
-  if (!potions) return '';
-  if (potions.mega) return 'MFR';
-  if (potions.neon) return 'NFR';
-  if (potions.fly && potions.ride) return 'FR';
-  if (potions.fly) return 'F';
-  if (potions.ride) return 'R';
-  if (potions.neon) return 'N';
-  return 'NP';
-}
-
-function parsePotionSuffix(words) {
-  const potionTokens = new Set([
-    'mfr',
-    'mega',
-    'nfr',
-    'neon',
-    'fr',
-    'nr',
-    'np',
-    'no',
-    'none',
-    'fly',
-    'f',
-    'ride',
-    'r',
-    'n',
-    'm',
-  ]);
-
-  const found = [];
-  let i = words.length - 1;
-  while (i >= 0) {
-    const token = String(words[i] || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '');
-    if (!token) {
-      i -= 1;
-      continue;
-    }
-    if (!potionTokens.has(token)) break;
-    found.unshift(token);
-    i -= 1;
+/** Safe math calculator — digits, . + - * / ( ) and spaces only. No eval(). */
+function evaluateMathExpression(rawInput) {
+  const original = String(rawInput || '').trim();
+  if (!original) {
+    return { ok: false, error: 'Enter a math expression (example: `60+50+40/2`).' };
+  }
+  if (original.length > 200) {
+    return { ok: false, error: 'Expression is too long (max 200 characters).' };
+  }
+  if (!/^[0-9+\-*/().\s]+$/.test(original)) {
+    return {
+      ok: false,
+      error: 'Only numbers and `+ - * / ( )` are allowed (example: `60+50+40/2`).',
+    };
   }
 
-  if (!found.length) {
-    return { potions: defaultPetPotions(), nameWords: words };
+  const expr = original.replace(/\s+/g, '');
+  if (!expr) {
+    return { ok: false, error: 'Enter a math expression (example: `60+50+40/2`).' };
+  }
+  if (!/^[0-9+\-*/().]+$/.test(expr)) {
+    return { ok: false, error: 'Invalid characters in expression.' };
   }
 
-  let fly = false;
-  let ride = false;
-  let neon = false;
-  let mega = false;
+  let i = 0;
 
-  for (const token of found) {
-    if (token === 'mfr' || token === 'mega' || token === 'm') {
-      mega = true;
-      neon = false;
-      fly = true;
-      ride = true;
-    } else if (token === 'nfr' || token === 'neon') {
-      neon = true;
-      mega = false;
-      fly = true;
-      ride = true;
-    } else if (token === 'fr') {
-      fly = true;
-      ride = true;
-    } else if (token === 'nr') {
-      neon = true;
-      mega = false;
-      ride = true;
-      fly = false;
-    } else if (token === 'np' || token === 'no' || token === 'none') {
-      fly = false;
-      ride = false;
-      neon = false;
-      mega = false;
-    } else if (token === 'fly' || token === 'f') {
-      fly = true;
-    } else if (token === 'ride' || token === 'r') {
-      ride = true;
-    } else if (token === 'n') {
-      neon = true;
-      mega = false;
-    }
+  function peek() {
+    return expr[i] || '';
   }
 
-  return {
-    potions: { fly, ride, neon, mega },
-    nameWords: words.slice(0, i + 1),
-  };
-}
-
-function parseCalcQuantityAndName(raw) {
-  let text = String(raw || '').trim();
-  if (!text) return null;
-
-  let quantity = 1;
-  const leading = text.match(/^(\d+)\s*[x×*]?\s+(.+)$/i);
-  if (leading) {
-    quantity = Math.max(1, Math.min(99, Number(leading[1])));
-    text = leading[2].trim();
-  } else {
-    const trailing = text.match(/^(.+?)\s*[x×*]\s*(\d+)$/i);
-    if (trailing) {
-      text = trailing[1].trim();
-      quantity = Math.max(1, Math.min(99, Number(trailing[2])));
-    }
+  function consume() {
+    const ch = expr[i];
+    i += 1;
+    return ch;
   }
 
-  const words = text.split(/\s+/).filter(Boolean);
-  if (!words.length) return null;
-
-  const { potions, nameWords } = parsePotionSuffix(words);
-  const nameQuery = nameWords.join(' ').trim();
-  if (!nameQuery) return null;
-
-  return { quantity, nameQuery, potions };
-}
-
-function parseTradeSide(input) {
-  const chunks = String(input || '')
-    .split(/[\n,;+|]+/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  const lines = [];
-  const errors = [];
-  let total = 0;
-
-  for (const chunk of chunks) {
-    const parsed = parseCalcQuantityAndName(chunk);
-    if (!parsed) {
-      errors.push(`Could not parse \`${chunk}\``);
-      continue;
-    }
-
-    const itemName = resolveItemName(parsed.nameQuery);
-    if (!itemName) {
-      errors.push(`Unknown item: **${parsed.nameQuery}**`);
-      continue;
-    }
-
-    const pet = isPet(itemName);
-    const potions = pet ? parsed.potions : { fly: false, ride: false, neon: false, mega: false };
-    const unit = pet ? petUsd(itemName, potions) : itemUsd(itemName);
-    if (unit == null || !Number.isFinite(unit)) {
-      errors.push(`No value for **${itemName}**`);
-      continue;
-    }
-
-    const amount = unit * parsed.quantity;
-    total += amount;
-    const qtyLabel = parsed.quantity > 1 ? `${parsed.quantity}× ` : '';
-    const potLabel = pet ? ` ${potionLabel(potions)}` : '';
-    lines.push(`${qtyLabel}**${itemName}**${potLabel} — ${formatUsd(amount)}`);
-  }
-
-  return { lines, errors, total };
-}
-
-function buildCalculateEmbed(yoursInput, theirsInput) {
-  const yours = parseTradeSide(yoursInput);
-  const theirs = parseTradeSide(theirsInput);
-  const diff = yours.total - theirs.total;
-  const absDiff = Math.abs(diff);
-
-  let verdict;
-  if (!yours.lines.length && !theirs.lines.length) {
-    verdict = 'Could not value either side. Check item names.';
-  } else if (absDiff < 0.05) {
-    verdict = 'Fair trade (values match).';
-  } else if (diff > 0) {
-    verdict = `You overpay by **${formatUsd(absDiff)}**.`;
-  } else {
-    verdict = `You underpay by **${formatUsd(absDiff)}** (you win).`;
-  }
-
-  const yoursBody = yours.lines.length ? yours.lines.join('\n') : '_No valued items_';
-  const theirsBody = theirs.lines.length ? theirs.lines.join('\n') : '_No valued items_';
-  const errorBody = [...yours.errors, ...theirs.errors];
-
-  const embed = new EmbedBuilder()
-    .setColor(0x1e64c8)
-    .setTitle('Trade Calculator')
-    .addFields(
-      {
-        name: `Your side — ${formatUsd(yours.total)}`,
-        value: yoursBody.slice(0, 1024),
-      },
-      {
-        name: `Their side — ${formatUsd(theirs.total)}`,
-        value: theirsBody.slice(0, 1024),
-      },
-      {
-        name: 'Result',
-        value: verdict,
+  function parseNumber() {
+    let start = i;
+    while (/\d/.test(peek())) consume();
+    if (peek() === '.') {
+      consume();
+      if (!/\d/.test(peek()) && i === start + 1) {
+        throw new Error('Invalid number.');
       }
-    )
-    .setFooter({
-      text: 'Tips: 2 frost dragon nfr, giraffe fr, rr | potions: fr nfr mfr np',
-    });
-
-  if (errorBody.length) {
-    embed.addFields({
-      name: 'Notes',
-      value: errorBody.slice(0, 8).join('\n').slice(0, 1024),
-    });
+      while (/\d/.test(peek())) consume();
+    }
+    if (i === start) throw new Error('Expected a number.');
+    const value = Number(expr.slice(start, i));
+    if (!Number.isFinite(value)) throw new Error('Invalid number.');
+    return value;
   }
 
-  return embed;
+  function parseFactor() {
+    if (peek() === '-') {
+      consume();
+      return -parseFactor();
+    }
+    if (peek() === '(') {
+      consume();
+      const value = parseExpression();
+      if (peek() !== ')') throw new Error('Missing closing parenthesis `)`.');
+      consume();
+      return value;
+    }
+    return parseNumber();
+  }
+
+  function parseTerm() {
+    let value = parseFactor();
+    while (peek() === '*' || peek() === '/') {
+      const op = consume();
+      const right = parseFactor();
+      if (op === '*') value *= right;
+      else {
+        if (right === 0) throw new Error('Division by zero.');
+        value /= right;
+      }
+    }
+    return value;
+  }
+
+  function parseExpression() {
+    let value = parseTerm();
+    while (peek() === '+' || peek() === '-') {
+      const op = consume();
+      const right = parseTerm();
+      if (op === '+') value += right;
+      else value -= right;
+    }
+    return value;
+  }
+
+  try {
+    const result = parseExpression();
+    if (i !== expr.length) {
+      return { ok: false, error: `Unexpected character near \`${expr.slice(i)}\`.` };
+    }
+    if (!Number.isFinite(result)) {
+      return { ok: false, error: 'Result is not a finite number.' };
+    }
+    return { ok: true, expression: original, result };
+  } catch (err) {
+    return { ok: false, error: err.message || 'Could not calculate that expression.' };
+  }
+}
+
+function formatMathResult(value) {
+  if (Number.isInteger(value)) return String(value);
+  const rounded = Math.round(value * 1e10) / 1e10;
+  if (Number.isInteger(rounded)) return String(rounded);
+  return String(rounded);
+}
+
+function buildMathCalculateEmbed(expression, result) {
+  return new EmbedBuilder()
+    .setColor(0x1e64c8)
+    .setTitle('Calculator')
+    .setDescription(`\`${expression}\`\n= **${formatMathResult(result)}**`)
+    .setFooter({ text: 'ValueDex' });
 }
 
 function memberHasRole(interaction, roleId) {
@@ -1364,20 +1267,13 @@ const valueCommand = new SlashCommandBuilder()
 
 const calculateCommand = new SlashCommandBuilder()
   .setName('calculate')
-  .setDescription('Compare USD value of your side vs their side of a trade')
+  .setDescription('Evaluate a math expression (example: 60+50+40/2)')
   .addStringOption((option) =>
     option
-      .setName('yours')
-      .setDescription('Your items (example: 2 frost dragon nfr, giraffe fr)')
+      .setName('expression')
+      .setDescription('Math formula using + - * / and parentheses')
       .setRequired(true)
-      .setMaxLength(500)
-  )
-  .addStringOption((option) =>
-    option
-      .setName('theirs')
-      .setDescription('Their items (example: bat dragon fr, rr)')
-      .setRequired(true)
-      .setMaxLength(500)
+      .setMaxLength(200)
   )
   .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
   .setContexts(
@@ -1674,7 +1570,7 @@ const HELP_SECTIONS = [
     name: 'Anywhere (servers + DMs)',
     lines: [
       '`/value` — Show USD value for a pet or item',
-      '`/calculate` — Compare your side vs their side of a trade',
+      '`/calculate` — Evaluate a math expression (example: `60+50+40/2`)',
       '`/help` — Show this command list',
     ],
   },
@@ -1855,7 +1751,7 @@ function buildHelpEmbed() {
   return embed;
 }
 
-const BOT_BUILD = 'calculate-user-install-20260918';
+const BOT_BUILD = 'math-calculate-20260918';
 
 const client = new Client({
   intents: [
@@ -2025,9 +1921,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.commandName === 'calculate') {
-      const yours = interaction.options.getString('yours', true);
-      const theirs = interaction.options.getString('theirs', true);
-      await interaction.reply({ embeds: [buildCalculateEmbed(yours, theirs)] });
+      const expression = interaction.options.getString('expression', true);
+      const evaluated = evaluateMathExpression(expression);
+      if (!evaluated.ok) {
+        await interaction.reply({
+          content: evaluated.error,
+          ephemeral: true,
+        });
+        return;
+      }
+      await interaction.reply({
+        embeds: [buildMathCalculateEmbed(evaluated.expression, evaluated.result)],
+      });
       return;
     }
 
