@@ -4500,6 +4500,13 @@ a.trade-action-btn {
   height: 100%;
 }
 
+.trade-picker__category-icon--dollar {
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .trade-picker__category-label {
   line-height: 1.1;
 }
