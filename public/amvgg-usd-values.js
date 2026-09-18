@@ -2073,6 +2073,57 @@ function buildPotionKey(potions) {
   return (mega ? 'm' : '') + (neon ? 'n' : '') + (fly ? 'f' : '') + (ride ? 'r' : '');
 }
 
+/** Potion keys used for pet USD overrides / editors (blank = no potions). */
+var AMVGG_PET_VARIANT_KEYS = ['', 'f', 'r', 'fr', 'n', 'nf', 'nr', 'nfr', 'm', 'mf', 'mr', 'mfr'];
+
+function potionsFromKey(key) {
+  const k = String(key || '');
+  return {
+    mega: k.indexOf('m') !== -1,
+    neon: k.indexOf('n') !== -1,
+    fly: k.indexOf('f') !== -1,
+    ride: k.indexOf('r') !== -1,
+  };
+}
+
+function petOverrideHasExtendedVariants(entry) {
+  if (!entry || typeof entry !== 'object') return false;
+  return AMVGG_PET_VARIANT_KEYS.some(
+    (k) =>
+      k !== 'fr' &&
+      k !== 'nfr' &&
+      k !== 'mfr' &&
+      Object.prototype.hasOwnProperty.call(entry, k) &&
+      Number.isFinite(Number(entry[k]))
+  );
+}
+
+function resolvePetOverrideUsd(entry, potions) {
+  if (!entry || typeof entry !== 'object') return null;
+  const key = buildPotionKey(potions || {});
+  if (Object.prototype.hasOwnProperty.call(entry, key)) {
+    const exact = Number(entry[key]);
+    if (Number.isFinite(exact) && exact >= 0) return exact;
+  }
+
+  // Legacy overrides only stored FR / NFR / MFR buckets.
+  if (!petOverrideHasExtendedVariants(entry)) {
+    const p = potions || {};
+    if (p.mega) {
+      const mfr = Number(entry.mfr);
+      return Number.isFinite(mfr) && mfr >= 0 ? mfr : null;
+    }
+    if (p.neon) {
+      const nfr = Number(entry.nfr);
+      return Number.isFinite(nfr) && nfr >= 0 ? nfr : null;
+    }
+    const fr = Number(entry.fr);
+    return Number.isFinite(fr) && fr >= 0 ? fr : null;
+  }
+
+  return null;
+}
+
 function computeCategoryValues(category, regular, neon, mega, coefficients) {
   const coef = coefficients[String(category)];
   if (!coef) return null;
@@ -2233,12 +2284,11 @@ function getAmvggUsdValue(itemName, potions) {
   if (overrides && itemName) {
     if (overrides.pets && Object.prototype.hasOwnProperty.call(overrides.pets, itemName)) {
       const entry = overrides.pets[itemName];
-      if (entry && typeof entry === 'object') {
-        const p = potions || { fly: true, ride: true, neon: false, mega: false };
-        if (p.mega) return Number.isFinite(Number(entry.mfr)) ? Number(entry.mfr) : null;
-        if (p.neon) return Number.isFinite(Number(entry.nfr)) ? Number(entry.nfr) : null;
-        return Number.isFinite(Number(entry.fr)) ? Number(entry.fr) : null;
-      }
+      const resolved = resolvePetOverrideUsd(
+        entry,
+        potions || { fly: true, ride: true, neon: false, mega: false }
+      );
+      if (resolved != null) return resolved;
     }
     if (overrides.items && Object.prototype.hasOwnProperty.call(overrides.items, itemName)) {
       const flat = Number(overrides.items[itemName]);
@@ -2277,7 +2327,13 @@ function formatTradeSideLabel(label, total) {
 function getItemListSortUsd(name) {
   const overrides = typeof globalThis !== 'undefined' ? globalThis.__VALUE_OVERRIDES : null;
   if (overrides && overrides.pets && Object.prototype.hasOwnProperty.call(overrides.pets, name)) {
-    return overrides.pets[name].fr;
+    const fromOverride = resolvePetOverrideUsd(overrides.pets[name], {
+      fly: true,
+      ride: true,
+      neon: false,
+      mega: false,
+    });
+    if (fromOverride != null) return fromOverride;
   }
   if (overrides && overrides.items && Object.prototype.hasOwnProperty.call(overrides.items, name)) {
     return overrides.items[name];

@@ -232,24 +232,31 @@
     if (editTitle) editTitle.textContent = kind === 'pet' ? 'Edit pet values' : 'Edit item value';
 
     if (kind === 'pet') {
-      const fr = getAmvggUsdValue(itemName, { fly: true, ride: true, neon: false, mega: false });
-      const nfr = getAmvggUsdValue(itemName, { fly: true, ride: true, neon: true, mega: false });
-      const mfr = getAmvggUsdValue(itemName, { fly: true, ride: true, neon: false, mega: true });
-      editFields.innerHTML = `
+      const variantKeys =
+        typeof AMVGG_PET_VARIANT_KEYS !== 'undefined'
+          ? AMVGG_PET_VARIANT_KEYS
+          : ['', 'f', 'r', 'fr', 'n', 'nf', 'nr', 'nfr', 'm', 'mf', 'mr', 'mfr'];
+      editFields.classList.add('value-edit-modal__fields--variants');
+      editFields.innerHTML = variantKeys
+        .map((key) => {
+          const potions =
+            typeof potionsFromKey === 'function'
+              ? potionsFromKey(key)
+              : { fly: false, ride: false, neon: false, mega: false };
+          const amount = getAmvggUsdValue(itemName, potions);
+          const label = key === '' ? 'Blank' : key.toUpperCase();
+          const fieldId = `value-edit-${key === '' ? 'blank' : key}`;
+          return `
         <div class="value-edit-modal__field">
-          <label for="value-edit-fr">FR</label>
-          <input id="value-edit-fr" type="number" min="0" step="any" value="${fr != null ? fr : ''}" inputmode="decimal">
-        </div>
-        <div class="value-edit-modal__field">
-          <label for="value-edit-nfr">NFR</label>
-          <input id="value-edit-nfr" type="number" min="0" step="any" value="${nfr != null ? nfr : ''}" inputmode="decimal">
-        </div>
-        <div class="value-edit-modal__field">
-          <label for="value-edit-mfr">MFR</label>
-          <input id="value-edit-mfr" type="number" min="0" step="any" value="${mfr != null ? mfr : ''}" inputmode="decimal">
-        </div>
-      `;
+          <label for="${fieldId}">${label}</label>
+          <input id="${fieldId}" data-variant-key="${key}" type="number" min="0" step="any" value="${
+            amount != null ? amount : ''
+          }" inputmode="decimal">
+        </div>`;
+        })
+        .join('');
     } else {
+      editFields.classList.remove('value-edit-modal__fields--variants');
       const value = getAmvggUsdValue(itemName);
       editFields.innerHTML = `
         <div class="value-edit-modal__field">
@@ -271,14 +278,25 @@
 
     let body;
     if (editTarget.kind === 'pet') {
-      const fr = Number(document.getElementById('value-edit-fr')?.value);
-      const nfr = Number(document.getElementById('value-edit-nfr')?.value);
-      const mfr = Number(document.getElementById('value-edit-mfr')?.value);
-      if (![fr, nfr, mfr].every((n) => Number.isFinite(n) && n >= 0)) {
-        setEditStatus('Enter valid FR / NFR / MFR numbers.', true);
+      const values = {};
+      const inputs = editFields.querySelectorAll('input[data-variant-key]');
+      for (const input of inputs) {
+        const key = input.getAttribute('data-variant-key');
+        const amount = Number(input.value);
+        if (!Number.isFinite(amount) || amount < 0) {
+          const label = key === '' ? 'Blank' : String(key).toUpperCase();
+          setEditStatus(`Enter a valid ${label} value.`, true);
+          return;
+        }
+        values[key] = amount;
+      }
+      if (
+        ![values.fr, values.nfr, values.mfr].every((n) => Number.isFinite(n) && n >= 0)
+      ) {
+        setEditStatus('FR, NFR, and MFR are required.', true);
         return;
       }
-      body = { name: editTarget.name, kind: 'pet', fr, nfr, mfr };
+      body = { name: editTarget.name, kind: 'pet', values };
     } else {
       const value = Number(document.getElementById('value-edit-flat')?.value);
       if (!Number.isFinite(value) || value < 0) {

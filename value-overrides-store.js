@@ -45,6 +45,24 @@ const CUSTOM_ITEM_CATEGORIES = new Set([
   'houses',
 ]);
 
+const PET_VARIANT_KEYS = ['', 'f', 'r', 'fr', 'n', 'nf', 'nr', 'nfr', 'm', 'mf', 'mr', 'mfr'];
+
+function cleanPetValueEntry(values) {
+  if (!values || typeof values !== 'object') return null;
+  const clean = {};
+  for (const key of PET_VARIANT_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(values, key)) continue;
+    const amount = Number(values[key]);
+    if (!Number.isFinite(amount) || amount < 0) continue;
+    clean[key] = amount;
+  }
+  // Legacy / Discord editors still require FR/NFR/MFR as the primary trio.
+  if (![clean.fr, clean.nfr, clean.mfr].every((n) => Number.isFinite(n) && n >= 0)) {
+    return null;
+  }
+  return clean;
+}
+
 function normalizeOverrides(raw) {
   const pets = raw && raw.pets && typeof raw.pets === 'object' && !Array.isArray(raw.pets)
     ? raw.pets
@@ -66,12 +84,9 @@ function normalizeOverrides(raw) {
 
   const cleanPets = {};
   for (const [name, values] of Object.entries(pets)) {
-    if (!values || typeof values !== 'object') continue;
-    const fr = Number(values.fr);
-    const nfr = Number(values.nfr);
-    const mfr = Number(values.mfr);
-    if (![fr, nfr, mfr].every((n) => Number.isFinite(n) && n >= 0)) continue;
-    cleanPets[name] = { fr, nfr, mfr };
+    const clean = cleanPetValueEntry(values);
+    if (!clean) continue;
+    cleanPets[name] = clean;
   }
 
   const cleanItems = {};
@@ -94,13 +109,11 @@ function normalizeOverrides(raw) {
     const petName = String(name || '').trim();
     if (!petName || !entry || typeof entry !== 'object') continue;
     const image = String(entry.image || '').trim();
-    const fr = Number(entry.fr);
-    const nfr = Number(entry.nfr);
-    const mfr = Number(entry.mfr);
     if (!image || !/^https?:\/\//i.test(image)) continue;
-    if (![fr, nfr, mfr].every((n) => Number.isFinite(n) && n >= 0)) continue;
-    cleanCustomPets[petName] = { image, fr, nfr, mfr };
-    cleanPets[petName] = { fr, nfr, mfr };
+    const clean = cleanPetValueEntry(entry);
+    if (!clean) continue;
+    cleanCustomPets[petName] = { image, ...clean };
+    cleanPets[petName] = clean;
   }
 
   const cleanCustomItems = {};

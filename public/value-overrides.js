@@ -118,7 +118,8 @@
     Object.keys(customPets).forEach((name) => {
       const entry = customPets[name];
       if (!entry) return;
-      petsMap[name] = { fr: entry.fr, nfr: entry.nfr, mfr: entry.mfr };
+      const { image: _image, ...values } = entry;
+      petsMap[name] = { ...values };
     });
     Object.keys(customItems).forEach((name) => {
       const entry = customItems[name];

@@ -852,20 +852,62 @@ function createTradeApp() {
       };
 
       if (kind === 'pet') {
-        const fr = Number(req.body.fr);
-        const nfr = Number(req.body.nfr);
-        const mfr = Number(req.body.mfr);
-        if (![fr, nfr, mfr].every((n) => Number.isFinite(n) && n >= 0)) {
-          res.status(400).json({ message: 'FR, NFR, and MFR must be numbers ≥ 0.' });
+        const source =
+          req.body && req.body.values && typeof req.body.values === 'object'
+            ? req.body.values
+            : req.body || {};
+        const values = {};
+        const keys = ['', 'f', 'r', 'fr', 'n', 'nf', 'nr', 'nfr', 'm', 'mf', 'mr', 'mfr'];
+        for (const key of keys) {
+          if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
+          const amount = Number(source[key]);
+          if (!Number.isFinite(amount) || amount < 0) {
+            res.status(400).json({
+              message: `Invalid value for ${key === '' ? 'blank' : key.toUpperCase()}.`,
+            });
+            return;
+          }
+          values[key] = amount;
+        }
+
+        // Backward-compatible FR/NFR/MFR body fields.
+        if (Object.prototype.hasOwnProperty.call(req.body || {}, 'fr')) {
+          const fr = Number(req.body.fr);
+          if (!Number.isFinite(fr) || fr < 0) {
+            res.status(400).json({ message: 'FR must be a number ≥ 0.' });
+            return;
+          }
+          values.fr = fr;
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body || {}, 'nfr')) {
+          const nfr = Number(req.body.nfr);
+          if (!Number.isFinite(nfr) || nfr < 0) {
+            res.status(400).json({ message: 'NFR must be a number ≥ 0.' });
+            return;
+          }
+          values.nfr = nfr;
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body || {}, 'mfr')) {
+          const mfr = Number(req.body.mfr);
+          if (!Number.isFinite(mfr) || mfr < 0) {
+            res.status(400).json({ message: 'MFR must be a number ≥ 0.' });
+            return;
+          }
+          values.mfr = mfr;
+        }
+
+        const merged = { ...(next.pets[name] || {}), ...values };
+        if (
+          ![merged.fr, merged.nfr, merged.mfr].every((n) => Number.isFinite(Number(n)) && Number(n) >= 0)
+        ) {
+          res.status(400).json({ message: 'FR, NFR, and MFR are required (≥ 0).' });
           return;
         }
-        next.pets[name] = { fr, nfr, mfr };
+        next.pets[name] = merged;
         if (next.customPets[name]) {
           next.customPets[name] = {
             ...next.customPets[name],
-            fr,
-            nfr,
-            mfr,
+            ...merged,
           };
         }
       } else if (kind === 'item') {

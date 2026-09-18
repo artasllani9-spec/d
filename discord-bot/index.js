@@ -241,7 +241,8 @@ async function refreshOverridesFromRemote() {
   };
   // Keep pricing maps in sync with custom catalog entries
   for (const [name, entry] of Object.entries(overrides.customPets || {})) {
-    overrides.pets[name] = { fr: entry.fr, nfr: entry.nfr, mfr: entry.mfr };
+    const { image: _image, ...values } = entry || {};
+    overrides.pets[name] = { ...values };
   }
   for (const [name, entry] of Object.entries(overrides.customItems || {})) {
     overrides.items[name] = entry.value;
@@ -454,7 +455,8 @@ if (!overrides.acronyms || typeof overrides.acronyms !== 'object') overrides.acr
 if (!overrides.customPets || typeof overrides.customPets !== 'object') overrides.customPets = {};
 if (!overrides.customItems || typeof overrides.customItems !== 'object') overrides.customItems = {};
 for (const [name, entry] of Object.entries(overrides.customPets)) {
-  overrides.pets[name] = { fr: entry.fr, nfr: entry.nfr, mfr: entry.mfr };
+  const { image: _image, ...values } = entry || {};
+  overrides.pets[name] = { ...values };
 }
 for (const [name, entry] of Object.entries(overrides.customItems)) {
   overrides.items[name] = entry.value;
@@ -1976,6 +1978,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       const newValues = {
+        ...(overrides.pets[petName] || {}),
         fr: frInput == null ? oldValues.fr : frInput,
         nfr: nfrInput == null ? oldValues.nfr : nfrInput,
         mfr: mfrInput == null ? oldValues.mfr : mfrInput,
@@ -2984,6 +2987,7 @@ async function handlePrefixCommand(message) {
     }
     const oldValues = getPetFrNfrMfr(petName);
     const newValues = {
+      ...(overrides.pets[petName] || {}),
       fr: numbers[0] != null ? numbers[0] : oldValues.fr,
       nfr: numbers[1] != null ? numbers[1] : oldValues.nfr,
       mfr: numbers[2] != null ? numbers[2] : oldValues.mfr,

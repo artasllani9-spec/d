@@ -3156,7 +3156,9 @@ body.view-trade-page .trade-slot--add {
 .value-edit-modal__panel {
   position: relative;
   z-index: 1;
-  width: min(100%, 22rem);
+  width: min(100%, 28rem);
+  max-height: min(92vh, 40rem);
+  overflow: auto;
   padding: 1.25rem 1.35rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -3182,6 +3184,12 @@ body.view-trade-page .trade-slot--add {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+}
+
+.value-edit-modal__fields--variants {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 0.75rem;
 }
 
 .value-edit-modal__field {
