@@ -11,6 +11,7 @@ const {
   Client,
   Events,
   GatewayIntentBits,
+  Partials,
   EmbedBuilder,
   SlashCommandBuilder,
   REST,
@@ -1574,8 +1575,8 @@ const HELP_SECTIONS = [
   {
     name: 'Anywhere (servers + DMs)',
     lines: [
-      '`/value` — Show USD value for a pet or item',
-      '`/calculate` — Evaluate a math expression (example: `60+50+40/2`)',
+      '`/value` or `-value` / `-v` — Show USD value for a pet or item',
+      '`/calculate` or `-calculate` / `-c` — Math (example: `-c 68*7`)',
       '`/say` — Make the bot send a message *(admin in servers)*',
       '`/help` — Show this command list',
     ],
@@ -1755,14 +1756,17 @@ function buildHelpEmbed() {
   return embed;
 }
 
-const BOT_BUILD = 'say-user-install-20260918';
+const BOT_BUILD = 'prefix-commands-20260918';
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.MessageContent,
   ],
+  partials: [Partials.Channel],
 });
 
 client.once(Events.ClientReady, async (readyClient) => {
@@ -2574,15 +2578,82 @@ client.on(Events.GuildMemberAdd, async (member) => {
   }
 });
 
+async function handlePrefixCommand(message) {
+  const content = String(message.content || '').trim();
+  if (!content.startsWith('-')) return false;
+
+  const valueMatch = content.match(/^-(?:value|v)(?:\s+|$)(.*)$/i);
+  if (valueMatch) {
+    const query = String(valueMatch[1] || '').trim();
+    if (!query) {
+      await message.reply({
+        content: 'Usage: `-value bat dragon` or `-v bat dragon`',
+        allowedMentions: { repliedUser: false },
+      });
+      return true;
+    }
+
+    const itemName = resolveItemName(query);
+    if (!itemName) {
+      await message.reply({
+        content: `Could not find an item named **${query}**. Try the full name (example: Rainbow Rattle).`,
+        allowedMentions: { repliedUser: false },
+      });
+      return true;
+    }
+
+    await message.reply({
+      embeds: [buildValueEmbed(itemName)],
+      allowedMentions: { repliedUser: false },
+    });
+    return true;
+  }
+
+  const calcMatch = content.match(/^-(?:calculate|c)(?:\s+|$)(.*)$/i);
+  if (calcMatch) {
+    const expression = String(calcMatch[1] || '').trim();
+    if (!expression) {
+      await message.reply({
+        content: 'Usage: `-calculate 68*7` or `-c 60+50+40/2`',
+        allowedMentions: { repliedUser: false },
+      });
+      return true;
+    }
+
+    const evaluated = evaluateMathExpression(expression);
+    if (!evaluated.ok) {
+      await message.reply({
+        content: evaluated.error,
+        allowedMentions: { repliedUser: false },
+      });
+      return true;
+    }
+
+    await message.reply({
+      embeds: [buildMathCalculateEmbed(evaluated.expression, evaluated.result)],
+      allowedMentions: { repliedUser: false },
+    });
+    return true;
+  }
+
+  return false;
+}
+
 client.on(Events.MessageCreate, async (message) => {
   try {
-    if (!message.guild || message.system) return;
+    if (message.system) return;
+    if (client.user && message.author.id === client.user.id) return;
+    if (message.author.bot) return;
+
+    // Ignore sticky remounts completely (no react, no re-stick loop).
+    if (stickyMessageIds.has(String(message.id))) return;
+
+    if (await handlePrefixCommand(message)) return;
+
+    // Sticky + autoreact are server-channel features only.
+    if (!message.guild) return;
 
     const channelId = String(message.channel.id);
-
-    // Ignore our sticky remounts completely (no react, no re-stick loop).
-    if (stickyMessageIds.has(String(message.id))) return;
-    if (client.user && message.author.id === client.user.id) return;
 
     const autoEmojis = autoReactByChannel.get(channelId);
     if (Array.isArray(autoEmojis) && autoEmojis.length) {
