@@ -2,7 +2,7 @@
   "pets": {
     "Bat Dragon": {
       "fr": 199,
-      "nfr": 451,
+      "nfr": 460,
       "mfr": 1410
     },
     "Frost Dragon": {
@@ -35,5 +35,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1789763859841
+  "updatedAt": 1789769205878
 }
