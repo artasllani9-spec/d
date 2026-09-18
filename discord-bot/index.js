@@ -53,10 +53,13 @@ const githubBranch = process.env.GITHUB_BRANCH || 'main';
 const githubOverridesPath = process.env.VALUES_GITHUB_PATH || 'data/value-overrides.json';
 const OVERRIDES_PATH = path.join(__dirname, 'value-overrides.json');
 const SITE_OVERRIDES_PATH = path.join(__dirname, '..', 'data', 'value-overrides.json');
+const WELCOME_CONFIG_PATH = path.join(__dirname, 'welcome-config.json');
 const REPO_ROOT = path.join(__dirname, '..');
 const VALUE_UPDATE_CHANNEL_ID = String(
   process.env.DISCORD_VALUE_UPDATE_CHANNEL_ID || '1548371067679023178'
 ).trim();
+/** guildId -> welcome embed config */
+let welcomeByGuild = {};
 
 function loadAmvggValues() {
   const filePath = path.join(__dirname, '..', 'public', 'amvgg-usd-values.js');
@@ -938,6 +941,77 @@ function buildCustomEmbed({ title, description, color, image, thumbnail, footer 
   return embed;
 }
 
+function loadWelcomeConfig() {
+  try {
+    if (!fs.existsSync(WELCOME_CONFIG_PATH)) return {};
+    const raw = JSON.parse(fs.readFileSync(WELCOME_CONFIG_PATH, 'utf8'));
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+    return raw;
+  } catch (err) {
+    console.warn('Could not load welcome-config.json:', err.message);
+    return {};
+  }
+}
+
+function saveWelcomeConfig() {
+  fs.writeFileSync(WELCOME_CONFIG_PATH, JSON.stringify(welcomeByGuild, null, 2) + '\n', 'utf8');
+}
+
+function applyWelcomePlaceholders(text, member) {
+  if (text == null || text === '') return text;
+  const user = member.user;
+  const guild = member.guild;
+  const mention = `<@${member.id}>`;
+  const username = user?.username || 'member';
+  const displayName = member.displayName || user?.globalName || username;
+  const serverName = guild?.name || 'the server';
+  const memberCount = guild?.memberCount != null ? String(guild.memberCount) : '';
+  return String(text)
+    .replaceAll('{user}', mention)
+    .replaceAll('{userMention}', mention)
+    .replaceAll('{username}', username)
+    .replaceAll('{displayname}', displayName)
+    .replaceAll('{server}', serverName)
+    .replaceAll('{membercount}', memberCount);
+}
+
+function buildWelcomeEmbed(config, member) {
+  return buildCustomEmbed({
+    title: applyWelcomePlaceholders(config.title, member) || null,
+    description: applyWelcomePlaceholders(config.description, member),
+    color: Number.isFinite(Number(config.color)) ? Number(config.color) : 0x1e64c8,
+    image: config.image || null,
+    thumbnail: config.thumbnail || null,
+    footer: applyWelcomePlaceholders(config.footer, member) || null,
+  });
+}
+
+async function sendWelcomeMessage(member) {
+  if (!member?.guild?.id || member.user?.bot) return;
+  const config = welcomeByGuild[String(member.guild.id)];
+  if (!config?.channelId || !config?.description) return;
+
+  let channel = member.guild.channels.cache.get(config.channelId);
+  if (!channel) {
+    try {
+      channel = await member.guild.channels.fetch(config.channelId);
+    } catch {
+      console.warn(`Welcome channel ${config.channelId} not found for guild ${member.guild.id}`);
+      return;
+    }
+  }
+  if (!channel?.isTextBased?.()) return;
+
+  const embed = buildWelcomeEmbed(config, member);
+  await channel.send({
+    content: `<@${member.id}>`,
+    embeds: [embed],
+    allowedMentions: { users: [member.id] },
+  });
+}
+
+welcomeByGuild = loadWelcomeConfig();
+
 function buildValueEmbed(itemName) {
   if (isPet(itemName)) {
     const fr = petUsd(itemName, { fly: true, ride: true, neon: false, mega: false });
@@ -1223,6 +1297,37 @@ const embedCommand = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .toJSON();
 
+const welcomeSetupCommand = new SlashCommandBuilder()
+  .setName('welcomesetup')
+  .setDescription('Set the welcome embed that pings new members')
+  .addChannelOption((option) =>
+    option
+      .setName('channel')
+      .setDescription('Channel where welcome messages are sent')
+      .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      .setRequired(true)
+  )
+  .addStringOption((option) =>
+    option.setName('title').setDescription('Embed title').setRequired(false)
+  )
+  .addStringOption((option) =>
+    option.setName('description').setDescription('Embed description / body').setRequired(true)
+  )
+  .addStringOption((option) =>
+    option.setName('color').setDescription('Hex color (example: #1e64c8)').setRequired(false)
+  )
+  .addStringOption((option) =>
+    option.setName('image').setDescription('Large image URL').setRequired(false)
+  )
+  .addStringOption((option) =>
+    option.setName('thumbnail').setDescription('Thumbnail URL').setRequired(false)
+  )
+  .addStringOption((option) =>
+    option.setName('footer').setDescription('Footer text').setRequired(false)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .toJSON();
+
 const addPetCommand = new SlashCommandBuilder()
   .setName('addpet')
   .setDescription('Add a custom pet with FR / NFR / MFR values')
@@ -1329,6 +1434,7 @@ const HELP_SECTIONS = [
       '`/unstick` — Remove the sticky message *(admin)*',
       '`/autoreact` — Auto-react to every message (optional emoji_2 / emoji_3) *(admin)*',
       '`/autoreactoff` — Stop auto-reacting in a channel *(admin)*',
+      '`/welcomesetup` — Set welcome channel + embed for new members *(admin)*',
     ],
   },
   {
@@ -1424,6 +1530,7 @@ const allCommands = [
   autoreactCommand,
   autoreactOffCommand,
   embedCommand,
+  welcomeSetupCommand,
   addPetCommand,
   addItemCommand,
   deletePetCommand,
@@ -1473,16 +1580,21 @@ async function registerCommands(readyClient) {
   }
 }
 
-const BOT_BUILD = 'sticky-debounce-stable-20260915';
+const BOT_BUILD = 'welcome-setup-20260918';
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
+  ],
 });
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`valuedex bot online as ${readyClient.user.tag}`);
   console.log(`Bot build: ${BOT_BUILD}`);
   console.log(`Value update channel ID: ${VALUE_UPDATE_CHANNEL_ID}`);
+  console.log(`Welcome setups loaded: ${Object.keys(welcomeByGuild).length}`);
 
   // Register commands first so slash commands recover even if sync is slow.
   try {
@@ -1941,6 +2053,108 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.commandName === 'welcomesetup') {
+      if (!canAdminister(interaction)) {
+        await interaction.reply({
+          content: 'You need Administrator permission to use this command.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (!interaction.guild) {
+        await interaction.reply({
+          content: 'This command can only be used in a server.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const channel = interaction.options.getChannel('channel', true);
+      const description = interaction.options.getString('description', true);
+      const title = interaction.options.getString('title');
+      const colorInput = interaction.options.getString('color');
+      const image = interaction.options.getString('image');
+      const thumbnail = interaction.options.getString('thumbnail');
+      const footer = interaction.options.getString('footer');
+      const color = parseEmbedColor(colorInput);
+
+      if (color == null) {
+        await interaction.reply({
+          content: 'Color must be a hex code like `#1e64c8`.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (image && !isValidImageUrl(image)) {
+        await interaction.reply({
+          content: 'Image must be a valid http(s) URL.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (thumbnail && !isValidImageUrl(thumbnail)) {
+        await interaction.reply({
+          content: 'Thumbnail must be a valid http(s) URL.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (!channel || (typeof channel.isTextBased === 'function' && !channel.isTextBased())) {
+        await interaction.reply({
+          content: 'Please choose a text channel for welcome messages.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const config = {
+        channelId: channel.id,
+        title: title || null,
+        description,
+        color,
+        image: image || null,
+        thumbnail: thumbnail || null,
+        footer: footer || null,
+        updatedAt: Date.now(),
+        updatedBy: interaction.user.id,
+      };
+
+      welcomeByGuild[String(interaction.guild.id)] = config;
+      try {
+        saveWelcomeConfig();
+      } catch (err) {
+        console.error('Failed to save welcome config:', err.message || err);
+        await interaction.reply({
+          content: 'Could not save welcome setup to disk. Try again.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const previewMember = interaction.member || {
+        id: interaction.user.id,
+        user: interaction.user,
+        guild: interaction.guild,
+        displayName: interaction.member?.displayName || interaction.user.username,
+      };
+      const previewEmbed = buildWelcomeEmbed(config, previewMember);
+
+      await interaction.reply({
+        content: [
+          `Welcome messages will be sent in <#${channel.id}> and ping new members.`,
+          'Placeholders: `{user}` `{username}` `{displayname}` `{server}` `{membercount}`',
+          'Preview:',
+        ].join('\n'),
+        embeds: [previewEmbed],
+        ephemeral: true,
+      });
+      return;
+    }
+
     if (interaction.commandName === 'addpet') {
       if (!canEditValues(interaction)) {
         await interaction.reply({
@@ -2153,6 +2367,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } catch {
       // ignore follow-up failures
     }
+  }
+});
+
+client.on(Events.GuildMemberAdd, async (member) => {
+  try {
+    await sendWelcomeMessage(member);
+  } catch (err) {
+    console.error('GuildMemberAdd welcome failed:', err.message || err);
   }
 });
 

@@ -3,3 +3,4 @@ node_modules/
 .env.local
 discord-bot/.env
 discord-bot/value-overrides.json
+discord-bot/welcome-config.json
