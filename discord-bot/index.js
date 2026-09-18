@@ -1308,10 +1308,10 @@ const welcomeSetupCommand = new SlashCommandBuilder()
       .setRequired(true)
   )
   .addStringOption((option) =>
-    option.setName('title').setDescription('Embed title').setRequired(false)
+    option.setName('description').setDescription('Embed description / body').setRequired(true)
   )
   .addStringOption((option) =>
-    option.setName('description').setDescription('Embed description / body').setRequired(true)
+    option.setName('title').setDescription('Embed title').setRequired(false)
   )
   .addStringOption((option) =>
     option.setName('color').setDescription('Hex color (example: #1e64c8)').setRequired(false)
@@ -1580,7 +1580,7 @@ async function registerCommands(readyClient) {
   }
 }
 
-const BOT_BUILD = 'welcome-setup-20260918';
+const BOT_BUILD = 'welcome-setup-20260918b';
 
 const client = new Client({
   intents: [
