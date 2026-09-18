@@ -897,18 +897,25 @@ function createTradeApp() {
         }
 
         const merged = { ...(next.pets[name] || {}), ...values };
-        if (
-          ![merged.fr, merged.nfr, merged.mfr].every((n) => Number.isFinite(Number(n)) && Number(n) >= 0)
-        ) {
-          res.status(400).json({ message: 'FR, NFR, and MFR are required (≥ 0).' });
+        if (!Object.keys(values).length) {
+          res.status(400).json({ message: 'Provide at least one variant value.' });
           return;
         }
         next.pets[name] = merged;
         if (next.customPets[name]) {
-          next.customPets[name] = {
+          const customMerged = {
             ...next.customPets[name],
             ...merged,
           };
+          if (
+            ![customMerged.fr, customMerged.nfr, customMerged.mfr].every(
+              (n) => Number.isFinite(Number(n)) && Number(n) >= 0
+            )
+          ) {
+            res.status(400).json({ message: 'Custom pets still need FR, NFR, and MFR (≥ 0).' });
+            return;
+          }
+          next.customPets[name] = customMerged;
         }
       } else if (kind === 'item') {
         const value = Number(req.body.value);

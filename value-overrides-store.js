@@ -56,10 +56,7 @@ function cleanPetValueEntry(values) {
     if (!Number.isFinite(amount) || amount < 0) continue;
     clean[key] = amount;
   }
-  // Legacy / Discord editors still require FR/NFR/MFR as the primary trio.
-  if (![clean.fr, clean.nfr, clean.mfr].every((n) => Number.isFinite(n) && n >= 0)) {
-    return null;
-  }
+  if (!Object.keys(clean).length) return null;
   return clean;
 }
 
@@ -112,6 +109,7 @@ function normalizeOverrides(raw) {
     if (!image || !/^https?:\/\//i.test(image)) continue;
     const clean = cleanPetValueEntry(entry);
     if (!clean) continue;
+    if (![clean.fr, clean.nfr, clean.mfr].every((n) => Number.isFinite(n) && n >= 0)) continue;
     cleanCustomPets[petName] = { image, ...clean };
     cleanPets[petName] = clean;
   }

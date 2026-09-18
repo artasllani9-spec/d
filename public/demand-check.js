@@ -233,9 +233,9 @@
 
     if (kind === 'pet') {
       const variantKeys =
-        typeof AMVGG_PET_VARIANT_KEYS !== 'undefined'
-          ? AMVGG_PET_VARIANT_KEYS
-          : ['', 'f', 'r', 'fr', 'n', 'nf', 'nr', 'nfr', 'm', 'mf', 'mr', 'mfr'];
+        typeof AMVGG_PET_EDITOR_VARIANT_KEYS !== 'undefined'
+          ? AMVGG_PET_EDITOR_VARIANT_KEYS
+          : ['', 'f', 'r', 'n', 'nf', 'nr', 'm', 'mf', 'mr'];
       editFields.classList.add('value-edit-modal__fields--variants');
       editFields.innerHTML = variantKeys
         .map((key) => {
@@ -245,7 +245,7 @@
               : { fly: false, ride: false, neon: false, mega: false };
           const amount = getAmvggUsdValue(itemName, potions);
           const label = key === '' ? 'NoPot' : key.toUpperCase();
-          const fieldId = `value-edit-${key === '' ? 'blank' : key}`;
+          const fieldId = `value-edit-${key === '' ? 'nopot' : key}`;
           return `
         <div class="value-edit-modal__field">
           <label for="${fieldId}">${label}</label>
@@ -290,10 +290,8 @@
         }
         values[key] = amount;
       }
-      if (
-        ![values.fr, values.nfr, values.mfr].every((n) => Number.isFinite(n) && n >= 0)
-      ) {
-        setEditStatus('FR, NFR, and MFR are required.', true);
+      if (!Object.keys(values).length) {
+        setEditStatus('Enter at least one variant value.', true);
         return;
       }
       body = { name: editTarget.name, kind: 'pet', values };

@@ -2076,6 +2076,9 @@ function buildPotionKey(potions) {
 /** Potion keys used for pet USD overrides / editors (blank = no potions). */
 var AMVGG_PET_VARIANT_KEYS = ['', 'f', 'r', 'fr', 'n', 'nf', 'nr', 'nfr', 'm', 'mf', 'mr', 'mfr'];
 
+/** Keys shown in the site value editor (FR / NFR / MFR are omitted). */
+var AMVGG_PET_EDITOR_VARIANT_KEYS = ['', 'f', 'r', 'n', 'nf', 'nr', 'm', 'mf', 'mr'];
+
 function potionsFromKey(key) {
   const k = String(key || '');
   return {
