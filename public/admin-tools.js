@@ -12,12 +12,23 @@
   const banForm = document.getElementById('ban-form');
   const banInput = document.getElementById('ban-user-id');
   const banStatusEl = document.getElementById('ban-status');
+  const valueEditorForm = document.getElementById('add-value-editor-form');
+  const valueEditorInput = document.getElementById('value-editor-user-id');
+  const valueEditorStatusEl = document.getElementById('value-editor-status');
+  const valueEditorListEl = document.getElementById('value-editor-list');
 
   function setStatus(message, isError) {
     if (!statusEl) return;
     statusEl.hidden = !message;
     statusEl.textContent = message || '';
     statusEl.classList.toggle('admin-moderator-status--error', Boolean(isError));
+  }
+
+  function setValueEditorStatus(message, isError) {
+    if (!valueEditorStatusEl) return;
+    valueEditorStatusEl.hidden = !message;
+    valueEditorStatusEl.textContent = message || '';
+    valueEditorStatusEl.classList.toggle('admin-moderator-status--error', Boolean(isError));
   }
 
   function setUnbanStatus(message, isError) {
@@ -112,6 +123,64 @@
     renderModerators(data.moderators);
   }
 
+  function renderValueEditors(editors) {
+    if (!valueEditorListEl) return;
+    const list = Array.isArray(editors) ? editors : [];
+    if (!list.length) {
+      valueEditorListEl.innerHTML = '<li class="admin-moderator-list__empty">No value editors yet.</li>';
+      return;
+    }
+
+    valueEditorListEl.innerHTML = list.map((editor) => {
+      const id = typeof editor === 'object' && editor
+        ? String(editor.id || '')
+        : String(editor || '');
+      const label = formatModeratorLabel(editor);
+      return `
+      <li class="admin-moderator-list__item" data-user-id="${escapeHtml(id)}">
+        <span class="admin-moderator-list__id">${escapeHtml(label)}</span>
+        <button type="button" class="admin-moderator-list__remove">Remove</button>
+      </li>
+    `;
+    }).join('');
+  }
+
+  async function loadValueEditors() {
+    const response = await fetch('/api/moderation/value-editors', { credentials: 'same-origin' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Could not load value editors.');
+    }
+    renderValueEditors(data.valueEditors);
+  }
+
+  async function addValueEditor(userId) {
+    const response = await fetch('/api/moderation/value-editors', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Could not add value editor.');
+    }
+    renderValueEditors(data.valueEditors);
+    return data.added;
+  }
+
+  async function removeValueEditor(userId) {
+    const response = await fetch(`/api/moderation/value-editors/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Could not remove value editor.');
+    }
+    renderValueEditors(data.valueEditors);
+  }
+
   async function unbanUser(userId) {
     const response = await fetch(`/api/moderation/bans/${encodeURIComponent(userId)}`, {
       method: 'DELETE',
@@ -171,6 +240,45 @@
         .then(() => setStatus(`Removed site moderator ${userId}.`, false))
         .catch((error) => {
           setStatus((error && error.message) || 'Could not remove moderator.', true);
+        });
+    });
+  }
+
+  if (valueEditorForm && valueEditorInput) {
+    valueEditorForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const userId = String(valueEditorInput.value || '').trim();
+      if (!/^\d+$/.test(userId)) {
+        setValueEditorStatus('Enter a valid Roblox user ID.', true);
+        return;
+      }
+
+      setValueEditorStatus('Adding value editor…', false);
+      addValueEditor(userId)
+        .then((added) => {
+          valueEditorInput.value = '';
+          setValueEditorStatus(`Added value editor ${formatModeratorLabel(added)}.`, false);
+        })
+        .catch((error) => {
+          setValueEditorStatus((error && error.message) || 'Could not add value editor.', true);
+        });
+    });
+  }
+
+  if (valueEditorListEl) {
+    valueEditorListEl.addEventListener('click', (event) => {
+      const button = event.target.closest('.admin-moderator-list__remove');
+      if (!button) return;
+      const item = button.closest('[data-user-id]');
+      const userId = item && item.dataset.userId;
+      if (!userId) return;
+      if (!window.confirm(`Remove value editor ${userId}?`)) return;
+
+      setValueEditorStatus('Removing value editor…', false);
+      removeValueEditor(userId)
+        .then(() => setValueEditorStatus(`Removed value editor ${userId}.`, false))
+        .catch((error) => {
+          setValueEditorStatus((error && error.message) || 'Could not remove value editor.', true);
         });
     });
   }
@@ -238,7 +346,7 @@
 
       if (loading) loading.hidden = true;
       if (panel) panel.hidden = false;
-      await loadModerators();
+      await Promise.all([loadModerators(), loadValueEditors()]);
     })
     .catch(() => {
       window.location.replace('index.html');

@@ -20,7 +20,7 @@ let writeQueue = Promise.resolve();
 const SITE_OWNER_ID = '3519737769';
 
 function emptyStore() {
-  return { posted: [], accepted: [], moderators: [], bans: [], blocks: [], reports: [] };
+  return { posted: [], accepted: [], moderators: [], valueEditors: [], bans: [], blocks: [], reports: [] };
 }
 
 function normalizeBan(ban) {
@@ -63,6 +63,9 @@ function normalizeStore(store) {
   const moderators = Array.isArray(store && store.moderators)
     ? [...new Set(store.moderators.map((id) => String(id)).filter(Boolean))]
     : [];
+  const valueEditors = Array.isArray(store && store.valueEditors)
+    ? [...new Set(store.valueEditors.map((id) => String(id)).filter(Boolean))]
+    : [];
   const bans = Array.isArray(store && store.bans)
     ? store.bans.map(normalizeBan).filter(Boolean)
     : [];
@@ -77,6 +80,7 @@ function normalizeStore(store) {
     posted: Array.isArray(store && store.posted) ? store.posted : [],
     accepted: Array.isArray(store && store.accepted) ? store.accepted : [],
     moderators,
+    valueEditors,
     bans,
     blocks,
     reports,
@@ -89,6 +93,7 @@ function cloneStore(store) {
     posted: [...normalized.posted],
     accepted: [...normalized.accepted],
     moderators: [...normalized.moderators],
+    valueEditors: [...normalized.valueEditors],
     bans: normalized.bans.map((ban) => ({ ...ban })),
     blocks: normalized.blocks.map((block) => ({ ...block })),
     reports: normalized.reports.map((report) => ({ ...report })),
@@ -101,6 +106,7 @@ function storeContentScore(store) {
     normalized.posted.length +
     normalized.accepted.length +
     normalized.moderators.length +
+    normalized.valueEditors.length +
     normalized.bans.length +
     normalized.blocks.length +
     normalized.reports.length
@@ -121,6 +127,14 @@ function isSiteModerator(store, userId) {
   if (isSiteOwner(id)) return true;
   const moderators = store && Array.isArray(store.moderators) ? store.moderators : [];
   return moderators.some((modId) => String(modId) === id);
+}
+
+function isValueEditor(store, userId) {
+  if (!userId) return false;
+  const id = String(userId);
+  if (isSiteOwner(id)) return true;
+  const editors = store && Array.isArray(store.valueEditors) ? store.valueEditors : [];
+  return editors.some((editorId) => String(editorId) === id);
 }
 
 function getBanRecord(store, userId) {
@@ -355,6 +369,7 @@ function mergeStores(...stores) {
   const postedMap = new Map();
   const acceptedMap = new Map();
   const moderatorSet = new Set();
+  const valueEditorSet = new Set();
   const bansMap = new Map();
   const blocksMap = new Map();
   const reportsMap = new Map();
@@ -378,6 +393,7 @@ function mergeStores(...stores) {
       }
     });
     normalized.moderators.forEach((id) => moderatorSet.add(String(id)));
+    normalized.valueEditors.forEach((id) => valueEditorSet.add(String(id)));
     normalized.bans.forEach((ban) => {
       const current = bansMap.get(ban.userId);
       if (!current || (ban.bannedAt || 0) >= (current.bannedAt || 0)) {
@@ -407,6 +423,7 @@ function mergeStores(...stores) {
     posted: [...postedMap.values()].sort((a, b) => (b.postedAt || 0) - (a.postedAt || 0)),
     accepted: [...acceptedMap.values()].sort((a, b) => (b.acceptedAt || b.postedAt || 0) - (a.acceptedAt || a.postedAt || 0)),
     moderators: [...moderatorSet],
+    valueEditors: [...valueEditorSet],
     bans: [...bansMap.values()].sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0)),
     blocks: [...blocksMap.values()].sort((a, b) => (b.blockedAt || 0) - (a.blockedAt || 0)),
     reports: [...reportsMap.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
@@ -688,6 +705,7 @@ module.exports = {
   isTradeParticipant,
   isSiteOwner,
   isSiteModerator,
+  isValueEditor,
   isBannedUser,
   getBanRecord,
   hasUserBlocked,

@@ -4,6 +4,7 @@ const {
   isBannedUser,
   isSiteOwner,
   isSiteModerator,
+  isValueEditor,
 } = require('./trade-store');
 
 const ROBLOX_AUTHORIZE_URL = 'https://apis.roblox.com/oauth/v1/authorize';
@@ -472,6 +473,7 @@ function registerRobloxAuth(app) {
         roles: {
           isOwner: isSiteOwner(user.id),
           isModerator: isSiteModerator(store, user.id),
+          isValueEditor: isValueEditor(store, user.id),
         },
       });
     } catch {

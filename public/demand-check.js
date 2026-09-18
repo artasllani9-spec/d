@@ -66,6 +66,22 @@
   };
 
   let activeCategory = 'pets';
+  let canEditValues = false;
+  let editTarget = null;
+
+  const editModal = document.getElementById('value-edit-modal');
+  const editTitle = document.getElementById('value-edit-title');
+  const editNameEl = document.getElementById('value-edit-name');
+  const editFields = document.getElementById('value-edit-fields');
+  const editStatus = document.getElementById('value-edit-status');
+  const editSaveBtn = document.getElementById('value-edit-save');
+
+  const EDIT_PENCIL_SVG = `
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 20h4.5L19 9.5 14.5 5 4 15.5V20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M12.8 6.7l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  `;
 
   function debounce(fn, wait) {
     let timer = null;
@@ -141,7 +157,8 @@
   }
 
   function createItemCard(item) {
-    const noPotions = activeCategory !== 'pets' || PETS_NO_POTIONS.has(item.name);
+    const isPetCard = activeCategory === 'pets';
+    const noPotions = !isPetCard || PETS_NO_POTIONS.has(item.name);
     const defaultPotions = { fly: true, ride: true, neon: false, mega: false };
     const usdAmount = noPotions
       ? getAmvggUsdValue(item.name)
@@ -150,7 +167,9 @@
     const card = document.createElement('article');
     card.className = 'demand-check-pet-card trade-picker__pet-popout-card';
     card.dataset.petName = item.name;
+    card.dataset.itemKind = isPetCard ? 'pet' : 'item';
     card.innerHTML = `
+      ${canEditValues ? `<button type="button" class="demand-check-pet-card__edit" aria-label="Edit value of ${item.name}">${EDIT_PENCIL_SVG}</button>` : ''}
       <div class="trade-picker__pet-bar-media demand-check-pet-card__media">
         <div class="trade-picker__pet-bar-preview">
           <img class="trade-picker__pet-bar-img" src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" width="88" height="88">
@@ -179,7 +198,139 @@
       updateCardBadges(card);
     }
 
+    if (canEditValues) {
+      const editBtn = card.querySelector('.demand-check-pet-card__edit');
+      if (editBtn) {
+        editBtn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openValueEditor(item.name, isPetCard ? 'pet' : 'item');
+        });
+      }
+    }
+
     return card;
+  }
+
+  function setEditStatus(message, isError) {
+    if (!editStatus) return;
+    editStatus.hidden = !message;
+    editStatus.textContent = message || '';
+    editStatus.classList.toggle('value-edit-modal__status--error', Boolean(isError));
+  }
+
+  function closeValueEditor() {
+    editTarget = null;
+    if (editModal) editModal.hidden = true;
+    setEditStatus('', false);
+  }
+
+  function openValueEditor(itemName, kind) {
+    if (!editModal || !editFields || !editNameEl) return;
+    editTarget = { name: itemName, kind };
+    editNameEl.textContent = itemName;
+    if (editTitle) editTitle.textContent = kind === 'pet' ? 'Edit pet values' : 'Edit item value';
+
+    if (kind === 'pet') {
+      const fr = getAmvggUsdValue(itemName, { fly: true, ride: true, neon: false, mega: false });
+      const nfr = getAmvggUsdValue(itemName, { fly: true, ride: true, neon: true, mega: false });
+      const mfr = getAmvggUsdValue(itemName, { fly: true, ride: true, neon: false, mega: true });
+      editFields.innerHTML = `
+        <div class="value-edit-modal__field">
+          <label for="value-edit-fr">FR</label>
+          <input id="value-edit-fr" type="number" min="0" step="any" value="${fr != null ? fr : ''}" inputmode="decimal">
+        </div>
+        <div class="value-edit-modal__field">
+          <label for="value-edit-nfr">NFR</label>
+          <input id="value-edit-nfr" type="number" min="0" step="any" value="${nfr != null ? nfr : ''}" inputmode="decimal">
+        </div>
+        <div class="value-edit-modal__field">
+          <label for="value-edit-mfr">MFR</label>
+          <input id="value-edit-mfr" type="number" min="0" step="any" value="${mfr != null ? mfr : ''}" inputmode="decimal">
+        </div>
+      `;
+    } else {
+      const value = getAmvggUsdValue(itemName);
+      editFields.innerHTML = `
+        <div class="value-edit-modal__field">
+          <label for="value-edit-flat">USD Value</label>
+          <input id="value-edit-flat" type="number" min="0" step="any" value="${value != null ? value : ''}" inputmode="decimal">
+        </div>
+      `;
+    }
+
+    setEditStatus('', false);
+    editModal.hidden = false;
+    const firstInput = editFields.querySelector('input');
+    if (firstInput) firstInput.focus();
+  }
+
+  async function saveValueEditor() {
+    if (!editTarget) return;
+    setEditStatus('Saving…', false);
+
+    let body;
+    if (editTarget.kind === 'pet') {
+      const fr = Number(document.getElementById('value-edit-fr')?.value);
+      const nfr = Number(document.getElementById('value-edit-nfr')?.value);
+      const mfr = Number(document.getElementById('value-edit-mfr')?.value);
+      if (![fr, nfr, mfr].every((n) => Number.isFinite(n) && n >= 0)) {
+        setEditStatus('Enter valid FR / NFR / MFR numbers.', true);
+        return;
+      }
+      body = { name: editTarget.name, kind: 'pet', fr, nfr, mfr };
+    } else {
+      const value = Number(document.getElementById('value-edit-flat')?.value);
+      if (!Number.isFinite(value) || value < 0) {
+        setEditStatus('Enter a valid USD value.', true);
+        return;
+      }
+      body = { name: editTarget.name, kind: 'item', value };
+    }
+
+    try {
+      const response = await fetch('/api/values/item', {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || 'Could not save value.');
+      }
+
+      if (typeof globalThis !== 'undefined') {
+        globalThis.__VALUE_OVERRIDES = {
+          pets: data.pets || {},
+          items: data.items || {},
+          customPets: data.customPets || {},
+          customItems: data.customItems || {},
+          acronyms: data.acronyms || {},
+        };
+      }
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        window.dispatchEvent(new Event('valueoverridesready'));
+      }
+
+      closeValueEditor();
+      renderItems();
+    } catch (error) {
+      setEditStatus((error && error.message) || 'Could not save value.', true);
+    }
+  }
+
+  if (editModal) {
+    editModal.addEventListener('click', (event) => {
+      if (event.target.closest('[data-value-edit-close]')) {
+        closeValueEditor();
+      }
+    });
+  }
+  if (editSaveBtn) {
+    editSaveBtn.addEventListener('click', () => {
+      void saveValueEditor();
+    });
   }
 
   function renderItems() {
@@ -257,8 +408,14 @@
   });
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !categoryMenu.hidden) {
-      closeCategoryMenu();
+    if (event.key === 'Escape') {
+      if (editModal && !editModal.hidden) {
+        closeValueEditor();
+        return;
+      }
+      if (!categoryMenu.hidden) {
+        closeCategoryMenu();
+      }
     }
   });
 
@@ -271,10 +428,28 @@
     renderItems();
   }
 
-  const ready = window.valueOverridesReady;
-  if (ready && typeof ready.then === 'function') {
-    ready.then(bootDemandCheck).catch(bootDemandCheck);
-  } else {
-    bootDemandCheck();
+  function loadEditorAccess() {
+    if (!window.__demandggAuthMePromise) {
+      window.__demandggAuthMePromise = fetch('/api/auth/me', { credentials: 'same-origin' })
+        .then((response) => (response.ok ? response.json() : null))
+        .catch(() => null);
+    }
+    return window.__demandggAuthMePromise
+      .then((data) => {
+        canEditValues = Boolean(
+          data && data.roles && (data.roles.isValueEditor || data.roles.isOwner)
+        );
+      })
+      .catch(() => {
+        canEditValues = false;
+      });
   }
+
+  const ready = window.valueOverridesReady;
+  Promise.all([
+    loadEditorAccess(),
+    ready && typeof ready.then === 'function' ? ready.catch(() => null) : Promise.resolve(),
+  ])
+    .then(bootDemandCheck)
+    .catch(bootDemandCheck);
 })();

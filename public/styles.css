@@ -3103,6 +3103,146 @@ body.view-trade-page .trade-slot--add {
   contain-intrinsic-size: auto 140px;
 }
 
+.demand-check-pet-card__edit {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.demand-check-pet-card__edit:hover {
+  background: rgba(30, 100, 200, 0.75);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.demand-check-pet-card__edit svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.value-edit-modal[hidden] {
+  display: none !important;
+}
+
+.value-edit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.value-edit-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.value-edit-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 22rem);
+  padding: 1.25rem 1.35rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(12, 24, 42, 0.94);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.value-edit-modal__title {
+  margin: 0;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.value-edit-modal__name {
+  margin: 0.35rem 0 1rem;
+  color: rgba(220, 236, 255, 0.85);
+  font-size: 0.95rem;
+}
+
+.value-edit-modal__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.value-edit-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.value-edit-modal__field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(220, 236, 255, 0.75);
+}
+
+.value-edit-modal__field input {
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.value-edit-modal__status {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: rgba(220, 236, 255, 0.9);
+}
+
+.value-edit-modal__status--error {
+  color: #ff8f8f;
+}
+
+.value-edit-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+}
+
+.value-edit-modal__btn {
+  min-height: 2.4rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.value-edit-modal__btn--save {
+  background: rgba(30, 100, 200, 0.85);
+  border-color: rgba(120, 180, 255, 0.65);
+}
+
+.value-edit-modal__btn--save:hover {
+  background: rgba(40, 120, 230, 0.95);
+}
+
 .demand-check-pet-card__media {
   flex: 0 0 38%;
   width: auto;

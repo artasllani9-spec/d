@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260917perf">
-  <link rel="stylesheet" href="responsive.css?v=20260917perf">
+  <link rel="stylesheet" href="styles.css?v=20260918editor">
+  <link rel="stylesheet" href="responsive.css?v=20260918editor">
 </head>
 <body class="credits-page">
   <div class="credits-background" aria-hidden="true"></div>
@@ -147,11 +147,26 @@
       </div>
     </div>
   </main>
+
+  <div class="value-edit-modal" id="value-edit-modal" hidden>
+    <div class="value-edit-modal__backdrop" data-value-edit-close></div>
+    <div class="value-edit-modal__panel" role="dialog" aria-modal="true" aria-labelledby="value-edit-title">
+      <h2 class="value-edit-modal__title" id="value-edit-title">Edit value</h2>
+      <p class="value-edit-modal__name" id="value-edit-name"></p>
+      <div class="value-edit-modal__fields" id="value-edit-fields"></div>
+      <p class="value-edit-modal__status" id="value-edit-status" hidden></p>
+      <div class="value-edit-modal__actions">
+        <button type="button" class="value-edit-modal__btn value-edit-modal__btn--cancel" data-value-edit-close>Cancel</button>
+        <button type="button" class="value-edit-modal__btn value-edit-modal__btn--save" id="value-edit-save">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script defer src="nav.js"></script>
   <script defer src="auth.js"></script>
   <script defer src="pets-data.js?v=20260917perf"></script>
   <script defer src="amvgg-usd-values.js?v=20260917stars"></script>
   <script defer src="value-overrides.js?v=20260917perf"></script>
-  <script defer src="demand-check.js?v=20260917full"></script>
+  <script defer src="demand-check.js?v=20260918editor"></script>
 </body>
 </html>

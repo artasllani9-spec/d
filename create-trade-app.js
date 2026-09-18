@@ -12,6 +12,7 @@ const {
   isTradeParticipant,
   isSiteOwner,
   isSiteModerator,
+  isValueEditor,
   isBannedUser,
   getBanRecord,
   hasUserBlocked,
@@ -159,6 +160,89 @@ function createTradeApp() {
       });
     } catch (error) {
       sendError(res, error, 'Could not remove moderator.');
+    }
+  });
+
+  app.get('/api/moderation/value-editors', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser || !isSiteOwner(sessionUser.id)) {
+        res.status(403).json({ message: 'Only the site owner can manage value editors.' });
+        return;
+      }
+
+      const store = await readStore();
+      res.json({
+        ownerId: SITE_OWNER_ID,
+        valueEditors: await enrichModerators(store.valueEditors),
+      });
+    } catch (error) {
+      sendError(res, error, 'Could not load value editors.');
+    }
+  });
+
+  app.post('/api/moderation/value-editors', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser || !isSiteOwner(sessionUser.id)) {
+        res.status(403).json({ message: 'Only the site owner can add value editors.' });
+        return;
+      }
+
+      const userId = normalizeRobloxId(req.body && req.body.userId);
+      if (!userId) {
+        res.status(400).json({ message: 'Enter a valid Roblox user ID.' });
+        return;
+      }
+
+      if (isSiteOwner(userId)) {
+        res.status(400).json({ message: 'The site owner already has full access.' });
+        return;
+      }
+
+      const { store } = await updateStore((draft) => {
+        if (!Array.isArray(draft.valueEditors)) draft.valueEditors = [];
+        if (draft.valueEditors.includes(userId)) {
+          throw httpError(400, 'That user is already a value editor.');
+        }
+        draft.valueEditors.push(userId);
+      });
+
+      const valueEditors = await enrichModerators(store.valueEditors);
+      const added = valueEditors.find((item) => item.id === userId) || { id: userId, username: null };
+      res.json({
+        valueEditors,
+        added,
+      });
+    } catch (error) {
+      sendError(res, error, 'Could not add value editor.');
+    }
+  });
+
+  app.delete('/api/moderation/value-editors/:id', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser || !isSiteOwner(sessionUser.id)) {
+        res.status(403).json({ message: 'Only the site owner can remove value editors.' });
+        return;
+      }
+
+      const userId = normalizeRobloxId(req.params && req.params.id);
+      if (!userId) {
+        res.status(400).json({ message: 'Enter a valid Roblox user ID.' });
+        return;
+      }
+
+      const { store } = await updateStore((draft) => {
+        if (!Array.isArray(draft.valueEditors)) draft.valueEditors = [];
+        draft.valueEditors = draft.valueEditors.filter((id) => String(id) !== userId);
+      });
+
+      res.json({
+        valueEditors: await enrichModerators(store.valueEditors),
+      });
+    } catch (error) {
+      sendError(res, error, 'Could not remove value editor.');
     }
   });
 
@@ -734,6 +818,79 @@ function createTradeApp() {
       res.json(overrides);
     } catch (error) {
       sendError(res, error, 'Could not load value overrides.');
+    }
+  });
+
+  app.patch('/api/values/item', async (req, res) => {
+    try {
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser) {
+        res.status(401).json({ message: 'Log in to edit values.' });
+        return;
+      }
+
+      const store = await readStore();
+      if (!isValueEditor(store, sessionUser.id)) {
+        res.status(403).json({ message: 'You are not a value editor.' });
+        return;
+      }
+
+      const name = String((req.body && req.body.name) || '').trim();
+      if (!name) {
+        res.status(400).json({ message: 'Item name is required.' });
+        return;
+      }
+
+      const kind = String((req.body && req.body.kind) || '').trim().toLowerCase();
+      const current = await readValueOverrides();
+      const next = {
+        pets: { ...(current.pets || {}) },
+        items: { ...(current.items || {}) },
+        acronyms: { ...(current.acronyms || {}) },
+        customPets: { ...(current.customPets || {}) },
+        customItems: { ...(current.customItems || {}) },
+      };
+
+      if (kind === 'pet') {
+        const fr = Number(req.body.fr);
+        const nfr = Number(req.body.nfr);
+        const mfr = Number(req.body.mfr);
+        if (![fr, nfr, mfr].every((n) => Number.isFinite(n) && n >= 0)) {
+          res.status(400).json({ message: 'FR, NFR, and MFR must be numbers ≥ 0.' });
+          return;
+        }
+        next.pets[name] = { fr, nfr, mfr };
+        if (next.customPets[name]) {
+          next.customPets[name] = {
+            ...next.customPets[name],
+            fr,
+            nfr,
+            mfr,
+          };
+        }
+      } else if (kind === 'item') {
+        const value = Number(req.body.value);
+        if (!Number.isFinite(value) || value < 0) {
+          res.status(400).json({ message: 'Value must be a number ≥ 0.' });
+          return;
+        }
+        next.items[name] = value;
+        if (next.customItems[name]) {
+          next.customItems[name] = {
+            ...next.customItems[name],
+            value,
+          };
+        }
+      } else {
+        res.status(400).json({ message: 'kind must be "pet" or "item".' });
+        return;
+      }
+
+      const saved = await writeValueOverrides(next);
+      res.set('Cache-Control', 'no-store');
+      res.json(saved);
+    } catch (error) {
+      sendError(res, error, 'Could not save value.');
     }
   });
 
