@@ -17,6 +17,8 @@ const {
   Routes,
   PermissionFlagsBits,
   ChannelType,
+  ApplicationIntegrationType,
+  InteractionContextType,
 } = require('discord.js');
 
 const execFileAsync = promisify(execFile);
@@ -1134,6 +1136,12 @@ const valueCommand = new SlashCommandBuilder()
       .setRequired(true)
       .setAutocomplete(true)
   )
+  .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
+  .setContexts(
+    InteractionContextType.Guild,
+    InteractionContextType.BotDM,
+    InteractionContextType.PrivateChannel
+  )
   .toJSON();
 
 const editPetValueCommand = new SlashCommandBuilder()
@@ -1403,18 +1411,32 @@ const deleteItemCommand = new SlashCommandBuilder()
 const helpCommand = new SlashCommandBuilder()
   .setName('help')
   .setDescription('Show all ValueDex bot commands and what they do')
+  .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
+  .setContexts(
+    InteractionContextType.Guild,
+    InteractionContextType.BotDM,
+    InteractionContextType.PrivateChannel
+  )
   .toJSON();
 
 const serverInfoCommand = new SlashCommandBuilder()
   .setName('serverinfo')
   .setDescription('Show general information about this server')
+  .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
+  .setContexts(InteractionContextType.Guild)
   .toJSON();
 
 const HELP_SECTIONS = [
   {
-    name: 'Values',
+    name: 'Anywhere (servers + DMs)',
     lines: [
       '`/value` — Show USD value for a pet or item',
+      '`/help` — Show this command list',
+    ],
+  },
+  {
+    name: 'Values (server)',
+    lines: [
       '`/editpetvalue` — Edit FR / NFR / MFR values for a pet *(editor)*',
       '`/edititemvalue` — Edit USD value for a non-pet item *(editor)*',
       '`/acronymadd` — Add a search acronym (example: FD) *(editor)*',
@@ -1426,7 +1448,7 @@ const HELP_SECTIONS = [
     ],
   },
   {
-    name: 'Chat tools',
+    name: 'Chat tools (server)',
     lines: [
       '`/say` — Make the bot send a plain message *(admin)*',
       '`/embed` — Make the bot send an embed *(admin)*',
@@ -1441,11 +1463,84 @@ const HELP_SECTIONS = [
     name: 'Server',
     lines: ['`/serverinfo` — Show general info about this server'],
   },
-  {
-    name: 'Help',
-    lines: ['`/help` — Show this command list'],
-  },
 ];
+
+/** Global + user-installable (DMs / group DMs / servers). */
+const userInstallCommands = [helpCommand, valueCommand];
+
+/** Guild-only tools (admin / editor / server helpers). */
+const guildOnlyCommands = [
+  serverInfoCommand,
+  editPetValueCommand,
+  editItemValueCommand,
+  acronymAddCommand,
+  acronymRemoveCommand,
+  sayCommand,
+  stickCommand,
+  unstickCommand,
+  autoreactCommand,
+  autoreactOffCommand,
+  embedCommand,
+  welcomeSetupCommand,
+  addPetCommand,
+  addItemCommand,
+  deletePetCommand,
+  deleteItemCommand,
+];
+
+const allCommands = [...userInstallCommands, ...guildOnlyCommands];
+
+async function registerCommands(readyClient) {
+  const rest = new REST({ version: '10' }).setToken(token);
+  const userNames = userInstallCommands.map((cmd) => `/${cmd.name}`).join(', ');
+  const guildNames = guildOnlyCommands.map((cmd) => `/${cmd.name}`).join(', ');
+
+  const guildIds = new Set(
+    readyClient.guilds.cache.map((guild) => guild.id).filter(Boolean)
+  );
+  if (guildId) guildIds.add(String(guildId));
+
+  // Global commands power User Install + DMs. Do not clear these on every boot.
+  try {
+    await rest.put(Routes.applicationCommands(clientId), { body: userInstallCommands });
+    console.log(
+      `Registered global (user-install) commands: ${userNames} (can take up to ~1 hour the first time)`
+    );
+    const listedGlobal = await rest.get(Routes.applicationCommands(clientId));
+    const listedGlobalNames = (Array.isArray(listedGlobal) ? listedGlobal : [])
+      .map((cmd) => `/${cmd.name}`)
+      .join(', ');
+    console.log(`Verified global commands on Discord: ${listedGlobalNames}`);
+  } catch (err) {
+    console.error('Failed to register global slash commands:', err.message || err);
+  }
+
+  if (guildIds.size === 0) {
+    console.warn('No guilds available — guild-only commands were not registered.');
+    return;
+  }
+
+  for (const targetGuildId of guildIds) {
+    try {
+      await rest.put(Routes.applicationGuildCommands(clientId, targetGuildId), {
+        body: guildOnlyCommands,
+      });
+      const guildName = readyClient.guilds.cache.get(targetGuildId)?.name || targetGuildId;
+      console.log(
+        `Registered guild-only commands for ${guildName} (${targetGuildId}): ${guildNames}`
+      );
+
+      const listed = await rest.get(Routes.applicationGuildCommands(clientId, targetGuildId));
+      const listedNames = (Array.isArray(listed) ? listed : []).map((cmd) => `/${cmd.name}`).join(', ');
+      console.log(`Verified guild commands now on Discord: ${listedNames}`);
+    } catch (err) {
+      console.error(
+        `Failed to register slash commands for guild ${targetGuildId}:`,
+        err.message || err
+      );
+    }
+  }
+}
 
 async function buildServerInfoEmbed(guild) {
   let ownerLabel = guild.ownerId ? `<@${guild.ownerId}>` : 'Unknown';
@@ -1516,71 +1611,7 @@ function buildHelpEmbed() {
   return embed;
 }
 
-const allCommands = [
-  helpCommand,
-  serverInfoCommand,
-  valueCommand,
-  editPetValueCommand,
-  editItemValueCommand,
-  acronymAddCommand,
-  acronymRemoveCommand,
-  sayCommand,
-  stickCommand,
-  unstickCommand,
-  autoreactCommand,
-  autoreactOffCommand,
-  embedCommand,
-  welcomeSetupCommand,
-  addPetCommand,
-  addItemCommand,
-  deletePetCommand,
-  deleteItemCommand,
-];
-
-async function registerCommands(readyClient) {
-  const rest = new REST({ version: '10' }).setToken(token);
-  const names = allCommands.map((cmd) => `/${cmd.name}`).join(', ');
-
-  const guildIds = new Set(
-    readyClient.guilds.cache.map((guild) => guild.id).filter(Boolean)
-  );
-  if (guildId) guildIds.add(String(guildId));
-
-  // Clear global commands so they don't duplicate guild commands in the picker.
-  try {
-    await rest.put(Routes.applicationCommands(clientId), { body: [] });
-    console.log('Cleared global slash commands (guild-only registration).');
-  } catch (err) {
-    console.error('Failed to clear global slash commands:', err.message || err);
-  }
-
-  if (guildIds.size === 0) {
-    await rest.put(Routes.applicationCommands(clientId), { body: allCommands });
-    console.log(`Registered global slash commands: ${names} (can take up to ~1 hour to appear)`);
-    return;
-  }
-
-  for (const targetGuildId of guildIds) {
-    try {
-      await rest.put(Routes.applicationGuildCommands(clientId, targetGuildId), {
-        body: allCommands,
-      });
-      const guildName = readyClient.guilds.cache.get(targetGuildId)?.name || targetGuildId;
-      console.log(`Registered slash commands for guild ${guildName} (${targetGuildId}): ${names}`);
-
-      const listed = await rest.get(Routes.applicationGuildCommands(clientId, targetGuildId));
-      const listedNames = (Array.isArray(listed) ? listed : []).map((cmd) => `/${cmd.name}`).join(', ');
-      console.log(`Verified guild commands now on Discord: ${listedNames}`);
-    } catch (err) {
-      console.error(
-        `Failed to register slash commands for guild ${targetGuildId}:`,
-        err.message || err
-      );
-    }
-  }
-}
-
-const BOT_BUILD = 'welcome-setup-20260918b';
+const BOT_BUILD = 'user-install-split-20260918';
 
 const client = new Client({
   intents: [
@@ -2447,6 +2478,8 @@ if (process.env.DISCORD_SKIP_LOGIN !== '1') {
 
 module.exports = {
   allCommands,
+  userInstallCommands,
+  guildOnlyCommands,
   registerCommands,
   BOT_BUILD,
   client,
