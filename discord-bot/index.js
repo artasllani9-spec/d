@@ -1575,39 +1575,38 @@ const HELP_SECTIONS = [
   {
     name: 'Anywhere (servers + DMs)',
     lines: [
+      'Prefix: start with `-` (shortcuts: `-v` value, `-c` calculate)',
       '`/value` or `-value` / `-v` — Show USD value for a pet or item',
       '`/calculate` or `-calculate` / `-c` — Math (example: `-c 68*7`)',
-      '`/say` — Make the bot send a message *(admin in servers)*',
-      '`/help` — Show this command list',
+      '`/say` or `-say` — Make the bot send a message *(admin in servers)*',
+      '`/help` or `-help` — Show this command list',
     ],
   },
   {
     name: 'Values (server)',
     lines: [
-      '`/editpetvalue` — Edit FR / NFR / MFR values for a pet *(editor)*',
-      '`/edititemvalue` — Edit USD value for a non-pet item *(editor)*',
-      '`/acronymadd` — Add a search acronym (example: FD) *(editor)*',
-      '`/acronymremove` — Remove a search acronym *(editor)*',
-      '`/addpet` — Add a custom pet with values *(editor)*',
-      '`/additem` — Add a custom non-pet item *(editor)*',
-      '`/deletepet` — Delete a custom pet *(editor)*',
-      '`/deleteitem` — Delete a custom item *(editor)*',
+      '`-editpetvalue <pet> <fr> [nfr] [mfr]` *(editor)*',
+      '`-edititemvalue <item> <usd>` *(editor)*',
+      '`-acronymadd <acronym> <item>` *(editor)*',
+      '`-acronymremove <acronym>` *(editor)*',
+      '`-addpet name | image | fr | nfr | mfr` *(editor)*',
+      '`-additem name | image | category | value` *(editor)*',
+      '`-deletepet <name>` / `-deleteitem <name> <category>` *(editor)*',
     ],
   },
   {
     name: 'Chat tools (server)',
     lines: [
-      '`/embed` — Make the bot send an embed *(admin)*',
-      '`/stick` — Keep a message stuck at the bottom of this channel *(admin)*',
-      '`/unstick` — Remove the sticky message *(admin)*',
-      '`/autoreact` — Auto-react to every message (optional emoji_2 / emoji_3) *(admin)*',
-      '`/autoreactoff` — Stop auto-reacting in a channel *(admin)*',
-      '`/welcomesetup` — Set welcome channel + embed for new members *(admin)*',
+      '`-embed title | description | #color` *(admin)* — extra fields optional',
+      '`-stick` / `-unstick` *(admin)*',
+      '`-autoreact <emoji> [emoji2] [emoji3]` / `-autoreactoff` *(admin)*',
+      '`-welcomesetup #channel description...` *(admin)*',
+      '`-serverinfo`',
     ],
   },
   {
     name: 'Server',
-    lines: ['`/serverinfo` — Show general info about this server'],
+    lines: ['`/serverinfo` or `-serverinfo` — Show general info about this server'],
   },
 ];
 
@@ -1756,7 +1755,7 @@ function buildHelpEmbed() {
   return embed;
 }
 
-const BOT_BUILD = 'prefix-commands-20260918';
+const BOT_BUILD = 'prefix-all-commands-20260918';
 
 const client = new Client({
   intents: [
@@ -2578,61 +2577,724 @@ client.on(Events.GuildMemberAdd, async (member) => {
   }
 });
 
+function messageCanAdminister(message) {
+  if (!message.guild) return false;
+  const perms = message.member?.permissions;
+  return Boolean(perms?.has?.(PermissionFlagsBits.Administrator));
+}
+
+function messageCanEditValues(message) {
+  return memberHasRole(
+    { guild: message.guild, member: message.member },
+    editorRoleId
+  );
+}
+
+async function prefixReply(message, payload) {
+  return message.reply({
+    allowedMentions: { repliedUser: false, parse: [] },
+    ...payload,
+  });
+}
+
+function splitPipeArgs(args, expectedMin) {
+  const parts = String(args || '')
+    .split('|')
+    .map((part) => part.trim());
+  if (expectedMin != null && parts.length < expectedMin) return null;
+  return parts;
+}
+
+function peelTrailingNumbers(args, maxCount) {
+  const parts = String(args || '').trim().split(/\s+/).filter(Boolean);
+  const numbers = [];
+  while (
+    parts.length &&
+    numbers.length < maxCount &&
+    /^-?\d+(\.\d+)?$/.test(parts[parts.length - 1])
+  ) {
+    numbers.unshift(Number(parts.pop()));
+  }
+  return { nameQuery: parts.join(' ').trim(), numbers };
+}
+
+const PREFIX_COMMAND_NAMES = [
+  'welcomesetup',
+  'autoreactoff',
+  'editpetvalue',
+  'edititemvalue',
+  'acronymremove',
+  'acronymadd',
+  'serverinfo',
+  'calculate',
+  'deleteitem',
+  'deletepet',
+  'autoreact',
+  'additem',
+  'addpet',
+  'unstick',
+  'value',
+  'help',
+  'say',
+  'stick',
+  'embed',
+].sort((a, b) => b.length - a.length);
+
+function parsePrefixInvocation(content) {
+  const text = String(content || '').trim();
+  if (!text.startsWith('-')) return null;
+  const body = text.slice(1);
+
+  for (const name of PREFIX_COMMAND_NAMES) {
+    if (body.length < name.length) continue;
+    if (body.slice(0, name.length).toLowerCase() !== name) continue;
+    const after = body.slice(name.length);
+    if (after !== '' && !/^\s/.test(after)) continue;
+    return { name, args: after.trim() };
+  }
+
+  // Shortcuts: only value + calculate
+  if (/^v(?:\s|$)/i.test(body)) {
+    return { name: 'value', args: body.slice(1).trim() };
+  }
+  if (/^c(?:\s|$)/i.test(body)) {
+    return { name: 'calculate', args: body.slice(1).trim() };
+  }
+
+  return null;
+}
+
+function normalizeReactionEmojiList(rawArgs) {
+  const inputs = String(rawArgs || '')
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  const emojis = [];
+  const labels = [];
+  for (const input of inputs) {
+    const normalized = normalizeReactionEmoji(input);
+    if (!normalized || emojis.includes(normalized)) continue;
+    emojis.push(normalized);
+    labels.push(input);
+  }
+  return { emojis, labels };
+}
+
 async function handlePrefixCommand(message) {
-  const content = String(message.content || '').trim();
-  if (!content.startsWith('-')) return false;
+  const parsed = parsePrefixInvocation(message.content);
+  if (!parsed) return false;
 
-  const valueMatch = content.match(/^-(?:value|v)(?:\s+|$)(.*)$/i);
-  if (valueMatch) {
-    const query = String(valueMatch[1] || '').trim();
-    if (!query) {
-      await message.reply({
-        content: 'Usage: `-value bat dragon` or `-v bat dragon`',
-        allowedMentions: { repliedUser: false },
-      });
+  const { name, args } = parsed;
+
+  if (name === 'help') {
+    await prefixReply(message, { embeds: [buildHelpEmbed()] });
+    return true;
+  }
+
+  if (name === 'value') {
+    if (!args) {
+      await prefixReply(message, { content: 'Usage: `-value bat dragon` or `-v bat dragon`' });
       return true;
     }
-
-    const itemName = resolveItemName(query);
+    const itemName = resolveItemName(args);
     if (!itemName) {
-      await message.reply({
-        content: `Could not find an item named **${query}**. Try the full name (example: Rainbow Rattle).`,
-        allowedMentions: { repliedUser: false },
+      await prefixReply(message, {
+        content: `Could not find an item named **${args}**. Try the full name (example: Rainbow Rattle).`,
       });
       return true;
     }
+    await prefixReply(message, { embeds: [buildValueEmbed(itemName)] });
+    return true;
+  }
 
-    await message.reply({
-      embeds: [buildValueEmbed(itemName)],
-      allowedMentions: { repliedUser: false },
+  if (name === 'calculate') {
+    if (!args) {
+      await prefixReply(message, { content: 'Usage: `-calculate 68*7` or `-c 60+50+40/2`' });
+      return true;
+    }
+    const evaluated = evaluateMathExpression(args);
+    if (!evaluated.ok) {
+      await prefixReply(message, { content: evaluated.error });
+      return true;
+    }
+    await prefixReply(message, {
+      embeds: [buildMathCalculateEmbed(evaluated.expression, evaluated.result)],
     });
     return true;
   }
 
-  const calcMatch = content.match(/^-(?:calculate|c)(?:\s+|$)(.*)$/i);
-  if (calcMatch) {
-    const expression = String(calcMatch[1] || '').trim();
-    if (!expression) {
-      await message.reply({
-        content: 'Usage: `-calculate 68*7` or `-c 60+50+40/2`',
-        allowedMentions: { repliedUser: false },
+  if (name === 'say') {
+    const inGuild = Boolean(message.guild);
+    if (inGuild && !messageCanAdminister(message)) {
+      await prefixReply(message, {
+        content: 'You need Administrator permission to use this command in a server.',
       });
       return true;
     }
-
-    const evaluated = evaluateMathExpression(expression);
-    if (!evaluated.ok) {
-      await message.reply({
-        content: evaluated.error,
-        allowedMentions: { repliedUser: false },
-      });
+    if (!args) {
+      await prefixReply(message, { content: 'Usage: `-say hello world`' });
       return true;
     }
+    if (inGuild && message.channel?.isTextBased?.()) {
+      try {
+        await message.channel.send({ content: args });
+        await prefixReply(message, { content: 'Sent.' });
+        return true;
+      } catch (err) {
+        console.warn('prefix -say channel.send failed:', err.message || err);
+      }
+    }
+    await prefixReply(message, { content: args });
+    return true;
+  }
 
-    await message.reply({
-      embeds: [buildMathCalculateEmbed(evaluated.expression, evaluated.result)],
-      allowedMentions: { repliedUser: false },
+  if (name === 'serverinfo') {
+    if (!message.guild) {
+      await prefixReply(message, { content: 'This command can only be used in a server.' });
+      return true;
+    }
+    const embed = await buildServerInfoEmbed(message.guild);
+    await prefixReply(message, { embeds: [embed] });
+    return true;
+  }
+
+  if (name === 'stick') {
+    if (!messageCanAdminister(message)) {
+      await prefixReply(message, { content: 'You need Administrator permission to use this command.' });
+      return true;
+    }
+    if (!message.guild || !message.channel?.isTextBased?.()) {
+      await prefixReply(message, { content: 'This command can only be used in a server text channel.' });
+      return true;
+    }
+    if (!args) {
+      await prefixReply(message, { content: 'Usage: `-stick message to keep at the bottom`' });
+      return true;
+    }
+    await setStickyForChannel(message.channel, args);
+    await prefixReply(message, {
+      content: 'Sticky set. It will stay as the newest message in this channel.',
     });
+    return true;
+  }
+
+  if (name === 'unstick') {
+    if (!messageCanAdminister(message)) {
+      await prefixReply(message, { content: 'You need Administrator permission to use this command.' });
+      return true;
+    }
+    if (!message.guild || !message.channel?.isTextBased?.()) {
+      await prefixReply(message, { content: 'This command can only be used in a server text channel.' });
+      return true;
+    }
+    const existed = await clearStickyForChannel(message.channel);
+    await prefixReply(message, {
+      content: existed ? 'Sticky removed.' : 'No sticky message in this channel.',
+    });
+    return true;
+  }
+
+  if (name === 'autoreact') {
+    if (!messageCanAdminister(message)) {
+      await prefixReply(message, { content: 'You need Administrator permission to use this command.' });
+      return true;
+    }
+    if (!canAutoReactInChannel(message.channel)) {
+      await prefixReply(message, { content: 'Use this in a text channel.' });
+      return true;
+    }
+    const { emojis, labels } = normalizeReactionEmojiList(args);
+    if (!emojis.length) {
+      await prefixReply(message, {
+        content: 'Usage: `-autoreact ✅` (optional 2nd/3rd emoji)',
+      });
+      return true;
+    }
+    autoReactByChannel.set(String(message.channel.id), emojis);
+    await prefixReply(message, {
+      content: `Auto-react enabled in <#${message.channel.id}>. Every new message will get: ${labels.join(' ')}`,
+    });
+    return true;
+  }
+
+  if (name === 'autoreactoff') {
+    if (!messageCanAdminister(message)) {
+      await prefixReply(message, { content: 'You need Administrator permission to use this command.' });
+      return true;
+    }
+    if (!message.channel?.id) {
+      await prefixReply(message, { content: 'Use this in a text channel.' });
+      return true;
+    }
+    const existed = autoReactByChannel.delete(String(message.channel.id));
+    await prefixReply(message, {
+      content: existed
+        ? `Auto-react disabled in <#${message.channel.id}>.`
+        : `Auto-react was not enabled in <#${message.channel.id}>.`,
+    });
+    return true;
+  }
+
+  if (name === 'embed') {
+    if (!messageCanAdminister(message)) {
+      await prefixReply(message, { content: 'You need Administrator permission to use this command.' });
+      return true;
+    }
+    if (!message.channel?.isTextBased?.()) {
+      await prefixReply(message, { content: 'This command can only be used in a text channel.' });
+      return true;
+    }
+    if (!args) {
+      await prefixReply(message, {
+        content: 'Usage: `-embed description` or `-embed title | description | #1e64c8 | image | thumb | footer`',
+      });
+      return true;
+    }
+    const parts = splitPipeArgs(args) || [args];
+    let title = null;
+    let description = args;
+    let colorInput = null;
+    let image = null;
+    let thumbnail = null;
+    let footer = null;
+    if (parts.length === 1) {
+      description = parts[0];
+    } else {
+      title = parts[0] || null;
+      description = parts[1] || '';
+      colorInput = parts[2] || null;
+      image = parts[3] || null;
+      thumbnail = parts[4] || null;
+      footer = parts[5] || null;
+    }
+    if (!description) {
+      await prefixReply(message, { content: 'Embed description is required.' });
+      return true;
+    }
+    const color = parseEmbedColor(colorInput);
+    if (color == null) {
+      await prefixReply(message, { content: 'Color must be a hex code like `#1e64c8`.' });
+      return true;
+    }
+    if (image && !isValidImageUrl(image)) {
+      await prefixReply(message, { content: 'Image must be a valid http(s) URL.' });
+      return true;
+    }
+    if (thumbnail && !isValidImageUrl(thumbnail)) {
+      await prefixReply(message, { content: 'Thumbnail must be a valid http(s) URL.' });
+      return true;
+    }
+    const embed = buildCustomEmbed({
+      title,
+      description,
+      color,
+      image,
+      thumbnail,
+      footer,
+    });
+    await message.channel.send({ embeds: [embed] });
+    await prefixReply(message, { content: 'Embed sent.' });
+    return true;
+  }
+
+  if (name === 'welcomesetup') {
+    if (!messageCanAdminister(message)) {
+      await prefixReply(message, { content: 'You need Administrator permission to use this command.' });
+      return true;
+    }
+    if (!message.guild) {
+      await prefixReply(message, { content: 'This command can only be used in a server.' });
+      return true;
+    }
+    const match = String(args || '').match(/^(?:<#(\d+)>|(\d+))\s+([\s\S]+)$/);
+    if (!match) {
+      await prefixReply(message, {
+        content:
+          'Usage: `-welcomesetup #channel Welcome {user} to {server}!` (optional: use `/welcomesetup` for title/color/image)',
+      });
+      return true;
+    }
+    const channelId = match[1] || match[2];
+    const description = match[3].trim();
+    let channel = message.guild.channels.cache.get(channelId);
+    if (!channel) {
+      try {
+        channel = await message.guild.channels.fetch(channelId);
+      } catch {
+        channel = null;
+      }
+    }
+    if (!channel?.isTextBased?.()) {
+      await prefixReply(message, { content: 'Please mention a valid text channel.' });
+      return true;
+    }
+    const config = {
+      channelId: channel.id,
+      title: null,
+      description,
+      color: 0x1e64c8,
+      image: null,
+      thumbnail: null,
+      footer: null,
+      updatedAt: Date.now(),
+      updatedBy: message.author.id,
+    };
+    welcomeByGuild[String(message.guild.id)] = config;
+    try {
+      saveWelcomeConfig();
+    } catch (err) {
+      console.error('Failed to save welcome config:', err.message || err);
+      await prefixReply(message, { content: 'Could not save welcome setup to disk. Try again.' });
+      return true;
+    }
+    const previewEmbed = buildWelcomeEmbed(config, message.member || {
+      id: message.author.id,
+      user: message.author,
+      guild: message.guild,
+      displayName: message.member?.displayName || message.author.username,
+    });
+    await prefixReply(message, {
+      content: [
+        `Welcome messages will be sent in <#${channel.id}> and ping new members.`,
+        'Placeholders: `{user}` `{username}` `{displayname}` `{server}` `{membercount}`',
+        'Preview:',
+      ].join('\n'),
+      embeds: [previewEmbed],
+    });
+    return true;
+  }
+
+  if (name === 'editpetvalue') {
+    if (!messageCanEditValues(message)) {
+      await prefixReply(message, { content: 'You need the editor role to use this command.' });
+      return true;
+    }
+    const { nameQuery, numbers } = peelTrailingNumbers(args, 3);
+    if (!nameQuery || !numbers.length) {
+      await prefixReply(message, {
+        content: 'Usage: `-editpetvalue Frost Dragon 67` or `-editpetvalue Frost Dragon 67 114 285`',
+      });
+      return true;
+    }
+    const petName = resolvePetOnly(nameQuery);
+    if (!petName) {
+      await prefixReply(message, { content: `Could not find a pet named **${nameQuery}**.` });
+      return true;
+    }
+    const oldValues = getPetFrNfrMfr(petName);
+    const newValues = {
+      fr: numbers[0] != null ? numbers[0] : oldValues.fr,
+      nfr: numbers[1] != null ? numbers[1] : oldValues.nfr,
+      mfr: numbers[2] != null ? numbers[2] : oldValues.mfr,
+    };
+    overrides.pets[petName] = newValues;
+    await prefixReply(message, {
+      content: `Value of **${petName}** has been changed.`,
+      embeds: [buildValueEmbed(petName)],
+    });
+    await postPetValueUpdate(petName, oldValues, newValues);
+    try {
+      await saveOverrides();
+    } catch (err) {
+      console.error('Failed after prefix editpetvalue:', err.message || err);
+    }
+    return true;
+  }
+
+  if (name === 'edititemvalue') {
+    if (!messageCanEditValues(message)) {
+      await prefixReply(message, { content: 'You need the editor role to use this command.' });
+      return true;
+    }
+    const { nameQuery, numbers } = peelTrailingNumbers(args, 1);
+    if (!nameQuery || numbers.length !== 1) {
+      await prefixReply(message, { content: 'Usage: `-edititemvalue Rainbow Rattle 356`' });
+      return true;
+    }
+    const itemName = resolveNonPetItem(nameQuery);
+    if (!itemName) {
+      await prefixReply(message, {
+        content: `Could not find a non-pet item named **${nameQuery}**. Use \`-editpetvalue\` for pets.`,
+      });
+      return true;
+    }
+    const amount = numbers[0];
+    const oldValue = itemUsd(itemName);
+    overrides.items[itemName] = amount;
+    await prefixReply(message, {
+      content: `Value of **${itemName}** has been changed.`,
+      embeds: [buildValueEmbed(itemName)],
+    });
+    await postItemValueUpdate(itemName, oldValue, amount);
+    try {
+      await saveOverrides();
+    } catch (err) {
+      console.error('Failed after prefix edititemvalue:', err.message || err);
+    }
+    return true;
+  }
+
+  if (name === 'acronymadd') {
+    if (!messageCanEditValues(message)) {
+      await prefixReply(message, { content: 'You need the editor role to use this command.' });
+      return true;
+    }
+    const parts = String(args || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length < 2) {
+      await prefixReply(message, { content: 'Usage: `-acronymadd FD Frost Dragon`' });
+      return true;
+    }
+    const acronymRaw = parts[0];
+    const itemQuery = parts.slice(1).join(' ');
+    const itemName = resolveItemName(itemQuery);
+    if (!itemName) {
+      await prefixReply(message, { content: `Could not find an item named **${itemQuery}**.` });
+      return true;
+    }
+    const acronym = normalizeItemKey(acronymRaw);
+    if (!acronym) {
+      await prefixReply(message, { content: 'Acronym must include at least one letter or number.' });
+      return true;
+    }
+    const existing = overrides.acronyms[acronym];
+    overrides.acronyms[acronym] = itemName;
+    await prefixReply(message, {
+      content:
+        existing && existing !== itemName
+          ? `Acronym **${acronym}** remapped from **${existing}** to **${itemName}**.`
+          : `Acronym **${acronym}** added for **${itemName}**.`,
+    });
+    try {
+      await saveOverrides();
+    } catch (err) {
+      console.error('Failed after prefix acronymadd:', err.message || err);
+    }
+    return true;
+  }
+
+  if (name === 'acronymremove') {
+    if (!messageCanEditValues(message)) {
+      await prefixReply(message, { content: 'You need the editor role to use this command.' });
+      return true;
+    }
+    const acronym = normalizeItemKey(args);
+    if (!acronym) {
+      await prefixReply(message, { content: 'Usage: `-acronymremove FD`' });
+      return true;
+    }
+    if (!overrides.acronyms || typeof overrides.acronyms !== 'object') overrides.acronyms = {};
+    const mapped = overrides.acronyms[acronym];
+    if (!mapped) {
+      await prefixReply(message, { content: `No acronym **${acronym}** is saved.` });
+      return true;
+    }
+    delete overrides.acronyms[acronym];
+    await prefixReply(message, {
+      content: `Acronym **${acronym}** removed (was mapped to **${mapped}**).`,
+    });
+    try {
+      await saveOverrides();
+    } catch (err) {
+      console.error('Failed after prefix acronymremove:', err.message || err);
+    }
+    return true;
+  }
+
+  if (name === 'addpet') {
+    if (!messageCanEditValues(message)) {
+      await prefixReply(message, { content: 'You need the editor role to use this command.' });
+      return true;
+    }
+    const parts = splitPipeArgs(args, 5);
+    if (!parts || parts.length < 5) {
+      await prefixReply(message, {
+        content: 'Usage: `-addpet Pet Name | https://image.png | fr | nfr | mfr`',
+      });
+      return true;
+    }
+    const petName = parts[0].trim();
+    const image = parts[1].trim();
+    const fr = Number(parts[2]);
+    const nfr = Number(parts[3]);
+    const mfr = Number(parts[4]);
+    if (!petName) {
+      await prefixReply(message, { content: 'Pet name cannot be empty.' });
+      return true;
+    }
+    if (!isValidImageUrl(image)) {
+      await prefixReply(message, { content: 'Image must be a valid http(s) URL.' });
+      return true;
+    }
+    if (![fr, nfr, mfr].every((n) => Number.isFinite(n) && n >= 0)) {
+      await prefixReply(message, { content: 'FR / NFR / MFR must be valid numbers ≥ 0.' });
+      return true;
+    }
+    if (getOtherItemNames().includes(petName) || overrides.customItems[petName]) {
+      await prefixReply(message, {
+        content: `**${petName}** already exists as a non-pet item.`,
+      });
+      return true;
+    }
+    overrides.customPets[petName] = { image, fr, nfr, mfr };
+    overrides.pets[petName] = { fr, nfr, mfr };
+    syncAmvggOverrides();
+    await prefixReply(message, {
+      content: `Added custom pet **${petName}**.`,
+      embeds: [buildValueEmbed(petName)],
+    });
+    try {
+      await saveOverrides();
+    } catch (err) {
+      console.error('Failed after prefix addpet:', err.message || err);
+    }
+    return true;
+  }
+
+  if (name === 'additem') {
+    if (!messageCanEditValues(message)) {
+      await prefixReply(message, { content: 'You need the editor role to use this command.' });
+      return true;
+    }
+    const parts = splitPipeArgs(args, 4);
+    if (!parts || parts.length < 4) {
+      await prefixReply(message, {
+        content:
+          'Usage: `-additem Item Name | https://image.png | toys | 12` (categories: pet-wear, strollers, food, vehicles, toys, gifts, stickers, houses)',
+      });
+      return true;
+    }
+    const itemName = parts[0].trim();
+    const image = parts[1].trim();
+    const category = parts[2].trim().toLowerCase();
+    const value = Number(parts[3]);
+    const validCategories = new Set(ITEM_CATEGORY_CHOICES.map((c) => c.value));
+    if (!itemName) {
+      await prefixReply(message, { content: 'Item name cannot be empty.' });
+      return true;
+    }
+    if (!isValidImageUrl(image)) {
+      await prefixReply(message, { content: 'Image must be a valid http(s) URL.' });
+      return true;
+    }
+    if (!validCategories.has(category)) {
+      await prefixReply(message, {
+        content: `Invalid category **${category}**. Use one of: ${[...validCategories].join(', ')}`,
+      });
+      return true;
+    }
+    if (!Number.isFinite(value) || value < 0) {
+      await prefixReply(message, { content: 'Value must be a number ≥ 0.' });
+      return true;
+    }
+    if (isPet(itemName) || overrides.customPets[itemName]) {
+      await prefixReply(message, {
+        content: `**${itemName}** already exists as a pet. Use \`-addpet\` / value edits for pets.`,
+      });
+      return true;
+    }
+    overrides.customItems[itemName] = { image, category, value };
+    overrides.items[itemName] = value;
+    syncAmvggOverrides();
+    await prefixReply(message, {
+      content: `Added custom item **${itemName}**.`,
+      embeds: [buildValueEmbed(itemName)],
+    });
+    try {
+      await saveOverrides();
+    } catch (err) {
+      console.error('Failed after prefix additem:', err.message || err);
+    }
+    return true;
+  }
+
+  if (name === 'deletepet') {
+    if (!messageCanEditValues(message)) {
+      await prefixReply(message, { content: 'You need the editor role to use this command.' });
+      return true;
+    }
+    if (!args) {
+      await prefixReply(message, { content: 'Usage: `-deletepet Custom Pet Name`' });
+      return true;
+    }
+    const exact =
+      (overrides.customPets && overrides.customPets[args] && args) ||
+      Object.keys(overrides.customPets || {}).find(
+        (petName) => petName.toLowerCase() === args.toLowerCase()
+      );
+    if (!exact) {
+      await prefixReply(message, {
+        content: `No custom pet named **${args}**. Only pets added with \`-addpet\` / \`/addpet\` can be deleted.`,
+      });
+      return true;
+    }
+    const result = deleteCustomPet(exact);
+    if (!result.ok) {
+      await prefixReply(message, { content: `Could not delete **${exact}**.` });
+      return true;
+    }
+    await prefixReply(message, {
+      content: `Deleted custom pet **${exact}**. It is removed from the site and \`/value\`.`,
+    });
+    try {
+      await saveOverrides();
+    } catch (err) {
+      console.error('Failed after prefix deletepet:', err.message || err);
+    }
+    return true;
+  }
+
+  if (name === 'deleteitem') {
+    if (!messageCanEditValues(message)) {
+      await prefixReply(message, { content: 'You need the editor role to use this command.' });
+      return true;
+    }
+    const parts = String(args || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length < 2) {
+      await prefixReply(message, {
+        content: 'Usage: `-deleteitem Item Name toys` (category last)',
+      });
+      return true;
+    }
+    const category = parts[parts.length - 1].toLowerCase();
+    const itemQuery = parts.slice(0, -1).join(' ');
+    const validCategories = new Set(ITEM_CATEGORY_CHOICES.map((c) => c.value));
+    if (!validCategories.has(category)) {
+      await prefixReply(message, {
+        content: `Invalid category **${category}**. Use one of: ${[...validCategories].join(', ')}`,
+      });
+      return true;
+    }
+    const exact =
+      (overrides.customItems && overrides.customItems[itemQuery] && itemQuery) ||
+      Object.keys(overrides.customItems || {}).find(
+        (itemName) => itemName.toLowerCase() === itemQuery.toLowerCase()
+      );
+    if (!exact) {
+      await prefixReply(message, {
+        content: `No custom item named **${itemQuery}**.`,
+      });
+      return true;
+    }
+    const result = deleteCustomItem(exact, category);
+    if (!result.ok) {
+      if (result.reason === 'category') {
+        await prefixReply(message, {
+          content: `**${exact}** is in **${result.actual}**, not **${category}**.`,
+        });
+        return true;
+      }
+      await prefixReply(message, { content: `Could not delete **${exact}**.` });
+      return true;
+    }
+    await prefixReply(message, {
+      content: `Deleted custom item **${exact}** (${category}). It is removed from the site and \`/value\`.`,
+    });
+    try {
+      await saveOverrides();
+    } catch (err) {
+      console.error('Failed after prefix deleteitem:', err.message || err);
+    }
     return true;
   }
 
