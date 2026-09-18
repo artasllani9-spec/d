@@ -1348,7 +1348,12 @@ const sayCommand = new SlashCommandBuilder()
   .addStringOption((option) =>
     option.setName('message').setDescription('What the bot should say').setRequired(true)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
+  .setContexts(
+    InteractionContextType.Guild,
+    InteractionContextType.BotDM,
+    InteractionContextType.PrivateChannel
+  )
   .toJSON();
 
 const stickCommand = new SlashCommandBuilder()
@@ -1571,6 +1576,7 @@ const HELP_SECTIONS = [
     lines: [
       '`/value` — Show USD value for a pet or item',
       '`/calculate` — Evaluate a math expression (example: `60+50+40/2`)',
+      '`/say` — Make the bot send a message *(admin in servers)*',
       '`/help` — Show this command list',
     ],
   },
@@ -1590,7 +1596,6 @@ const HELP_SECTIONS = [
   {
     name: 'Chat tools (server)',
     lines: [
-      '`/say` — Make the bot send a plain message *(admin)*',
       '`/embed` — Make the bot send an embed *(admin)*',
       '`/stick` — Keep a message stuck at the bottom of this channel *(admin)*',
       '`/unstick` — Remove the sticky message *(admin)*',
@@ -1606,7 +1611,7 @@ const HELP_SECTIONS = [
 ];
 
 /** Global + user-installable (DMs / group DMs / servers). */
-const userInstallCommands = [helpCommand, valueCommand, calculateCommand];
+const userInstallCommands = [helpCommand, valueCommand, calculateCommand, sayCommand];
 
 /** Guild-only tools (admin / editor / server helpers). */
 const guildOnlyCommands = [
@@ -1615,7 +1620,6 @@ const guildOnlyCommands = [
   editItemValueCommand,
   acronymAddCommand,
   acronymRemoveCommand,
-  sayCommand,
   stickCommand,
   unstickCommand,
   autoreactCommand,
@@ -1751,7 +1755,7 @@ function buildHelpEmbed() {
   return embed;
 }
 
-const BOT_BUILD = 'math-calculate-20260918';
+const BOT_BUILD = 'say-user-install-20260918';
 
 const client = new Client({
   intents: [
@@ -2122,25 +2126,30 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.commandName === 'say') {
-      if (!canAdminister(interaction)) {
+      const inGuild = Boolean(interaction.guild);
+      if (inGuild && !canAdminister(interaction)) {
         await interaction.reply({
-          content: 'You need Administrator permission to use this command.',
+          content: 'You need Administrator permission to use this command in a server.',
           ephemeral: true,
         });
         return;
       }
 
       const message = interaction.options.getString('message', true);
-      if (!interaction.channel || !interaction.channel.isTextBased()) {
-        await interaction.reply({
-          content: 'This command can only be used in a text channel.',
-          ephemeral: true,
-        });
-        return;
+
+      // In servers where the bot can post, send as a normal message.
+      if (inGuild && interaction.channel?.isTextBased?.()) {
+        try {
+          await interaction.channel.send({ content: message });
+          await interaction.reply({ content: 'Sent.', ephemeral: true });
+          return;
+        } catch (err) {
+          console.warn('channel.send failed for /say, falling back to reply:', err.message || err);
+        }
       }
 
-      await interaction.channel.send({ content: message });
-      await interaction.reply({ content: 'Sent.', ephemeral: true });
+      // DMs / user-install / fallback: reply with the message itself.
+      await interaction.reply({ content: message });
       return;
     }
 
