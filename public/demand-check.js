@@ -232,28 +232,46 @@
     if (editTitle) editTitle.textContent = kind === 'pet' ? 'Edit pet values' : 'Edit item value';
 
     if (kind === 'pet') {
-      const variantKeys =
-        typeof AMVGG_PET_EDITOR_VARIANT_KEYS !== 'undefined'
-          ? AMVGG_PET_EDITOR_VARIANT_KEYS
-          : ['', 'f', 'r', 'n', 'nf', 'nr', 'm', 'mf', 'mr'];
+      const categories = [
+        { id: 'regular', title: 'Regular', keys: ['', 'f', 'r'] },
+        { id: 'neon', title: 'Neon', keys: ['n', 'nf', 'nr'] },
+        { id: 'mega', title: 'Mega', keys: ['m', 'mf', 'mr'] },
+      ];
+
+      function renderVariantField(key) {
+        const potions =
+          typeof potionsFromKey === 'function'
+            ? potionsFromKey(key)
+            : { fly: false, ride: false, neon: false, mega: false };
+        const amount = getAmvggUsdValue(itemName, potions);
+        const label = key === '' ? 'NoPot' : key.toUpperCase();
+        const fieldId = `value-edit-${key === '' ? 'nopot' : key}`;
+        return `
+          <div class="value-edit-modal__field">
+            <label for="${fieldId}">${label}</label>
+            <div class="value-edit-modal__input-wrap">
+              <span class="value-edit-modal__currency" aria-hidden="true">$</span>
+              <input id="${fieldId}" data-variant-key="${key}" type="number" min="0" step="any" value="${
+                amount != null ? amount : ''
+              }" inputmode="decimal">
+            </div>
+          </div>`;
+      }
+
       editFields.classList.add('value-edit-modal__fields--variants');
-      editFields.innerHTML = variantKeys
-        .map((key) => {
-          const potions =
-            typeof potionsFromKey === 'function'
-              ? potionsFromKey(key)
-              : { fly: false, ride: false, neon: false, mega: false };
-          const amount = getAmvggUsdValue(itemName, potions);
-          const label = key === '' ? 'NoPot' : key.toUpperCase();
-          const fieldId = `value-edit-${key === '' ? 'nopot' : key}`;
-          return `
-        <div class="value-edit-modal__field">
-          <label for="${fieldId}">${label}</label>
-          <input id="${fieldId}" data-variant-key="${key}" type="number" min="0" step="any" value="${
-            amount != null ? amount : ''
-          }" inputmode="decimal">
-        </div>`;
-        })
+      editFields.innerHTML = categories
+        .map(
+          (category) => `
+        <section class="value-edit-modal__category value-edit-modal__category--${category.id}" aria-labelledby="value-edit-cat-${category.id}">
+          <div class="value-edit-modal__category-head">
+            <span class="value-edit-modal__category-mark" aria-hidden="true"></span>
+            <h3 class="value-edit-modal__category-title" id="value-edit-cat-${category.id}">${category.title}</h3>
+          </div>
+          <div class="value-edit-modal__category-grid">
+            ${category.keys.map(renderVariantField).join('')}
+          </div>
+        </section>`
+        )
         .join('');
     } else {
       editFields.classList.remove('value-edit-modal__fields--variants');
@@ -261,7 +279,10 @@
       editFields.innerHTML = `
         <div class="value-edit-modal__field">
           <label for="value-edit-flat">USD Value</label>
-          <input id="value-edit-flat" type="number" min="0" step="any" value="${value != null ? value : ''}" inputmode="decimal">
+          <div class="value-edit-modal__input-wrap">
+            <span class="value-edit-modal__currency" aria-hidden="true">$</span>
+            <input id="value-edit-flat" type="number" min="0" step="any" value="${value != null ? value : ''}" inputmode="decimal">
+          </div>
         </div>
       `;
     }
