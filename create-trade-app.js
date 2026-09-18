@@ -863,7 +863,7 @@ function createTradeApp() {
           const amount = Number(source[key]);
           if (!Number.isFinite(amount) || amount < 0) {
             res.status(400).json({
-              message: `Invalid value for ${key === '' ? 'blank' : key.toUpperCase()}.`,
+              message: `Invalid value for ${key === '' ? 'NoPot' : key.toUpperCase()}.`,
             });
             return;
           }

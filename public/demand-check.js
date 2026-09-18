@@ -244,7 +244,7 @@
               ? potionsFromKey(key)
               : { fly: false, ride: false, neon: false, mega: false };
           const amount = getAmvggUsdValue(itemName, potions);
-          const label = key === '' ? 'Blank' : key.toUpperCase();
+          const label = key === '' ? 'NoPot' : key.toUpperCase();
           const fieldId = `value-edit-${key === '' ? 'blank' : key}`;
           return `
         <div class="value-edit-modal__field">
@@ -284,7 +284,7 @@
         const key = input.getAttribute('data-variant-key');
         const amount = Number(input.value);
         if (!Number.isFinite(amount) || amount < 0) {
-          const label = key === '' ? 'Blank' : String(key).toUpperCase();
+          const label = key === '' ? 'NoPot' : String(key).toUpperCase();
           setEditStatus(`Enter a valid ${label} value.`, true);
           return;
         }
