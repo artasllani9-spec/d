@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260918netdesk">
+  <link rel="stylesheet" href="styles.css?v=20260919filtercrypto">
   <link rel="stylesheet" href="responsive.css?v=20260918netdesk">
 </head>
 <body class="tos-page trading-page">
@@ -176,6 +176,10 @@
             </span>
             <span class="trade-picker__category-label">Houses</span>
           </button>
+          <button type="button" class="trade-picker__category" data-category="crypto">
+            <span class="trade-picker__category-icon trade-picker__category-icon--dollar" aria-hidden="true">$</span>
+            <span class="trade-picker__category-label">Crypto</span>
+          </button>
         </nav>
         <div class="trade-picker__body">
           <div class="trade-picker__toolbar">
@@ -227,6 +231,10 @@
               <p class="trade-picker__hint" data-filter-hint>Select a house to filter trades</p>
               <div class="trade-picker__items" data-filter-items></div>
             </div>
+            <div class="trade-picker__panel-content" data-panel="crypto">
+              <p class="trade-picker__hint" data-filter-hint>Select a crypto to filter trades</p>
+              <div class="trade-picker__items" data-filter-items></div>
+            </div>
           </div>
         </div>
         <div class="trade-picker__pet-popout" id="trade-side-filter-detail" hidden>
@@ -244,6 +252,26 @@
                 <button type="button" class="trade-picker__potion trade-picker__potion--ride trade-picker__potion--active" data-potion="ride" aria-label="Ride" aria-pressed="true">R</button>
                 <button type="button" class="trade-picker__potion trade-picker__potion--neon" data-potion="neon" aria-label="Neon" aria-pressed="false">N</button>
                 <button type="button" class="trade-picker__potion trade-picker__potion--mega" data-potion="mega" aria-label="Mega" aria-pressed="false">M</button>
+              </div>
+              <div class="trade-picker__networks" id="trade-side-filter-networks" hidden>
+                <span class="trade-picker__networks-label">Select network:</span>
+                <div class="trade-picker__networks-options" role="radiogroup" aria-label="Select network">
+                  <button type="button" class="trade-picker__network" data-network="BSC - BEP20" role="radio" aria-checked="false" title="BSC - BEP20">
+                    <img class="trade-picker__network-icon" src="icons/crypto/bsc.png?v=1" alt="" aria-hidden="true">
+                    <span class="trade-picker__network-label-full">BSC - BEP20</span>
+                    <span class="trade-picker__network-label-short" aria-hidden="true">BSC</span>
+                  </button>
+                  <button type="button" class="trade-picker__network" data-network="Ethereum - ERC20" role="radio" aria-checked="false" title="Ethereum - ERC20">
+                    <img class="trade-picker__network-icon" src="icons/crypto/ethereum.png?v=2" alt="" aria-hidden="true">
+                    <span class="trade-picker__network-label-full">Ethereum - ERC20</span>
+                    <span class="trade-picker__network-label-short" aria-hidden="true">ETH</span>
+                  </button>
+                  <button type="button" class="trade-picker__network" data-network="Solana - SOL" role="radio" aria-checked="false" title="Solana - SOL">
+                    <img class="trade-picker__network-icon" src="icons/crypto/solana.png?v=4" alt="" aria-hidden="true">
+                    <span class="trade-picker__network-label-full">Solana - SOL</span>
+                    <span class="trade-picker__network-label-short" aria-hidden="true">SOL</span>
+                  </button>
+                </div>
               </div>
             </div>
             <div class="trade-picker__pet-actions">
@@ -281,6 +309,6 @@
   <script defer src="nav.js?v=20260917perf"></script>
   <script defer src="auth.js?v=20260917perf"></script>
   <script defer src="trades.js?v=20260917perf"></script>
-  <script defer src="trading-feed.js?v=20260917full"></script>
+  <script defer src="trading-feed.js?v=20260919filtercrypto"></script>
 </body>
 </html>

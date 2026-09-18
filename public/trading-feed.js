@@ -16,6 +16,10 @@
   const filterDetailName = document.getElementById('trade-side-filter-detail-name');
   const filterDetailBadges = document.getElementById('trade-side-filter-detail-badges');
   const filterPotionsRow = document.getElementById('trade-side-filter-potions');
+  const filterNetworks = document.getElementById('trade-side-filter-networks');
+  const filterNetworkButtons = filterNetworks
+    ? filterNetworks.querySelectorAll('.trade-picker__network')
+    : [];
   const filterDetailCancel = document.getElementById('trade-side-filter-detail-cancel');
   const filterDetailConfirm = document.getElementById('trade-side-filter-detail-confirm');
   const tradeConfirm = document.getElementById('trade-confirm');
@@ -47,7 +51,7 @@
 
   let showingAccepted = new URLSearchParams(window.location.search).get('accepted') === '1';
   let lastFingerprint = '';
-  /** @type {{ yours: { itemName: string, potions: object | null } | null, theirs: { itemName: string, potions: object | null } | null }} */
+  /** @type {{ yours: { itemName: string, potions: object | null, network: string | null } | null, theirs: { itemName: string, potions: object | null, network: string | null } | null }} */
   const sideFilters = { yours: null, theirs: null };
   /** @type {'yours' | 'theirs' | null} */
   let filterPickerSide = null;
@@ -55,8 +59,44 @@
   let pendingItemName = null;
   let pendingItemImage = null;
   let pendingNoPotions = false;
+  let pendingCryptoMode = false;
+  let pendingCryptoNetwork = null;
   /** @type {{ tradeId: number, action: 'completed' | 'failed' | 'delete' | 'accept' } | null} */
   let pendingConfirm = null;
+
+  const CRYPTO_NETWORK_ITEMS = new Set(['USDT', 'USDC']);
+  const CRYPTO_NETWORKS = ['BSC - BEP20', 'Ethereum - ERC20', 'Solana - SOL'];
+  const CRYPTO_ORDER = [
+    'Any Crypto',
+    'Bitcoin',
+    'Ethereum',
+    'Litecoin',
+    'Solana',
+    'USDT',
+    'USDC',
+  ];
+  const CRYPTO_ICONS = {
+    'Any Crypto': 'icons/crypto/any-crypto.png?v=1',
+    Bitcoin: 'icons/crypto/bitcoin.png?v=2',
+    Ethereum: 'icons/crypto/ethereum.png?v=2',
+    Litecoin: 'icons/crypto/litecoin.png?v=2',
+    Solana: 'icons/crypto/solana.png?v=4',
+    USDT: 'icons/crypto/usdt.png?v=2',
+    USDC: 'icons/crypto/usdc.png?v=2',
+  };
+
+  function getCryptoImage(name) {
+    if (CRYPTO_ICONS[name]) return CRYPTO_ICONS[name];
+    const label = String(name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const fontSize = name.length > 10 ? 12 : name.length > 7 ? 14 : 16;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="14" fill="#0f172a"/><text x="64" y="68" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="Outfit,Arial,sans-serif" font-size="${fontSize}" font-weight="700">${label}</text></svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  }
+
+  const cryptoItems = CRYPTO_ORDER.map((name) => ({
+    name,
+    image: getCryptoImage(name),
+  }));
 
   const CATEGORY_ITEMS = {
     pets: typeof petsByUsd !== 'undefined' ? petsByUsd : typeof pets !== 'undefined' ? pets : [],
@@ -68,6 +108,7 @@
     gifts: typeof gifts !== 'undefined' ? gifts : [],
     stickers: typeof stickers !== 'undefined' ? stickers : [],
     houses: typeof houses !== 'undefined' ? houses : [],
+    crypto: cryptoItems,
   };
 
   const noPotionsSet = typeof PETS_NO_POTIONS !== 'undefined' ? PETS_NO_POTIONS : new Set();
@@ -156,9 +197,44 @@
     return Boolean(sideFilters.yours || sideFilters.theirs);
   }
 
+  function formatNetworkLabel(network) {
+    if (!network) return '';
+    const raw = String(network);
+    const short = raw.split(' - ')[0] || raw;
+    return short;
+  }
+
   function formatFilterLabel(filter) {
     if (!filter) return '';
-    return `${filter.itemName}${formatPotionsLabel(filter.potions)}`;
+    let label = filter.itemName;
+    if (filter.network) label += ` (${formatNetworkLabel(filter.network)})`;
+    label += formatPotionsLabel(filter.potions);
+    return label;
+  }
+
+  function needsCryptoNetwork(itemName) {
+    return CRYPTO_NETWORK_ITEMS.has(String(itemName || ''));
+  }
+
+  function resetPendingNetwork() {
+    pendingCryptoNetwork = null;
+    filterNetworkButtons.forEach((button) => {
+      button.classList.remove('trade-picker__network--active', 'trade-picker__network--invalid');
+      button.setAttribute('aria-checked', 'false');
+    });
+    if (filterNetworks) filterNetworks.classList.remove('trade-picker__networks--invalid');
+  }
+
+  function setPendingNetwork(network) {
+    if (!CRYPTO_NETWORKS.includes(network)) return;
+    pendingCryptoNetwork = network;
+    filterNetworkButtons.forEach((button) => {
+      const active = button.dataset.network === network;
+      button.classList.toggle('trade-picker__network--active', active);
+      button.setAttribute('aria-checked', active ? 'true' : 'false');
+      button.classList.remove('trade-picker__network--invalid');
+    });
+    if (filterNetworks) filterNetworks.classList.remove('trade-picker__networks--invalid');
   }
 
   function sideMatchesFilter(trade, side, filter) {
@@ -167,6 +243,9 @@
     const target = normalizeItemName(filter.itemName);
     return items.some((item) => {
       if (normalizeItemName(item && item.name) !== target) return false;
+      if (filter.network) {
+        if (String(item && item.network || '') !== String(filter.network)) return false;
+      }
       if (!filter.potions) return true;
       return potionsEqual(item.potions, filter.potions);
     });
@@ -187,10 +266,10 @@
   function fingerprintTrades(trades) {
     const filterKey = [
       sideFilters.yours
-        ? `yours:${normalizeItemName(sideFilters.yours.itemName)}:${potionsKey(sideFilters.yours.potions)}`
+        ? `yours:${normalizeItemName(sideFilters.yours.itemName)}:${potionsKey(sideFilters.yours.potions)}:${sideFilters.yours.network || ''}`
         : 'yours:none',
       sideFilters.theirs
-        ? `theirs:${normalizeItemName(sideFilters.theirs.itemName)}:${potionsKey(sideFilters.theirs.potions)}`
+        ? `theirs:${normalizeItemName(sideFilters.theirs.itemName)}:${potionsKey(sideFilters.theirs.potions)}:${sideFilters.theirs.network || ''}`
         : 'theirs:none',
     ].join('|');
     return `${filterKey}|${trades.map((trade) => [
@@ -258,6 +337,10 @@
     pendingItemName = null;
     pendingItemImage = null;
     pendingNoPotions = false;
+    pendingCryptoMode = false;
+    resetPendingNetwork();
+    if (filterPotionsRow) filterPotionsRow.hidden = false;
+    if (filterNetworks) filterNetworks.hidden = true;
     if (filterDetail) filterDetail.hidden = true;
   }
 
@@ -265,6 +348,8 @@
     pendingItemName = itemName;
     pendingItemImage = itemImage;
     pendingNoPotions = noPotions;
+    pendingCryptoMode = false;
+    resetPendingNetwork();
 
     if (filterDetailImg) {
       filterDetailImg.src = itemImage || '';
@@ -272,6 +357,7 @@
     }
     if (filterDetailName) filterDetailName.textContent = itemName || '';
     if (filterPotionsRow) filterPotionsRow.hidden = noPotions;
+    if (filterNetworks) filterNetworks.hidden = true;
 
     if (noPotions) {
       resetPotions(false);
@@ -281,6 +367,27 @@
       resetPotions(true);
     }
 
+    if (filterDetail) filterDetail.hidden = false;
+  }
+
+  function showCryptoFilterDetail(itemName, itemImage, restoreNetwork) {
+    pendingItemName = itemName;
+    pendingItemImage = itemImage;
+    pendingNoPotions = true;
+    pendingCryptoMode = true;
+    resetPendingNetwork();
+
+    if (filterDetailImg) {
+      filterDetailImg.src = itemImage || '';
+      filterDetailImg.alt = itemName || '';
+    }
+    if (filterDetailName) filterDetailName.textContent = itemName || '';
+    if (filterPotionsRow) filterPotionsRow.hidden = true;
+    if (filterNetworks) {
+      filterNetworks.hidden = false;
+      if (restoreNetwork) setPendingNetwork(restoreNetwork);
+    }
+    resetPotions(false);
     if (filterDetail) filterDetail.hidden = false;
   }
 
@@ -484,10 +591,11 @@
     syncFilterButtonState();
   }
 
-  function setSideFilter(side, itemName, potions) {
+  function setSideFilter(side, itemName, potions, network = null) {
     sideFilters[side] = {
       itemName,
       potions: potions ? normalizePotions(potions) : null,
+      network: network || null,
     };
     syncFilterButtonState();
     closeFilterPicker();
@@ -506,8 +614,17 @@
 
   function confirmPendingFilter() {
     if (!filterPickerSide || !pendingItemName) return;
+    if (pendingCryptoMode) {
+      if (needsCryptoNetwork(pendingItemName) && !pendingCryptoNetwork) {
+        if (filterNetworks) filterNetworks.classList.add('trade-picker__networks--invalid');
+        filterNetworkButtons.forEach((button) => button.classList.add('trade-picker__network--invalid'));
+        return;
+      }
+      setSideFilter(filterPickerSide, pendingItemName, null, pendingCryptoNetwork);
+      return;
+    }
     const potions = pendingNoPotions ? null : getActivePotions();
-    setSideFilter(filterPickerSide, pendingItemName, potions);
+    setSideFilter(filterPickerSide, pendingItemName, potions, null);
   }
 
   function closeTradeConfirm() {
@@ -642,6 +759,21 @@
         });
         itemBtn.classList.add('trade-picker__item--selected');
 
+        if (activeFilterCategory === 'crypto') {
+          if (needsCryptoNetwork(itemName)) {
+            const activeSideFilter = sideFilters[filterPickerSide];
+            const restoreNetwork = (
+              activeSideFilter
+              && normalizeItemName(activeSideFilter.itemName) === normalizeItemName(itemName)
+              && activeSideFilter.network
+            ) ? activeSideFilter.network : null;
+            showCryptoFilterDetail(itemName, itemImage, restoreNetwork);
+            return;
+          }
+          setSideFilter(filterPickerSide, itemName, null, null);
+          return;
+        }
+
         if (activeFilterCategory === 'pets') {
           const activeSideFilter = sideFilters[filterPickerSide];
           const restorePotions = (
@@ -654,10 +786,18 @@
         }
 
         // Non-pet categories apply immediately (no version).
-        setSideFilter(filterPickerSide, itemName, null);
+        setSideFilter(filterPickerSide, itemName, null, null);
       }
     });
   }
+
+  filterNetworkButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (!pendingCryptoMode) return;
+      setPendingNetwork(button.dataset.network);
+    });
+  });
 
   potionButtons.forEach((button) => {
     button.addEventListener('click', (event) => {
