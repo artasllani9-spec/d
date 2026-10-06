@@ -41,6 +41,7 @@
 
   renderTradeGrids();
   window.addEventListener('valueoverridesready', updateViewTradeValues);
+  window.addEventListener('vd-currency-change', renderTradeGrids);
 
   if (offererEl) {
     offererEl.textContent = viewTrade.offerer || '—';

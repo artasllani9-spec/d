@@ -164,6 +164,9 @@
       ? getAmvggUsdValue(item.name)
       : getAmvggUsdValue(item.name, defaultPotions);
     const usdDisplay = formatUsdValue(usdAmount);
+    const valueLabel = (globalThis.ValueDexPrefs && typeof globalThis.ValueDexPrefs.valueLabel === 'function')
+      ? globalThis.ValueDexPrefs.valueLabel()
+      : 'USD';
     const card = document.createElement('article');
     card.className = 'demand-check-pet-card trade-picker__pet-popout-card';
     card.dataset.petName = item.name;
@@ -186,7 +189,7 @@
         <span class="trade-picker__pet-bar-name">${item.name}</span>
         <div class="demand-check-pet-card__stats">
           <div class="demand-check-value">
-            <span class="demand-check-value__label">USD Value:</span>
+            <span class="demand-check-value__label">${valueLabel} Value:</span>
             <span class="demand-check-value__amount">${usdDisplay}</span>
           </div>
         </div>
@@ -458,6 +461,9 @@
 
   searchInput.addEventListener('input', debounce(renderItems, 120));
   window.addEventListener('valueoverridesready', () => {
+    renderItems();
+  });
+  window.addEventListener('vd-currency-change', () => {
     renderItems();
   });
 

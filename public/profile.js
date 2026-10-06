@@ -191,7 +191,10 @@
     syncUserActionButtons();
   }
 
+  let shownProfileId = null;
+
   async function renderPublishedTrades(userId) {
+    shownProfileId = userId;
     if (!tradesSection || !tradesFeed || !tradesEmpty || !userId) return;
 
     tradesSection.hidden = false;
@@ -550,6 +553,10 @@
   const loadPromise = profileId
     ? loadPublicProfile(profileId)
     : loadOwnProfile();
+
+  window.addEventListener('vd-currency-change', () => {
+    if (shownProfileId) renderPublishedTrades(shownProfileId);
+  });
 
   loadPromise.catch(() => {
     loading.hidden = false;

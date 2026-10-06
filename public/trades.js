@@ -640,7 +640,7 @@ function buildTradeSlotHTML(item) {
   const name = escapeHtml(item.name);
   const signClass = item.isSign ? ' trade-slot--sign' : '';
   const usdTag = typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)
-    ? `<span class="trade-slot__usd-tag">$${Number(item.usdValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>`
+    ? `<span class="trade-slot__usd-tag">${escapeHtml(typeof formatUsdValue === 'function' ? formatUsdValue(item.usdValue) : ('$' + Number(item.usdValue).toLocaleString(undefined, { maximumFractionDigits: 2 })))}</span>`
     : '';
   const networkBadge = buildTradeNetworkBadgeHTML(item.network);
   const usdAttr = typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)

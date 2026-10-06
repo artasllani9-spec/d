@@ -8,8 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="favicon.png?v=20261007zoom" type="image/png">
-  <link rel="stylesheet" href="styles.css?v=20261007mid">
-  <link rel="stylesheet" href="responsive.css?v=20261006glow">
+  <script src="site-prefs.js?v=20261007gray"></script>
+  <link rel="stylesheet" href="styles.css?v=20261007gray">
+  <link rel="stylesheet" href="responsive.css?v=20261007prefs">
 </head>
 <body class="tos-page post-trade-page">
   <div class="tos-background" aria-hidden="true"></div>
@@ -284,7 +285,7 @@
                   <span class="trade-picker__quantity-value">1</span>
                 </div>
                 <div class="trade-picker__quantity-line trade-picker__quantity-line--usd" hidden>
-                  <span class="trade-picker__quantity-label">USD Value:</span>
+                  <span class="trade-picker__quantity-label" id="crypto-value-label">USD Value:</span>
                   <input
                     type="text"
                     inputmode="decimal"
@@ -356,10 +357,10 @@
   </main>
 
   <script src="pets-data.js?v=20261007items"></script>
-  <script src="amvgg-usd-values.js?v=20261007fresh"></script>
+  <script src="amvgg-usd-values.js?v=20261007prefs"></script>
   <script src="value-overrides.js?v=20261007sync"></script>
   <script src="trade-value-compare.js?v=20260917perf"></script>
-  <script src="trades.js?v=20260917crypto10"></script>
+  <script src="trades.js?v=20261007prefs"></script>
   <script>
     const tradePicker = document.getElementById('trade-picker');
     const tradePickerPanel = tradePicker.querySelector('.trade-picker__panel');
@@ -497,12 +498,30 @@
       return category === 'crypto';
     }
 
+    function currencyValueName() {
+      const prefs = globalThis.ValueDexPrefs;
+      return prefs && typeof prefs.valueLabel === 'function' ? prefs.valueLabel() : 'USD';
+    }
+
+    function syncCryptoValueLabel() {
+      const labelEl = document.getElementById('crypto-value-label');
+      const name = currencyValueName();
+      if (labelEl) labelEl.textContent = name + ' Value:';
+      if (cryptoUsdInput) {
+        cryptoUsdInput.setAttribute('aria-label', name + ' value');
+        cryptoUsdInput.placeholder = name === 'JPY' ? '0' : '0.00';
+      }
+    }
+
     function parseCryptoUsdInput() {
       if (!cryptoUsdInput) return NaN;
       const raw = String(cryptoUsdInput.value || '').trim().replace(/,/g, '');
       if (!raw) return NaN;
       const value = Number(raw);
-      return Number.isFinite(value) ? value : NaN;
+      if (!Number.isFinite(value)) return NaN;
+      const prefs = globalThis.ValueDexPrefs;
+      if (prefs && typeof prefs.toUsd === 'function') return prefs.toUsd(value);
+      return value;
     }
 
     function needsCryptoNetwork(itemName = selectedPetName) {
@@ -839,12 +858,12 @@
       filled.setAttribute('role', 'button');
       filled.setAttribute('tabindex', '0');
       const valueLabel = typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)
-        ? ` ($${item.usdValue})`
+        ? ` (${typeof formatUsdValue === 'function' ? formatUsdValue(item.usdValue) : ('$' + item.usdValue)})`
         : '';
       const networkLabel = item.network ? ` · ${item.network}` : '';
       filled.setAttribute('aria-label', `Remove ${item.name}${valueLabel}${networkLabel}`);
       const usdTag = typeof item.usdValue === 'number' && Number.isFinite(item.usdValue)
-        ? `<span class="trade-slot__usd-tag">$${Number(item.usdValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>`
+        ? `<span class="trade-slot__usd-tag">${typeof formatUsdValue === 'function' ? formatUsdValue(item.usdValue) : ('$' + Number(item.usdValue).toLocaleString(undefined, { maximumFractionDigits: 2 }))}</span>`
         : '';
       filled.innerHTML = `
         <div class="trade-slot__card">
@@ -1460,6 +1479,22 @@
           postTradeBtn.textContent = originalPostLabel || 'Post Trade';
         }
       }
+    });
+
+    syncCryptoValueLabel();
+    window.addEventListener('vd-currency-change', (event) => {
+      const previous = event.detail && event.detail.previous;
+      const prefs = globalThis.ValueDexPrefs;
+      if (cryptoUsdInput && previous && previous !== prefs?.currency && prefs && typeof prefs.toUsd === 'function' && typeof prefs.present === 'function') {
+        const raw = String(cryptoUsdInput.value || '').trim().replace(/,/g, '');
+        const typed = Number(raw);
+        if (raw && Number.isFinite(typed)) {
+          const shown = prefs.present(prefs.toUsd(typed, previous));
+          if (shown && Number.isFinite(shown.shown)) cryptoUsdInput.value = String(shown.shown);
+        }
+      }
+      syncCryptoValueLabel();
+      updateTradeSideTotals();
     });
   </script>
   <script src="nav.js"></script>

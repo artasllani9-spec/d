@@ -495,9 +495,21 @@ ${RUNTIME_HELPERS}
 
 function formatUsdValue(amount) {
   if (amount == null || !Number.isFinite(amount)) return '—';
-  if (Number.isInteger(amount)) return '$' + amount.toLocaleString('en-US');
-  if (amount < 1) return '$' + amount.toFixed(2);
-  return '$' + amount.toFixed(1);
+  let shown = amount;
+  let symbol = '$';
+  let zeroDecimals = false;
+  const prefs = typeof globalThis !== 'undefined' ? globalThis.ValueDexPrefs : null;
+  if (prefs && typeof prefs.present === 'function') {
+    const presented = prefs.present(amount);
+    if (presented && Number.isFinite(presented.shown)) {
+      shown = presented.shown;
+      symbol = presented.symbol || '$';
+      zeroDecimals = Boolean(presented.zeroDecimals);
+    }
+  }
+  if (zeroDecimals || Number.isInteger(shown)) return symbol + Math.round(shown).toLocaleString('en-US');
+  if (shown < 1) return symbol + shown.toFixed(2);
+  return symbol + shown.toFixed(1);
 }
 
 function getAmvggUsdValue(itemName, potions) {

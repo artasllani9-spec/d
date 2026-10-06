@@ -8,8 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="favicon.png?v=20261007zoom" type="image/png">
-  <link rel="stylesheet" href="styles.css?v=20261006homebg">
-  <link rel="stylesheet" href="responsive.css?v=20261006glow">
+  <script src="site-prefs.js?v=20261007gray"></script>
+  <link rel="stylesheet" href="styles.css?v=20261007gray">
+  <link rel="stylesheet" href="responsive.css?v=20261007prefs">
 </head>
 <body class="home-page">
   <header class="top-line">
@@ -52,7 +53,7 @@
           <img src="vd-logo.png?v=20261006clear" class="home-hero__mark-img" alt="ValueDex" width="520" height="520" decoding="async" fetchpriority="high">
           <p class="home-hero__brand">VALUEDEX</p>
         </div>
-        <p class="home-hero__line">Know the USD value of every pet &amp; item.</p>
+        <p class="home-hero__line">Know the value of every pet &amp; item.</p>
         <div class="home-hero__ctas">
           <a href="trading.html" class="home-cta home-cta--primary">
             <span class="home-cta__icon" aria-hidden="true">
@@ -80,9 +81,9 @@
       <div class="home-below__inner">
         <section class="home-pitch home-reveal">
           <p class="home-pitch__eyebrow">Built around real money</p>
-          <h2 class="home-pitch__title">Values in USD — not vague tiers.</h2>
+          <h2 class="home-pitch__title">Values in real money — not vague tiers.</h2>
           <p class="home-pitch__body">
-            ValueDex prices Adopt Me pets and items in dollars, so you can tell what a trade is actually worth
+            ValueDex prices Adopt Me pets and items in real currency, so you can tell what a trade is actually worth
             before you accept.
           </p>
         </section>
@@ -187,7 +188,7 @@
             <span class="home-path__num" aria-hidden="true">01</span>
             <div class="home-path__copy">
               <h3 class="home-path__name">Look it up</h3>
-              <p class="home-path__desc">Search any pet or item and see FR, NFR, and MFR in USD.</p>
+              <p class="home-path__desc">Search any pet or item and see FR, NFR, and MFR.</p>
               <a href="demand-check.html" class="home-path__link">Open value list</a>
             </div>
           </li>
@@ -212,7 +213,7 @@
         <section class="home-spotlight home-reveal" aria-label="Example values">
           <div class="home-spotlight__head">
             <h2 class="home-spotlight__title">A few prices, straight up</h2>
-            <p class="home-spotlight__note">Live FR USD from the ValueDex list — open the full list for everything else.</p>
+            <p class="home-spotlight__note">Live Fly and Ride prices from the ValueDex list — open the full list for everything else.</p>
           </div>
           <ul class="home-spotlight__row">
             <li class="home-spotlight__item" data-pet="Bat Dragon">
@@ -260,7 +261,7 @@
     </div>
   </footer>
   <script defer src="pets-data.js?v=20261007items"></script>
-  <script defer src="amvgg-usd-values.js?v=20261007fresh"></script>
+  <script defer src="amvgg-usd-values.js?v=20261007prefs"></script>
   <script defer src="value-overrides.js?v=20261007sync"></script>
   <script defer src="nav.js"></script>
   <script defer src="auth.js"></script>
@@ -351,6 +352,8 @@
           fillCatalogStats(false);
         }
       }
+
+      window.addEventListener('vd-currency-change', fillSpotlightPrices);
 
       const ready = window.valueOverridesReady;
       if (ready && typeof ready.then === 'function') {
