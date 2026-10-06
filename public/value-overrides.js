@@ -200,4 +200,18 @@
       window.dispatchEvent(new Event('valueoverridesready'));
     }
   })();
+
+  window.setInterval(() => {
+    fetch('/api/values/overrides', { cache: 'no-store', credentials: 'same-origin' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const nextAt = Number(data.updatedAt) || 0;
+        const currentAt = Number(globalThis.__VALUE_OVERRIDES && globalThis.__VALUE_OVERRIDES.updatedAt) || 0;
+        if (nextAt === currentAt) return;
+        applyOverrides(data);
+        window.dispatchEvent(new Event('valueoverridesready'));
+      })
+      .catch(() => {});
+  }, 8000);
 })();

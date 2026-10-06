@@ -61,6 +61,21 @@ const REPO_ROOT = path.join(__dirname, '..');
 const VALUE_UPDATE_CHANNEL_ID = String(
   process.env.DISCORD_VALUE_UPDATE_CHANNEL_ID || '1548371067679023178'
 ).trim();
+let lastAppliedUpdatedAt = 0;
+let watchRemoteOverrides = false;
+let adoptInFlight = null;
+const VALUE_SYNC_COMMANDS = new Set([
+  'value',
+  'editpetvalue',
+  'edititemvalue',
+  'addpet',
+  'additem',
+  'deletepet',
+  'deleteitem',
+  'acronymadd',
+  'acronymremove',
+]);
+const PET_VARIANT_ANNOUNCE_ORDER = ['fr', 'nfr', 'mfr', '', 'f', 'r', 'n', 'nf', 'nr', 'm', 'mf', 'mr'];
 /** guildId -> welcome embed config */
 let welcomeByGuild = {};
 
@@ -263,6 +278,8 @@ function saveOverridesLocal() {
     updatedAt: Date.now(),
   };
   syncAmvggOverrides();
+  overrides.updatedAt = payload.updatedAt;
+  lastAppliedUpdatedAt = Math.max(lastAppliedUpdatedAt, payload.updatedAt);
   const text = JSON.stringify(payload, null, 2) + '\n';
   fs.writeFileSync(OVERRIDES_PATH, text, 'utf8');
   try {
@@ -462,6 +479,144 @@ for (const [name, entry] of Object.entries(overrides.customItems)) {
   overrides.items[name] = entry.value;
 }
 syncAmvggOverrides();
+lastAppliedUpdatedAt = Number(overrides.updatedAt) || 0;
+
+function potionsFromVariantKey(key) {
+  const k = String(key || '');
+  return {
+    mega: k.indexOf('m') !== -1,
+    neon: k.indexOf('n') !== -1,
+    fly: k.indexOf('f') !== -1,
+    ride: k.indexOf('r') !== -1,
+  };
+}
+
+function variantAnnounceLabel(key) {
+  if (key === 'fr') return `${EMOJI.fly}${EMOJI.ride}`;
+  if (key === 'nfr') return `${EMOJI.neon}${EMOJI.fly}${EMOJI.ride}`;
+  if (key === 'mfr') return `${EMOJI.mega}${EMOJI.fly}${EMOJI.ride}`;
+  if (key === '') return 'No Potion';
+  if (key === 'f') return EMOJI.fly;
+  if (key === 'r') return EMOJI.ride;
+  if (key === 'n') return EMOJI.neon;
+  if (key === 'nf') return `${EMOJI.neon}${EMOJI.fly}`;
+  if (key === 'nr') return `${EMOJI.neon}${EMOJI.ride}`;
+  if (key === 'm') return EMOJI.mega;
+  if (key === 'mf') return `${EMOJI.mega}${EMOJI.fly}`;
+  if (key === 'mr') return `${EMOJI.mega}${EMOJI.ride}`;
+  return String(key || '').toUpperCase();
+}
+
+function applyRemoteOverridePayload(remote) {
+  overrides = {
+    pets: { ...(remote.pets || {}) },
+    items: { ...(remote.items || {}) },
+    acronyms: { ...(remote.acronyms || {}) },
+    customPets: { ...(remote.customPets || {}) },
+    customItems: { ...(remote.customItems || {}) },
+    updatedAt: remote.updatedAt || null,
+  };
+  for (const [name, entry] of Object.entries(overrides.customPets || {})) {
+    const { image: _image, ...values } = entry || {};
+    overrides.pets[name] = { ...values };
+  }
+  for (const [name, entry] of Object.entries(overrides.customItems || {})) {
+    if (entry && entry.value != null) overrides.items[name] = entry.value;
+  }
+  syncAmvggOverrides();
+}
+
+async function postSyncedPetChange(petName, lines) {
+  const description = ['**USD Value:**', ...lines].join('\n');
+  const embed = new EmbedBuilder()
+    .setColor(0x1e64c8)
+    .setTitle(petName)
+    .setDescription(description)
+    .setThumbnail(getItemImage(petName))
+    .setFooter({ text: 'ValueDex' });
+  try {
+    const channel = await getValueUpdateChannel();
+    await channel.send({ embeds: [embed] });
+  } catch (err) {
+    console.error('Failed to post synced pet value update:', err.message || err);
+  }
+}
+
+async function adoptRemoteValueChanges() {
+  if (adoptInFlight) return adoptInFlight;
+  adoptInFlight = (async () => {
+    let remote = null;
+    try {
+      const site = await fetchOverridesFromSite();
+      const github = await fetchOverridesFromGitHub();
+      if (!site && !github) return;
+      remote = pickNewestOverrides(site, github);
+    } catch (err) {
+      console.warn('Value sync fetch failed:', err.message || err);
+      return;
+    }
+    if (!remote) return;
+    const remoteAt = Number(remote.updatedAt) || 0;
+    if (remoteAt && remoteAt <= lastAppliedUpdatedAt) return;
+
+    const pendingPets = [];
+    const pendingItems = [];
+    if (watchRemoteOverrides) {
+      const prevPets = overrides.pets || {};
+      const nextPets = remote.pets || {};
+      const petNames = new Set([...Object.keys(prevPets), ...Object.keys(nextPets)]);
+      for (const name of petNames) {
+        if (JSON.stringify(prevPets[name] ?? null) === JSON.stringify(nextPets[name] ?? null)) continue;
+        const keys = new Set([
+          ...Object.keys(prevPets[name] || {}),
+          ...Object.keys(nextPets[name] || {}),
+          'fr',
+          'nfr',
+          'mfr',
+        ]);
+        const olds = {};
+        for (const key of keys) olds[key] = petUsd(name, potionsFromVariantKey(key));
+        pendingPets.push({ name, keys: [...keys], olds });
+      }
+      const prevItems = overrides.items || {};
+      const nextItems = remote.items || {};
+      const itemNames = new Set([...Object.keys(prevItems), ...Object.keys(nextItems)]);
+      for (const name of itemNames) {
+        if (JSON.stringify(prevItems[name] ?? null) === JSON.stringify(nextItems[name] ?? null)) continue;
+        pendingItems.push({ name, old: itemUsd(name) });
+      }
+    }
+
+    applyRemoteOverridePayload(remote);
+    lastAppliedUpdatedAt = remoteAt || Date.now();
+    console.log(
+      `Adopted value overrides (${Object.keys(overrides.pets || {}).length} pets, ${Object.keys(overrides.items || {}).length} items)`
+    );
+
+    if (!watchRemoteOverrides) return;
+
+    for (const change of pendingPets) {
+      const lines = [];
+      const ordered = PET_VARIANT_ANNOUNCE_ORDER.filter((key) => change.keys.includes(key));
+      for (const key of change.keys) {
+        if (!ordered.includes(key)) ordered.push(key);
+      }
+      for (const key of ordered) {
+        const next = petUsd(change.name, potionsFromVariantKey(key));
+        if (next === change.olds[key]) continue;
+        lines.push(`${variantAnnounceLabel(key)} ${formatValueChange(change.olds[key], next)}`);
+      }
+      if (lines.length) await postSyncedPetChange(change.name, lines);
+    }
+    for (const change of pendingItems) {
+      const next = itemUsd(change.name);
+      if (next !== change.old) await postItemValueUpdate(change.name, change.old, next);
+    }
+  })().finally(() => {
+    adoptInFlight = null;
+  });
+  return adoptInFlight;
+}
 
 const BUILTIN_PET_NAMES = Object.keys(values.AMVGG_PET_PRICING || {});
 const BUILTIN_ITEM_NAMES = Object.keys(values.AMVGG_USD_VALUES || {}).filter(
@@ -1757,7 +1912,7 @@ function buildHelpEmbed() {
   return embed;
 }
 
-const BOT_BUILD = 'prefix-all-commands-20260918';
+const BOT_BUILD = 'value-sync-20261007';
 
 const client = new Client({
   intents: [
@@ -1791,11 +1946,16 @@ client.once(Events.ClientReady, async (readyClient) => {
   }
 
   try {
-    await refreshOverridesFromRemote();
-    await syncOverridesToSite().catch((err) => console.warn(err.message));
+    await adoptRemoteValueChanges();
   } catch (err) {
     console.error('Failed to refresh overrides on startup:', err.message);
   }
+  watchRemoteOverrides = true;
+  setInterval(() => {
+    adoptRemoteValueChanges().catch((err) => {
+      console.warn('Value sync failed:', err.message || err);
+    });
+  }, 8000);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -1828,6 +1988,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 
   if (!interaction.isChatInputCommand()) return;
+
+  if (VALUE_SYNC_COMMANDS.has(interaction.commandName)) {
+    try {
+      await adoptRemoteValueChanges();
+    } catch (err) {
+      console.warn('Value sync before command failed:', err.message || err);
+    }
+  }
 
   console.log(`Slash command received: /${interaction.commandName} [${BOT_BUILD}]`);
 
@@ -2689,6 +2857,14 @@ async function handlePrefixCommand(message) {
   if (!parsed) return false;
 
   const { name, args } = parsed;
+
+  if (VALUE_SYNC_COMMANDS.has(name)) {
+    try {
+      await adoptRemoteValueChanges();
+    } catch (err) {
+      console.warn('Value sync before prefix command failed:', err.message || err);
+    }
+  }
 
   if (name === 'help') {
     await prefixReply(message, { embeds: [buildHelpEmbed()] });

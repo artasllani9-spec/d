@@ -457,6 +457,9 @@
   });
 
   searchInput.addEventListener('input', debounce(renderItems, 120));
+  window.addEventListener('valueoverridesready', () => {
+    renderItems();
+  });
 
   function bootDemandCheck() {
     if (CATEGORY_CONFIG.pets) {

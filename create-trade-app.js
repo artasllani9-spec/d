@@ -801,7 +801,7 @@ function createTradeApp() {
     try {
       const overrides = await readValueOverrides();
       // Short browser/CDN cache — editors publish infrequently; clients also session-cache.
-      res.set('Cache-Control', 'public, max-age=20, stale-while-revalidate=60');
+      res.set('Cache-Control', 'no-store');
       res.json(overrides);
     } catch (error) {
       sendError(res, error, 'Could not load value overrides.');
