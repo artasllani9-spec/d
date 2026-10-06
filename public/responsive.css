@@ -108,9 +108,9 @@
   }
 
   .sector:hover::before {
-    background: rgba(93, 184, 255, 0.92);
-    border-color: #5db8ff;
-    box-shadow: 0 0 12px rgba(93, 184, 255, 0.45);
+    background: rgba(255, 58, 58, 0.92);
+    border-color: #ff3a3a;
+    box-shadow: 0 0 12px rgba(255, 58, 58, 0.45);
   }
 
   .sector--active {
@@ -128,9 +128,9 @@
   }
 
   .sector--active:hover::before {
-    background: rgba(93, 184, 255, 0.92);
-    border-color: #5db8ff;
-    box-shadow: 0 0 12px rgba(93, 184, 255, 0.45);
+    background: rgba(255, 58, 58, 0.92);
+    border-color: #ff3a3a;
+    box-shadow: 0 0 12px rgba(255, 58, 58, 0.45);
   }
 }
 
@@ -545,8 +545,8 @@
   }
 
   .credits-slot--bankai {
-    background: rgba(93, 184, 255, 0.08);
-    box-shadow: inset 0 0 40px rgba(93, 184, 255, 0.18);
+    background: rgba(255, 58, 58, 0.08);
+    box-shadow: inset 0 0 40px rgba(255, 58, 58, 0.18);
   }
 
   .credits-slot--shade .credits-name,
@@ -566,15 +566,15 @@
   }
 
   .credits-slot--bankai .credits-name {
-    color: #5db8ff;
+    color: #ff3a3a;
     text-shadow:
-      0 0 12px rgba(93, 184, 255, 0.9),
-      0 0 28px rgba(93, 184, 255, 0.55);
+      0 0 12px rgba(255, 58, 58, 0.9),
+      0 0 28px rgba(255, 58, 58, 0.55);
   }
 
   .credits-slot--bankai .credits-profile-link {
-    color: #5db8ff;
-    filter: drop-shadow(0 0 6px rgba(93, 184, 255, 0.55));
+    color: #ff3a3a;
+    filter: drop-shadow(0 0 6px rgba(255, 58, 58, 0.55));
   }
 
   .credits-slot--shade .credits-role,
@@ -599,20 +599,20 @@
   }
 
   .credits-slot--bankai .credits-role--blue {
-    border-color: rgba(93, 184, 255, 0.65);
+    border-color: rgba(255, 58, 58, 0.65);
     box-shadow:
-      0 0 20px rgba(93, 184, 255, 0.45),
+      0 0 20px rgba(255, 58, 58, 0.45),
       inset 0 1px 0 rgba(255, 255, 255, 0.25);
     text-shadow:
-      0 0 16px rgba(93, 184, 255, 0.85),
-      0 0 30px rgba(93, 184, 255, 0.5);
+      0 0 16px rgba(255, 58, 58, 0.85),
+      0 0 30px rgba(255, 58, 58, 0.5);
   }
 
   .credits-slot--bankai .credits-role--blue .credits-role-icon {
     filter:
-      drop-shadow(0 0 12px rgba(93, 184, 255, 0.95))
-      drop-shadow(0 0 22px rgba(93, 184, 255, 0.65))
-      drop-shadow(0 0 32px rgba(93, 184, 255, 0.35));
+      drop-shadow(0 0 12px rgba(255, 58, 58, 0.95))
+      drop-shadow(0 0 22px rgba(255, 58, 58, 0.65))
+      drop-shadow(0 0 32px rgba(255, 58, 58, 0.35));
   }
 
   .credits-slot--shade .credits-avatar,
@@ -625,10 +625,10 @@
   }
 
   .credits-slot--bankai .credits-avatar {
-    border-color: rgba(93, 184, 255, 0.85);
+    border-color: rgba(255, 58, 58, 0.85);
     box-shadow:
-      0 0 18px rgba(93, 184, 255, 0.7),
-      0 0 36px rgba(93, 184, 255, 0.4);
+      0 0 18px rgba(255, 58, 58, 0.7),
+      0 0 36px rgba(255, 58, 58, 0.4);
   }
 
   .trading-feed-headbar,
@@ -2176,7 +2176,7 @@
   }
 
   .sector:active {
-    background: rgba(93, 184, 255, 0.32);
+    background: rgba(255, 58, 58, 0.32);
   }
 }
 

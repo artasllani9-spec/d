@@ -73,6 +73,6 @@ if (shouldRunDiscordBot()) {
 
   app.listen(PORT, () => {
     console.log(`valuedex running at http://localhost:${PORT}`);
-    console.log(`Roblox login: http://localhost:${PORT}/api/auth/roblox`);
+    console.log(`Discord login: http://localhost:${PORT}/api/auth/discord`);
   });
 }

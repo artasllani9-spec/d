@@ -87,7 +87,12 @@
     if (user.avatarUrl) return user.avatarUrl;
     if (user.picture) return user.picture;
     if (user.id) {
-      return `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(user.id)}&width=150&height=150&format=png`;
+      try {
+        const index = Number((BigInt(String(user.id)) >> 22n) % 6n);
+        return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+      } catch {
+        return 'https://cdn.discordapp.com/embed/avatars/0.png';
+      }
     }
     return '';
   }
@@ -159,7 +164,7 @@
   function renderUser(user, stats, moderation, relationship) {
     const label = user.username || user.name || 'Player';
     const imageUrl = avatarUrlFor(user);
-    const robloxUrl = user.profile || `https://www.roblox.com/users/${encodeURIComponent(user.id)}/profile`;
+    const robloxUrl = user.profile || `https://discord.com/users/${encodeURIComponent(user.id)}`;
 
     viewedUserId = user.id ? String(user.id) : null;
     viewedUsername = user.username || user.name || null;
@@ -176,11 +181,11 @@
       avatar.alt = label;
     }
     if (username) username.textContent = label;
-    if (idEl) idEl.textContent = `Roblox ID: ${user.id || '—'}`;
+    if (idEl) idEl.textContent = `Discord ID: ${user.id || '—'}`;
     if (robloxLink) {
       robloxLink.href = robloxUrl;
       const labelEl = robloxLink.querySelector('.profile-card__roblox-label');
-      if (labelEl) labelEl.textContent = 'View on Roblox';
+      if (labelEl) labelEl.textContent = 'View on Discord';
     }
     renderStats(stats);
     syncUserActionButtons();
@@ -232,7 +237,7 @@
           if (ok) window.location.href = 'trading.html?accepted=1';
         }).catch((error) => {
           if (error && error.code === 'AUTH_REQUIRED') {
-            window.location.href = '/api/auth/roblox';
+            window.location.href = '/api/auth/discord';
             return;
           }
           window.alert((error && error.message) || 'Could not accept trade.');
@@ -253,7 +258,7 @@
     reportBtn.addEventListener('click', () => {
       if (!viewedUserId) return;
       if (!viewerLoggedIn) {
-        window.location.href = '/api/auth/roblox';
+        window.location.href = '/api/auth/discord';
         return;
       }
       openReportModal();
@@ -315,7 +320,7 @@
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           if (response.status === 401) {
-            window.location.href = '/api/auth/roblox';
+            window.location.href = '/api/auth/discord';
             return;
           }
           throw new Error(data.message || 'Could not submit report.');
@@ -369,7 +374,7 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok && response.status !== 204) {
         if (response.status === 401) {
-          window.location.href = '/api/auth/roblox';
+          window.location.href = '/api/auth/discord';
           return;
         }
         throw new Error(data.message || (isBlocked ? 'Could not unblock user.' : 'Could not block user.'));
@@ -481,7 +486,7 @@
           return;
         }
         if (!data || !data.user) {
-          window.location.replace('/api/auth/roblox');
+          window.location.replace('/api/auth/discord');
           return;
         }
 

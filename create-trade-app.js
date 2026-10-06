@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerRobloxAuth, getSessionUser } = require('./roblox-auth');
+const { registerRobloxAuth, getSessionUser, fetchDiscordUser, discordDefaultAvatar } = require('./roblox-auth');
 const {
   MAX_STORED_TRADES,
   SITE_OWNER_ID,
@@ -41,27 +41,16 @@ function sendError(res, error, fallbackMessage) {
   res.status(status).json(payload);
 }
 
-async function fetchRobloxUsername(userId) {
-  try {
-    const response = await fetch(`https://users.roblox.com/v1/users/${encodeURIComponent(userId)}`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.name || data.displayName || null;
-  } catch {
-    return null;
-  }
-}
-
 async function enrichModerators(moderatorIds) {
   const ids = (Array.isArray(moderatorIds) ? moderatorIds : [])
     .map((id) => String(id))
     .filter((id) => id && id !== SITE_OWNER_ID);
 
   return Promise.all(ids.map(async (id) => {
-    const username = await fetchRobloxUsername(id);
+    const discordUser = await fetchDiscordUser(id);
     return {
       id,
-      username: username || null,
+      username: (discordUser && (discordUser.username || discordUser.name)) || null,
     };
   }));
 }
@@ -111,7 +100,7 @@ function createTradeApp() {
 
       const userId = normalizeRobloxId(req.body && req.body.userId);
       if (!userId) {
-        res.status(400).json({ message: 'Enter a valid Roblox user ID.' });
+        res.status(400).json({ message: 'Enter a valid Discord user ID.' });
         return;
       }
 
@@ -191,7 +180,7 @@ function createTradeApp() {
 
       const userId = normalizeRobloxId(req.body && req.body.userId);
       if (!userId) {
-        res.status(400).json({ message: 'Enter a valid Roblox user ID.' });
+        res.status(400).json({ message: 'Enter a valid Discord user ID.' });
         return;
       }
 
@@ -229,7 +218,7 @@ function createTradeApp() {
 
       const userId = normalizeRobloxId(req.params && req.params.id);
       if (!userId) {
-        res.status(400).json({ message: 'Enter a valid Roblox user ID.' });
+        res.status(400).json({ message: 'Enter a valid Discord user ID.' });
         return;
       }
 
@@ -514,7 +503,7 @@ function createTradeApp() {
       const access = await rejectIfBanned(req, res);
       if (access.banned) return;
       if (!access.sessionUser) {
-        res.status(401).json({ message: 'Log in with Roblox to post a trade.' });
+        res.status(401).json({ message: 'Log in with Discord to post a trade.' });
         return;
       }
 
@@ -592,7 +581,7 @@ function createTradeApp() {
       const access = await rejectIfBanned(req, res);
       if (access.banned) return;
       if (!access.sessionUser) {
-        res.status(401).json({ message: 'Log in with Roblox to accept a trade.' });
+        res.status(401).json({ message: 'Log in with Discord to accept a trade.' });
         return;
       }
 
@@ -743,19 +732,17 @@ function createTradeApp() {
 
       let username = latest?.offerer || null;
       let avatarUrl = latest?.offererAvatar || null;
+      let profileUrl = `https://discord.com/users/${encodeURIComponent(id)}`;
 
-      try {
-        const robloxResponse = await fetch(`https://users.roblox.com/v1/users/${id}`);
-        if (robloxResponse.ok) {
-          const data = await robloxResponse.json();
-          username = data.name || data.displayName || username;
-        }
-      } catch {
-        // Keep trade-derived username if Roblox lookup fails.
+      const discordUser = await fetchDiscordUser(id);
+      if (discordUser) {
+        username = discordUser.username || username;
+        avatarUrl = discordUser.avatarUrl || avatarUrl;
+        profileUrl = discordUser.profile || profileUrl;
       }
 
       if (!avatarUrl) {
-        avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(id)}&width=150&height=150&format=png`;
+        avatarUrl = discordDefaultAvatar(id);
       }
 
       const sessionUser = getSessionUser(req);
@@ -773,7 +760,7 @@ function createTradeApp() {
           name: username || 'Player',
           avatarUrl,
           picture: avatarUrl,
-          profile: `https://www.roblox.com/users/${encodeURIComponent(id)}/profile`,
+          profile: profileUrl,
         },
         stats: {
           posted: relatedTrades.length,

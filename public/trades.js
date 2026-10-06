@@ -70,12 +70,17 @@ function isAuthModerator() {
 
 function getRobloxAvatarUrl(userId) {
   if (!userId || String(userId).startsWith('user-') || !/^\d+$/.test(String(userId))) return '';
-  return `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(userId)}&width=150&height=150&format=png`;
+  try {
+    const index = Number((BigInt(String(userId)) >> 22n) % 6n);
+    return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+  } catch {
+    return 'https://cdn.discordapp.com/embed/avatars/0.png';
+  }
 }
 
 function getRobloxProfileUrl(userId) {
   if (!userId || String(userId).startsWith('user-') || !/^\d+$/.test(String(userId))) return '';
-  return `https://www.roblox.com/users/${encodeURIComponent(userId)}/profile`;
+  return `https://discord.com/users/${encodeURIComponent(userId)}`;
 }
 
 function getOffererAvatarUrl(trade) {
@@ -398,7 +403,7 @@ async function acceptPostedTrade(tradeId) {
 
   const authUser = await ensureAuthUser();
   if (!authUser || !authUser.id) {
-    const error = new Error('Log in with Roblox to accept a trade.');
+    const error = new Error('Log in with Discord to accept a trade.');
     error.code = 'AUTH_REQUIRED';
     throw error;
   }
@@ -499,7 +504,7 @@ async function savePostedTrade(trade) {
 
   const authUser = await ensureAuthUser();
   if (!authUser || !authUser.id) {
-    const error = new Error('Log in with Roblox to post a trade.');
+    const error = new Error('Log in with Discord to post a trade.');
     error.code = 'AUTH_REQUIRED';
     throw error;
   }

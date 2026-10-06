@@ -7,13 +7,11 @@ const {
   isValueEditor,
 } = require('./trade-store');
 
-const ROBLOX_AUTHORIZE_URL = 'https://apis.roblox.com/oauth/v1/authorize';
-const ROBLOX_TOKEN_URL = 'https://apis.roblox.com/oauth/v1/token';
-const ROBLOX_USERINFO_URL = 'https://apis.roblox.com/oauth/v1/userinfo';
-const DEFAULT_CLIENT_ID = '1467861509529011675';
+const DISCORD_AUTHORIZE_URL = 'https://discord.com/api/oauth2/authorize';
+const DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token';
+const DISCORD_USER_URL = 'https://discord.com/api/users/@me';
+const DISCORD_SCOPES = 'identify';
 const DEFAULT_SITE_URL = 'https://d-seven-chi.vercel.app';
-const OAUTH_APP_NAME = 'DemandGG';
-const OAUTH_SCOPES = 'openid profile';
 const COOKIE_OAUTH_STATE = 'dgg_oauth_state';
 const COOKIE_OAUTH_VERIFIER = 'dgg_oauth_verifier';
 const COOKIE_SESSION = 'dgg_session';
@@ -21,17 +19,17 @@ const COOKIE_SESSION = 'dgg_session';
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 400;
 
 function getClientId() {
-  return process.env.ROBLOX_CLIENT_ID || DEFAULT_CLIENT_ID;
+  return process.env.DISCORD_CLIENT_ID || '';
 }
 
 function getClientSecret() {
-  return process.env.ROBLOX_CLIENT_SECRET || '';
+  return process.env.DISCORD_CLIENT_SECRET || '';
 }
 
 function getSessionSecret() {
   return (
     process.env.SESSION_SECRET ||
-    process.env.ROBLOX_CLIENT_SECRET ||
+    process.env.DISCORD_CLIENT_SECRET ||
     'demandgg-dev-session-secret'
   );
 }
@@ -48,14 +46,6 @@ function base64UrlDecode(value) {
   const padded = value.replace(/-/g, '+').replace(/_/g, '/');
   const pad = padded.length % 4 === 0 ? '' : '='.repeat(4 - (padded.length % 4));
   return Buffer.from(padded + pad, 'base64');
-}
-
-function createCodeVerifier() {
-  return base64UrlEncode(crypto.randomBytes(32));
-}
-
-function createCodeChallenge(verifier) {
-  return base64UrlEncode(crypto.createHash('sha256').update(verifier).digest());
 }
 
 function createState() {
@@ -150,18 +140,10 @@ function verifySession(token) {
 }
 
 function getRequestOrigin(req) {
-  const configured = process.env.SITE_URL || process.env.ROBLOX_REDIRECT_ORIGIN;
-  if (configured) return configured.replace(/\/$/, '');
-
   const host = String(req.headers['x-forwarded-host'] || req.headers.host || '')
     .split(',')[0]
     .trim()
     .toLowerCase();
-
-  // Keep production redirects stable even if a preview host is used.
-  if (host.includes('vercel.app') || host === 'valuedex' || host === 'www.valuedex' || host === 'demand.gg' || host === 'www.demand.gg') {
-    return DEFAULT_SITE_URL;
-  }
 
   const protoHeader = req.headers['x-forwarded-proto'];
   const proto = (Array.isArray(protoHeader) ? protoHeader[0] : protoHeader) ||
@@ -171,43 +153,51 @@ function getRequestOrigin(req) {
     return `${proto}://${host}`;
   }
 
+  const configured = process.env.SITE_URL || '';
+  if (configured) return configured.replace(/\/$/, '');
+
+  // Keep production redirects stable even if a preview host is used.
+  if (host.includes('vercel.app') || host === 'valuedex' || host === 'www.valuedex' || host === 'demand.gg' || host === 'www.demand.gg') {
+    return DEFAULT_SITE_URL;
+  }
+
   return DEFAULT_SITE_URL;
 }
 
 function getRedirectUri(req) {
-  if (process.env.ROBLOX_REDIRECT_URI) {
-    return process.env.ROBLOX_REDIRECT_URI;
+  if (process.env.DISCORD_REDIRECT_URI) {
+    return process.env.DISCORD_REDIRECT_URI;
   }
-  return `${getRequestOrigin(req)}/api/auth/roblox/callback`;
+  return `${getRequestOrigin(req)}/api/auth/discord/callback`;
 }
 
 function getRequiredRedirectUris() {
   return [
-    `${DEFAULT_SITE_URL}/api/auth/roblox/callback`,
-    'http://localhost:3000/api/auth/roblox/callback',
+    `${DEFAULT_SITE_URL}/api/auth/discord/callback`,
+    'http://localhost:3000/api/auth/discord/callback',
   ];
 }
 
-function getAvatarFallbackUrl(userId) {
-  return `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(userId)}&width=150&height=150&format=png`;
+function discordDefaultAvatar(userId) {
+  try {
+    const index = Number((BigInt(String(userId)) >> 22n) % 6n);
+    return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+  } catch {
+    return 'https://cdn.discordapp.com/embed/avatars/0.png';
+  }
 }
 
-async function fetchAvatarHeadshotUrl(userId) {
-  if (!userId) return null;
-  try {
-    const url = new URL('https://thumbnails.roblox.com/v1/users/avatar-headshot');
-    url.searchParams.set('userIds', String(userId));
-    url.searchParams.set('size', '150x150');
-    url.searchParams.set('format', 'Png');
-    url.searchParams.set('isCircular', 'true');
-
-    const response = await fetch(url);
-    const data = await response.json().catch(() => ({}));
-    const imageUrl = data && data.data && data.data[0] && data.data[0].imageUrl;
-    return imageUrl || getAvatarFallbackUrl(userId);
-  } catch {
-    return getAvatarFallbackUrl(userId);
+function discordAvatarUrl(user) {
+  if (!user) return discordDefaultAvatar('');
+  if (user.avatar && user.id) {
+    const ext = String(user.avatar).startsWith('a_') ? 'gif' : 'png';
+    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
   }
+  return discordDefaultAvatar(user.id);
+}
+
+function getAvatarFallbackUrl(userId) {
+  return discordDefaultAvatar(userId);
 }
 
 function getSessionUser(req) {
@@ -243,11 +233,11 @@ function refreshSessionCookie(res, payload) {
   setCookie(res, COOKIE_SESSION, signSession(nextPayload), { maxAgeMs: SESSION_MAX_AGE_MS });
 }
 
-async function exchangeCodeForTokens({ code, codeVerifier, redirectUri }) {
+async function exchangeCodeForTokens({ code, redirectUri }) {
   const secret = getClientSecret();
-  if (!secret) {
+  if (!secret || !getClientId()) {
     const error = new Error(
-      'ROBLOX_CLIENT_SECRET is not set. Add it in Vercel Environment Variables (and local .env), then redeploy.',
+      'DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET are not set. Add them in Vercel Environment Variables, then redeploy.',
     );
     error.status = 500;
     throw error;
@@ -259,10 +249,9 @@ async function exchangeCodeForTokens({ code, codeVerifier, redirectUri }) {
     redirect_uri: redirectUri,
     client_id: getClientId(),
     client_secret: secret,
-    code_verifier: codeVerifier,
   });
 
-  const response = await fetch(ROBLOX_TOKEN_URL, {
+  const response = await fetch(DISCORD_TOKEN_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -283,8 +272,8 @@ async function exchangeCodeForTokens({ code, codeVerifier, redirectUri }) {
   return data;
 }
 
-async function fetchUserInfo(accessToken) {
-  const response = await fetch(ROBLOX_USERINFO_URL, {
+async function fetchDiscordProfile(accessToken) {
+  const response = await fetch(DISCORD_USER_URL, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/json',
@@ -293,13 +282,37 @@ async function fetchUserInfo(accessToken) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = data.error_description || data.error || 'Failed to load Roblox profile.';
+    const message = data.error_description || data.message || data.error || 'Failed to load Discord profile.';
     const error = new Error(message);
     error.status = response.status;
     throw error;
   }
 
   return data;
+}
+
+async function fetchDiscordUser(userId) {
+  const token = process.env.DISCORD_BOT_TOKEN || '';
+  if (!token || !userId) return null;
+  try {
+    const response = await fetch(`https://discord.com/api/v10/users/${encodeURIComponent(userId)}`, {
+      headers: { Authorization: `Bot ${token}` },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const username = data.global_name || data.username || null;
+    const avatarUrl = discordAvatarUrl(data);
+    return {
+      id: String(data.id),
+      username,
+      name: username,
+      avatarUrl,
+      picture: avatarUrl,
+      profile: `https://discord.com/users/${data.id}`,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function htmlErrorPage(title, message) {
@@ -325,59 +338,56 @@ function htmlErrorPage(title, message) {
 </html>`;
 }
 
+function startDiscordLogin(req, res) {
+  if (!getClientId() || !getClientSecret()) {
+    res
+      .status(500)
+      .send(
+        htmlErrorPage(
+          'Login not configured',
+          'Add DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET in Vercel Environment Variables, then redeploy. In the Discord Developer Portal, add the redirect URLs from /api/auth/setup.',
+        ),
+      );
+    return;
+  }
+
+  const state = createState();
+  const redirectUri = getRedirectUri(req);
+  setCookie(res, COOKIE_OAUTH_STATE, state, { maxAgeMs: 1000 * 60 * 10 });
+
+  const url = new URL(DISCORD_AUTHORIZE_URL);
+  url.searchParams.set('client_id', getClientId());
+  url.searchParams.set('redirect_uri', redirectUri);
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('scope', DISCORD_SCOPES);
+  url.searchParams.set('state', state);
+
+  res.redirect(url.toString());
+}
+
 function registerRobloxAuth(app) {
   app.get('/api/auth/setup', (req, res) => {
     const redirectUri = getRedirectUri(req);
     res.json({
-      appName: OAUTH_APP_NAME,
       clientId: getClientId(),
       redirectUri,
       requiredRedirectUris: getRequiredRedirectUris(),
       instructions: [
-        'Open https://create.roblox.com/dashboard/credentials?activeTab=OAuthTab',
-        `Edit the OAuth app named ${OAUTH_APP_NAME} (client ID ${getClientId()}).`,
-        'Set Application Name to DemandGG if it is not already.',
-        'Under Redirect URLs, add every URL in requiredRedirectUris exactly.',
-        'Save changes, then try Log In again on the site.',
+        'Open https://discord.com/developers/applications and select the ValueDex application.',
+        'OAuth2 → Redirects: add every URL in requiredRedirectUris exactly.',
+        'Copy the Client Secret into DISCORD_CLIENT_SECRET.',
+        'Set SITE_OWNER_ID to your Discord user ID so the owner tools stay yours.',
+        'Save, redeploy, then try Log In again.',
       ],
       hasClientSecret: Boolean(getClientSecret()),
+      hasClientId: Boolean(getClientId()),
     });
   });
 
-  app.get('/api/auth/roblox', (req, res) => {
-    if (!getClientSecret()) {
-      res
-        .status(500)
-        .send(
-          htmlErrorPage(
-            'Login not configured',
-            'Add ROBLOX_CLIENT_SECRET for the DemandGG OAuth app in Vercel Environment Variables, then redeploy. Find it under Creator Dashboard → Credentials → OAuth → DemandGG.',
-          ),
-        );
-      return;
-    }
+  app.get('/api/auth/discord', startDiscordLogin);
+  app.get('/api/auth/roblox', startDiscordLogin);
 
-    const state = createState();
-    const codeVerifier = createCodeVerifier();
-    const codeChallenge = createCodeChallenge(codeVerifier);
-    const redirectUri = getRedirectUri(req);
-
-    setCookie(res, COOKIE_OAUTH_STATE, state, { maxAgeMs: 1000 * 60 * 10 });
-    setCookie(res, COOKIE_OAUTH_VERIFIER, codeVerifier, { maxAgeMs: 1000 * 60 * 10 });
-
-    const url = new URL(ROBLOX_AUTHORIZE_URL);
-    url.searchParams.set('client_id', getClientId());
-    url.searchParams.set('redirect_uri', redirectUri);
-    url.searchParams.set('scope', OAUTH_SCOPES);
-    url.searchParams.set('response_type', 'code');
-    url.searchParams.set('state', state);
-    url.searchParams.set('code_challenge', codeChallenge);
-    url.searchParams.set('code_challenge_method', 'S256');
-
-    res.redirect(url.toString());
-  });
-
-  app.get('/api/auth/roblox/callback', async (req, res) => {
+  app.get('/api/auth/discord/callback', async (req, res) => {
     const cookies = parseCookies(req.headers.cookie);
     const { code, state, error, error_description: errorDescription } = req.query;
 
@@ -392,7 +402,7 @@ function registerRobloxAuth(app) {
     }
 
     if (!code || !state) {
-      res.status(400).send(htmlErrorPage('Login failed', 'Missing authorization code from Roblox.'));
+      res.status(400).send(htmlErrorPage('Login failed', 'Missing authorization code from Discord.'));
       return;
     }
 
@@ -401,23 +411,14 @@ function registerRobloxAuth(app) {
       return;
     }
 
-    const codeVerifier = cookies[COOKIE_OAUTH_VERIFIER];
-    if (!codeVerifier) {
-      res
-        .status(400)
-        .send(htmlErrorPage('Login failed', 'Login session expired. Try logging in again.'));
-      return;
-    }
-
     try {
       const tokens = await exchangeCodeForTokens({
         code: String(code),
-        codeVerifier,
         redirectUri: getRedirectUri(req),
       });
 
-      const profile = await fetchUserInfo(tokens.access_token);
-      const userId = String(profile.sub);
+      const profile = await fetchDiscordProfile(tokens.access_token);
+      const userId = String(profile.id);
       try {
         const store = await readStore();
         if (isBannedUser(store, userId)) {
@@ -429,16 +430,16 @@ function registerRobloxAuth(app) {
         // Continue login if moderation lookup fails.
       }
 
-      const avatarUrl =
-        profile.picture || (await fetchAvatarHeadshotUrl(profile.sub)) || getAvatarFallbackUrl(profile.sub);
+      const displayName = profile.global_name || profile.username || 'Player';
+      const avatarUrl = discordAvatarUrl(profile);
       const session = {
-        sub: profile.sub,
-        name: profile.name,
-        nickname: profile.nickname,
-        preferred_username: profile.preferred_username,
-        profile: profile.profile,
+        sub: userId,
+        name: displayName,
+        preferred_username: profile.username || displayName,
+        profile: `https://discord.com/users/${userId}`,
         picture: avatarUrl,
         avatarUrl,
+        provider: 'discord',
         exp: Date.now() + SESSION_MAX_AGE_MS,
       };
 
@@ -447,8 +448,12 @@ function registerRobloxAuth(app) {
     } catch (err) {
       res
         .status(err.status || 500)
-        .send(htmlErrorPage('Login failed', err.message || 'Could not finish Roblox login.'));
+        .send(htmlErrorPage('Login failed', err.message || 'Could not finish Discord login.'));
     }
+  });
+
+  app.get('/api/auth/roblox/callback', (req, res) => {
+    res.redirect('/api/auth/discord');
   });
 
   app.get('/api/auth/me', async (req, res) => {
@@ -497,4 +502,6 @@ module.exports = {
   registerRobloxAuth,
   getSessionUser,
   getRedirectUri,
+  fetchDiscordUser,
+  discordDefaultAvatar,
 };

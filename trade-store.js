@@ -17,7 +17,7 @@ let githubSha = null;
 let blobReadUrl = process.env.TRADES_BLOB_URL || null;
 let writeQueue = Promise.resolve();
 
-const SITE_OWNER_ID = '3519737769';
+const SITE_OWNER_ID = String(process.env.SITE_OWNER_ID || '3519737769').trim();
 
 function emptyStore() {
   return { posted: [], accepted: [], moderators: [], valueEditors: [], bans: [], blocks: [], reports: [] };

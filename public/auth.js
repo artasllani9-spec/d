@@ -1,5 +1,4 @@
 (function () {
-  const ADMIN_ROBLOX_ID = '3519737769';
   const loginBtn = document.querySelector('.login-btn');
   if (!loginBtn) return;
 
@@ -14,13 +13,14 @@
     if (user.avatarUrl) return user.avatarUrl;
     if (user.picture) return user.picture;
     if (user.id) {
-      return `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(user.id)}&width=150&height=150&format=png`;
+      try {
+        const index = Number((BigInt(String(user.id)) >> 22n) % 6n);
+        return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+      } catch {
+        return 'https://cdn.discordapp.com/embed/avatars/0.png';
+      }
     }
     return '';
-  }
-
-  function isAdminUser(user) {
-    return Boolean(user && user.id && String(user.id) === ADMIN_ROBLOX_ID);
   }
 
   function ensureMenuWrap() {
@@ -97,7 +97,7 @@
   }
 
   function syncModeratorButtons(user, roles) {
-    if (isAdminUser(user)) {
+    if (roles && roles.isOwner) {
       ensureAdminToolsBtn();
     } else {
       removeAdminToolsBtn();
@@ -198,7 +198,7 @@
     }
 
     loginBtn.textContent = 'Log In';
-    loginBtn.href = '/api/auth/roblox';
+    loginBtn.href = '/api/auth/discord';
     loginBtn.removeAttribute('title');
     loginBtn.removeAttribute('aria-label');
     loginBtn.removeAttribute('aria-expanded');

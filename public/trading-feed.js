@@ -665,7 +665,7 @@
         }
       } catch (error) {
         if (error && error.code === 'AUTH_REQUIRED') {
-          window.location.href = '/api/auth/roblox';
+          window.location.href = '/api/auth/discord';
           return;
         }
         window.alert((error && error.message) || 'Could not accept trade.');

@@ -1,5 +1,4 @@
 (function () {
-  const ADMIN_ROBLOX_ID = '3519737769';
   const panel = document.querySelector('.admin-tools-panel');
   const loading = document.querySelector('.admin-tools-loading');
   const form = document.getElementById('add-moderator-form');
@@ -210,7 +209,7 @@
       event.preventDefault();
       const userId = String(input.value || '').trim();
       if (!/^\d+$/.test(userId)) {
-        setStatus('Enter a valid Roblox user ID.', true);
+        setStatus('Enter a valid Discord user ID.', true);
         return;
       }
 
@@ -249,7 +248,7 @@
       event.preventDefault();
       const userId = String(valueEditorInput.value || '').trim();
       if (!/^\d+$/.test(userId)) {
-        setValueEditorStatus('Enter a valid Roblox user ID.', true);
+        setValueEditorStatus('Enter a valid Discord user ID.', true);
         return;
       }
 
@@ -288,7 +287,7 @@
       event.preventDefault();
       const userId = String(banInput.value || '').trim();
       if (!/^\d+$/.test(userId)) {
-        setBanStatus('Enter a valid Roblox user ID.', true);
+        setBanStatus('Enter a valid Discord user ID.', true);
         return;
       }
 
@@ -309,7 +308,7 @@
       event.preventDefault();
       const userId = String(unbanInput.value || '').trim();
       if (!/^\d+$/.test(userId)) {
-        setUnbanStatus('Enter a valid Roblox user ID.', true);
+        setUnbanStatus('Enter a valid Discord user ID.', true);
         return;
       }
 
@@ -339,7 +338,8 @@
       }
 
       const user = data && data.user ? data.user : null;
-      if (!user || String(user.id) !== ADMIN_ROBLOX_ID) {
+      const roles = data && data.roles ? data.roles : null;
+      if (!user || !roles || !roles.isOwner) {
         window.location.replace('index.html');
         return;
       }
