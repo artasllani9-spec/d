@@ -1,42 +1,6 @@
 {
   "posted": [
     {
-      "id": 1791314391906,
-      "postedAt": 1791314391237,
-      "postedBy": "688787015646445648",
-      "offerer": "cursedartt",
-      "offererAvatar": "https://cdn.discordapp.com/avatars/688787015646445648/512939e920a6b8e37a0f6d440b6bcf59.png?size=128",
-      "offererProfile": "https://discord.com/users/688787015646445648",
-      "yourSide": [
-        {
-          "name": "Bat Dragon",
-          "image": "https://d-seven-chi.vercel.app/pets/pet-01.png",
-          "potions": {
-            "fly": true,
-            "ride": true,
-            "neon": false,
-            "mega": true
-          },
-          "isSign": false
-        }
-      ],
-      "theirSide": [
-        {
-          "name": "USDT",
-          "image": "https://d-seven-chi.vercel.app/icons/crypto/usdt.png?v=2",
-          "potions": {
-            "fly": false,
-            "ride": false,
-            "neon": false,
-            "mega": false
-          },
-          "isSign": false,
-          "usdValue": 1450,
-          "network": "BSC - BEP20"
-        }
-      ]
-    },
-    {
       "id": 1791312558380,
       "postedAt": 1791312558234,
       "postedBy": "688787015646445648",
