@@ -75,6 +75,7 @@
     'USDT',
     'USDC',
   ];
+  const CRYPTO_NAME_SET = new Set(CRYPTO_ORDER.map((name) => name.toLowerCase()));
   const CRYPTO_ICONS = {
     'Any Crypto': 'icons/crypto/any-crypto.png?v=1',
     Bitcoin: 'icons/crypto/bitcoin.png?v=2',
@@ -242,8 +243,12 @@
     const items = getViewerSideItems(trade, side);
     const target = normalizeItemName(filter.itemName);
     return items.some((item) => {
-      if (normalizeItemName(item && item.name) !== target) return false;
-      if (filter.network) {
+      const itemName = normalizeItemName(item && item.name);
+      const nameMatches = target === 'any crypto'
+        ? CRYPTO_NAME_SET.has(itemName)
+        : itemName === target;
+      if (!nameMatches) return false;
+      if (target !== 'any crypto' && filter.network) {
         if (String(item && item.network || '') !== String(filter.network)) return false;
       }
       if (!filter.potions) return true;
