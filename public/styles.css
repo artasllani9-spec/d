@@ -1213,12 +1213,9 @@ body.report-modal-open {
   background: rgba(14, 4, 4, 0.72);
 }
 
-.credits-page {
-  background: #080202;
-}
-
+.credits-page,
 .tos-page {
-  background: #140406;
+  background: #000;
   min-height: 100vh;
 }
 
@@ -1226,27 +1223,83 @@ body.report-modal-open {
 .credits-background {
   position: fixed;
   inset: 0;
+  overflow: hidden;
   background:
-    radial-gradient(ellipse 90% 55% at 50% -8%, rgba(255, 28, 36, 0.38) 0%, transparent 58%),
-    radial-gradient(ellipse 46% 40% at 6% 92%, rgba(170, 12, 20, 0.32) 0%, transparent 64%),
-    radial-gradient(ellipse 42% 36% at 94% 76%, rgba(130, 8, 16, 0.34) 0%, transparent 66%),
-    radial-gradient(ellipse 55% 28% at 50% 108%, rgba(255, 48, 48, 0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 55% at 18% 42%, rgba(255, 30, 36, 0.16) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 45% at 82% 58%, rgba(120, 8, 14, 0.18) 0%, transparent 60%),
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.05) 0%,
+      rgba(0, 0, 0, 0.12) 40%,
+      rgba(0, 0, 0, 0.55) 78%,
+      #000 100%
+    ),
+    radial-gradient(ellipse 80% 50% at 50% 18%, rgba(255, 28, 36, 0.34) 0%, transparent 62%),
+    radial-gradient(ellipse 40% 36% at 8% 88%, rgba(160, 10, 18, 0.28) 0%, transparent 66%),
+    radial-gradient(ellipse 36% 32% at 92% 72%, rgba(120, 6, 14, 0.3) 0%, transparent 68%),
     repeating-linear-gradient(
       118deg,
-      rgba(255, 255, 255, 0.018) 0,
-      rgba(255, 255, 255, 0.018) 1px,
+      rgba(255, 255, 255, 0.016) 0,
+      rgba(255, 255, 255, 0.016) 1px,
       transparent 1px,
       transparent 8px
     ),
-    linear-gradient(180deg, #1a0406 0%, #080001 46%, #000 100%);
+    linear-gradient(180deg, #160306 0%, #050000 55%, #000 100%);
   z-index: 0;
+}
+
+.tos-background::before,
+.tos-background::after,
+.credits-background::before,
+.credits-background::after {
+  content: "";
+  position: absolute;
+  width: 42vw;
+  max-width: 34rem;
+  height: 140%;
+  top: -20%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 80, 80, 0.16) 0%,
+    rgba(220, 30, 36, 0.05) 42%,
+    transparent 78%
+  );
+  filter: blur(28px);
+  transform-origin: top center;
+  opacity: 0.85;
+  animation: home-beam-sway 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.tos-background::before,
+.credits-background::before {
+  left: 8%;
+  transform: rotate(14deg);
+}
+
+.tos-background::after,
+.credits-background::after {
+  right: 4%;
+  width: 28vw;
+  animation-delay: -4s;
+  animation-duration: 16s;
+  transform: rotate(-10deg);
+  opacity: 0.55;
 }
 
 .tos-overlay,
 .credits-overlay {
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse 75% 65% at 50% 42%, transparent 30%, rgba(0, 0, 0, 0.55) 100%);
+  opacity: 0.18;
+  mix-blend-mode: soft-light;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.03) 0,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
   z-index: 1;
   pointer-events: none;
 }
@@ -5806,6 +5859,10 @@ a.trade-action-btn {
 
 @media (prefers-reduced-motion: reduce) {
   .credits-background,
+  .credits-background::before,
+  .credits-background::after,
+  .tos-background::before,
+  .tos-background::after,
   .credits-title-card,
   .credits-bar {
     animation: none !important;
