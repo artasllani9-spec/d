@@ -1,5 +1,11 @@
 {
-  "pets": {},
+  "pets": {
+    "Frost Dragon": {
+      "fr": 70,
+      "nfr": 119,
+      "mfr": 306
+    }
+  },
   "items": {},
   "acronyms": {
     "ssbd": "Strawberry Shortcake Bat Dragon",
@@ -10,5 +16,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1791323207170
+  "updatedAt": 1791325280394
 }
