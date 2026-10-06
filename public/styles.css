@@ -2929,7 +2929,8 @@ body.trade-calculator-page .trade-picker__quantity-btn:hover:not(:disabled) svg 
 }
 
 body.post-trade-page .trade-slot__card,
-body.trade-calculator-page .trade-slot__card {
+body.trade-calculator-page .trade-slot__card,
+body.view-trade-page .trade-slot__card {
   background: rgba(150, 142, 146, 0.34);
   backdrop-filter: blur(12px) saturate(1.1);
   -webkit-backdrop-filter: blur(12px) saturate(1.1);
@@ -2940,7 +2941,8 @@ body.trade-calculator-page .trade-slot__card {
 }
 
 body.post-trade-page .trade-slot__qty,
-body.trade-calculator-page .trade-slot__qty {
+body.trade-calculator-page .trade-slot__qty,
+body.view-trade-page .trade-slot__qty {
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
