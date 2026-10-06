@@ -5793,10 +5793,6 @@ a.trade-action-btn {
   display: block;
 }
 
-.credits-slot--rayn .credits-avatar img {
-  transform: scale(1.15);
-}
-
 @keyframes credits-rise {
   from {
     opacity: 0;
