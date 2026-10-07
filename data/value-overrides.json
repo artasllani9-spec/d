@@ -4,6 +4,11 @@
       "fr": 70,
       "nfr": 119,
       "mfr": 306
+    },
+    "Bat Dragon": {
+      "fr": 215,
+      "nfr": 495,
+      "mfr": 1500
     }
   },
   "items": {},
@@ -16,5 +21,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1791325280324
+  "updatedAt": 1791371912275
 }
