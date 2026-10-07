@@ -1,14 +1,13 @@
 (function () {
   var THEMES = [
-    { id: 'red', label: 'Red', swatch: '#ff3a3a' },
-    { id: 'blue', label: 'Blue', swatch: '#3a8bff' },
-    { id: 'green', label: 'Green', swatch: '#2ee06a' },
-    { id: 'purple', label: 'Purple', swatch: '#b44aff' },
-    { id: 'orange', label: 'Orange', swatch: '#ff8a2a' },
-    { id: 'pink', label: 'Pink', swatch: '#ff4f9a' },
-    { id: 'cyan', label: 'Cyan', swatch: '#2ad4ff' },
-    { id: 'gold', label: 'Gold', swatch: '#f0c14a' },
-    { id: 'gray', label: 'Gray', swatch: '#a3a3ab' }
+    { id: 'dark', label: 'Dark', swatch: '#18181c' },
+    { id: 'light', label: 'Light', swatch: '#f7f6f4' },
+    { id: 'navy', label: 'Navy', swatch: '#0c1222' },
+    { id: 'beige', label: 'Beige', swatch: '#efe4d2' },
+    { id: 'maroon', label: 'Maroon', swatch: '#14080c' },
+    { id: 'black', label: 'Black', swatch: '#000000' },
+    { id: 'espresso', label: 'Espresso', swatch: '#1a1410' },
+    { id: 'forest', label: 'Forest', swatch: '#101814' }
   ];
 
   var CURRENCIES = [
@@ -38,6 +37,8 @@
   };
 
   var THEME_KEY = 'vd-theme';
+  var THEME_DEFAULT = 'dark';
+  var THEME_DEFAULT_KEY = 'vd-theme-default';
   var CURRENCY_KEY = 'vd-currency';
   var RATES_KEY = 'vd-fx';
   var RATES_MAX_AGE = 12 * 60 * 60 * 1000;
@@ -72,8 +73,16 @@
     return THEMES[0];
   }
 
+  function initialThemeId() {
+    if (readStorage(THEME_DEFAULT_KEY) !== THEME_DEFAULT) {
+      writeStorage(THEME_DEFAULT_KEY, THEME_DEFAULT);
+      return THEME_DEFAULT;
+    }
+    return themeById(readStorage(THEME_KEY)).id;
+  }
+
   var state = {
-    theme: themeById(readStorage(THEME_KEY)).id,
+    theme: initialThemeId(),
     currency: currencyByCode(readStorage(CURRENCY_KEY)).code,
     rates: Object.assign({}, FALLBACK_RATES)
   };
