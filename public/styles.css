@@ -317,7 +317,7 @@ html[data-theme="light"] .tos-section p,
 html[data-theme="beige"] .tos-section p,
 html[data-theme="light"] .tos-section li,
 html[data-theme="beige"] .tos-section li {
-  color: rgba(28, 25, 22, 0.72);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 html[data-theme="light"] .home-hero__brand,
@@ -1232,12 +1232,12 @@ body.report-modal-open {
   margin: 0;
   font-family: "Outfit", system-ui, sans-serif;
   font-size: 0.95rem;
-  color: rgba(230, 240, 255, 0.92);
+  color: rgba(var(--vd-accent), 0.92);
 }
 
 .reports-list__reported a,
 .reports-list__reporter a {
-  color: #9fd0ff;
+  color: var(--vd-brand);
   text-decoration: none;
 }
 
@@ -1248,7 +1248,7 @@ body.report-modal-open {
 
 .reports-list__time {
   font-size: 0.82rem;
-  color: rgba(200, 220, 240, 0.65);
+  color: rgba(var(--vd-accent), 0.65);
 }
 
 .reports-list__reason {
@@ -1658,7 +1658,7 @@ body.report-modal-open {
   margin: 0 0 1.15rem;
   font-size: 0.88rem;
   font-weight: 600;
-  color: rgba(200, 228, 255, 0.82);
+  color: var(--vd-brand);
 }
 
 .tos-intro {
@@ -1898,7 +1898,7 @@ body.report-modal-open {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(200, 228, 255, 0.9);
+  color: var(--vd-brand);
   text-align: center;
 }
 
@@ -2025,7 +2025,7 @@ body.trading-page .posted-trades-feed {
   font-size: 0.92rem;
   font-weight: 500;
   line-height: 1.4;
-  color: rgba(210, 230, 255, 0.72);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 .posted-trades-empty__cta {
@@ -2230,7 +2230,7 @@ body.trading-page .posted-trades-feed {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(200, 228, 255, 0.82);
+  color: var(--vd-brand);
 }
 
 .posted-trade__offerer-name,
@@ -2249,7 +2249,7 @@ body.trading-page .posted-trades-feed {
 a.posted-trade__offerer-name:hover,
 a.posted-trade-modal__offerer-name:hover {
   text-decoration: underline;
-  color: #dff0ff;
+  color: var(--vd-brand-hot);
 }
 
 .posted-trade__side {
@@ -2720,7 +2720,7 @@ body.trade-confirm-open {
   font-family: "Outfit", system-ui, sans-serif;
   font-size: 0.88rem;
   font-weight: 500;
-  color: rgba(210, 230, 255, 0.72);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 .trading-toolbar__actions {
@@ -3308,7 +3308,7 @@ body.view-trade-page .trade-value-compare--fair .trade-value-compare__fill--your
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(220, 230, 240, 0.78);
+  color: var(--vd-brand);
 }
 
 .view-trade-offerer__name {
@@ -3321,7 +3321,7 @@ body.view-trade-page .trade-value-compare--fair .trade-value-compare__fill--your
 
 a.view-trade-offerer__name:hover {
   text-decoration: underline;
-  color: #dff0ff;
+  color: var(--vd-brand-hot);
 }
 
 .view-trade-timer {
@@ -3689,7 +3689,7 @@ body.view-trade-page .trade-slot--add {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(200, 225, 255, 0.72);
+  color: var(--vd-brand);
 }
 
 .value-edit-modal__input-wrap {
@@ -4625,7 +4625,7 @@ body.view-trade-page .trade-side__label {
 }
 
 .trade-post-error a {
-  color: #9fd6ff;
+  color: var(--vd-brand);
   font-weight: 700;
 }
 
@@ -5857,7 +5857,7 @@ a.trade-action-btn {
   font-family: "Outfit", system-ui, sans-serif;
   font-size: clamp(0.82rem, 1.6vw, 0.98rem);
   font-weight: 700;
-  color: rgba(210, 232, 255, 0.78);
+  color: var(--vd-brand);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   line-height: 1.2;
@@ -8021,7 +8021,7 @@ body.home-page .home-pitch__body {
   font-family: 'Outfit', sans-serif;
   font-size: clamp(1rem, 2.2vw, 1.12rem);
   line-height: 1.55;
-  color: rgba(220, 230, 245, 0.62);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 body.home-page .home-stats {
@@ -8082,7 +8082,7 @@ body.home-page .home-stats__lede {
   font-family: 'Outfit', sans-serif;
   font-size: 1rem;
   line-height: 1.5;
-  color: rgba(220, 230, 245, 0.58);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 body.home-page .home-stats__grid {
@@ -8222,7 +8222,7 @@ body.home-page .home-stats__total-label {
   font-family: 'Outfit', sans-serif;
   font-size: 0.95rem;
   font-weight: 500;
-  color: rgba(220, 230, 245, 0.55);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 body.home-page .home-path {
@@ -8265,7 +8265,7 @@ body.home-page .home-path__desc {
   font-family: 'Outfit', sans-serif;
   font-size: 0.95rem;
   line-height: 1.45;
-  color: rgba(220, 230, 245, 0.55);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 body.home-page .home-path__link {
@@ -8299,7 +8299,7 @@ body.home-page .home-spotlight__note {
   margin: 0.45rem 0 0;
   font-family: 'Outfit', sans-serif;
   font-size: 0.9rem;
-  color: rgba(220, 230, 245, 0.48);
+  color: rgba(var(--vd-accent), 0.65);
 }
 
 body.home-page .home-spotlight__row {
@@ -8377,7 +8377,7 @@ body.home-page .home-community__body {
   font-family: 'Outfit', sans-serif;
   font-size: 1rem;
   line-height: 1.5;
-  color: rgba(220, 230, 245, 0.55);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 body.home-page .home-community__btn {
@@ -8435,7 +8435,7 @@ body.home-page .home-footer__links {
 body.home-page .home-footer__links a {
   font-family: 'Outfit', sans-serif;
   font-size: 0.88rem;
-  color: rgba(220, 230, 245, 0.48);
+  color: rgba(var(--vd-accent), 0.65);
   text-decoration: none;
 }
 
@@ -8704,7 +8704,7 @@ html[data-theme="light"] body.home-page .home-stats__lede,
 html[data-theme="beige"] body.home-page .home-stats__lede,
 html[data-theme="light"] body.home-page .home-community__body,
 html[data-theme="beige"] body.home-page .home-community__body {
-  color: rgba(28, 25, 22, 0.72);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 html[data-theme="light"] body.home-page .home-cta--ghost,
@@ -8739,7 +8739,6 @@ html[data-theme="beige"] body.trading-page {
 }
 
 html[data-theme="light"] :is(
-  .trading-feed-headbar__label,
   .trading-side-filter-btn,
   .trading-side-filter-btn:hover,
   .trading-side-filter-btn.is-active,
@@ -8779,7 +8778,6 @@ html[data-theme="light"] :is(
   .value-edit-modal__btn
 ),
 html[data-theme="beige"] :is(
-  .trading-feed-headbar__label,
   .trading-side-filter-btn,
   .trading-side-filter-btn:hover,
   .trading-side-filter-btn.is-active,
@@ -8872,7 +8870,7 @@ html[data-theme="beige"] :is(
   .tos-section li,
   .value-edit-modal__field label
 ) {
-  color: rgba(28, 25, 22, 0.68);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 html[data-theme="light"] body.home-page :is(
@@ -8885,7 +8883,7 @@ html[data-theme="beige"] body.home-page :is(
   .home-spotlight__note,
   .home-footer__links a
 ) {
-  color: rgba(28, 25, 22, 0.68);
+  color: rgba(var(--vd-accent), 0.72);
 }
 
 html[data-theme="light"] .trading-btn--active,
