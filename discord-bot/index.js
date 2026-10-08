@@ -1331,6 +1331,37 @@ function getPetFrNfrMfr(petName) {
   };
 }
 
+const FROZEN_PET_VARIANT_KEYS = ['', 'f', 'r', 'n', 'nf', 'nr', 'm', 'mf', 'mr'];
+
+function applyPetFrNfrMfrEdit(petName, fr, nfr, mfr) {
+  const existing =
+    overrides.pets[petName] && typeof overrides.pets[petName] === 'object'
+      ? overrides.pets[petName]
+      : {};
+  const frozen = {};
+  for (const key of FROZEN_PET_VARIANT_KEYS) {
+    const current = petUsd(petName, potionsFromVariantKey(key));
+    if (Number.isFinite(Number(current)) && Number(current) >= 0) {
+      frozen[key] = Number(current);
+    }
+  }
+  const next = {
+    ...existing,
+    ...frozen,
+    fr: Number(fr),
+    nfr: Number(nfr),
+    mfr: Number(mfr),
+  };
+  overrides.pets[petName] = next;
+  if (overrides.customPets && overrides.customPets[petName]) {
+    overrides.customPets[petName] = {
+      ...overrides.customPets[petName],
+      ...next,
+    };
+  }
+  return next;
+}
+
 function formatValueChange(oldValue, newValue) {
   if (oldValue === newValue) return `**${formatUsd(newValue)}**`;
   return `${formatUsd(oldValue)} → **${formatUsd(newValue)}**`;
@@ -2145,14 +2176,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
       }
 
-      const newValues = {
-        ...(overrides.pets[petName] || {}),
-        fr: frInput == null ? oldValues.fr : frInput,
-        nfr: nfrInput == null ? oldValues.nfr : nfrInput,
-        mfr: mfrInput == null ? oldValues.mfr : mfrInput,
-      };
-
-      overrides.pets[petName] = newValues;
+      const newValues = applyPetFrNfrMfrEdit(
+        petName,
+        frInput == null ? oldValues.fr : frInput,
+        nfrInput == null ? oldValues.nfr : nfrInput,
+        mfrInput == null ? oldValues.mfr : mfrInput
+      );
 
       await interaction.reply({
         content: `Value of **${petName}** has been changed.`,
@@ -3162,13 +3191,12 @@ async function handlePrefixCommand(message) {
       return true;
     }
     const oldValues = getPetFrNfrMfr(petName);
-    const newValues = {
-      ...(overrides.pets[petName] || {}),
-      fr: numbers[0] != null ? numbers[0] : oldValues.fr,
-      nfr: numbers[1] != null ? numbers[1] : oldValues.nfr,
-      mfr: numbers[2] != null ? numbers[2] : oldValues.mfr,
-    };
-    overrides.pets[petName] = newValues;
+    const newValues = applyPetFrNfrMfrEdit(
+      petName,
+      numbers[0] != null ? numbers[0] : oldValues.fr,
+      numbers[1] != null ? numbers[1] : oldValues.nfr,
+      numbers[2] != null ? numbers[2] : oldValues.mfr
+    );
     await prefixReply(message, {
       content: `Value of **${petName}** has been changed.`,
       embeds: [buildValueEmbed(petName)],
