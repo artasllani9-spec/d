@@ -88,7 +88,9 @@
           "isSign": false
         }
       ]
-    },
+    }
+  ],
+  "accepted": [
     {
       "id": 1791585867704,
       "postedAt": 1791585867283,
@@ -308,10 +310,13 @@
           },
           "isSign": false
         }
-      ]
-    }
-  ],
-  "accepted": [
+      ],
+      "acceptedAt": 1791628927962,
+      "acceptedBy": "863886620323348531",
+      "accepterUsername": "bankaiiito",
+      "accepterAvatar": "https://cdn.discordapp.com/avatars/863886620323348531/c3456ee295c5329ae507a622250211c1.png?size=128",
+      "accepterProfile": "https://discord.com/users/863886620323348531"
+    },
     {
       "id": 1789770471939,
       "postedAt": 1789770471136,
