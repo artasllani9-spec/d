@@ -9273,3 +9273,84 @@ html[data-theme="beige"] .demand-check-category--active:hover {
   background: rgba(var(--vd-accent), 0.1);
   border-color: rgba(var(--vd-accent), 0.32);
 }
+
+.acestock-promo {
+  margin: 0;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+.acestock-promo__link {
+  color: var(--vd-brand);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.acestock-promo__link:hover,
+.acestock-promo__link:focus-visible {
+  color: var(--vd-brand-hot);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+body.home-page .home-hero__copy .acestock-promo {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.demand-check-body > .acestock-promo {
+  margin: -0.55rem 0 -0.35rem;
+}
+
+.trading-toolbar__intro .acestock-promo {
+  margin-top: 0.15rem;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.trade-glass-bar > .acestock-promo {
+  margin-top: 1.6rem;
+}
+
+@media (min-width: 769px) {
+  body.trade-calculator-page {
+    --calc-top-gap: clamp(0.75rem, calc(100dvh - 760px), 5rem);
+  }
+
+  body.trade-calculator-page .trade-glass-bar {
+    margin-top: var(--calc-top-gap);
+  }
+
+  body.trade-calculator-page .trade-side {
+    max-width: max(11rem, calc(100dvh - var(--calc-top-gap) - 356px));
+  }
+}
+
+@media (max-width: 640px) {
+  .acestock-promo {
+    font-size: 0.82rem;
+  }
+
+  .trade-glass-bar > .acestock-promo {
+    margin-top: 0.9rem;
+    padding-inline: 0.4rem;
+  }
+}
+
+html[data-theme="light"] .acestock-promo,
+html[data-theme="beige"] .acestock-promo,
+html[data-theme="light"] body.home-page .home-hero__copy .acestock-promo,
+html[data-theme="beige"] body.home-page .home-hero__copy .acestock-promo {
+  color: rgba(var(--vd-accent), 0.72);
+}
+
+html[data-theme="light"] .acestock-promo__link,
+html[data-theme="beige"] .acestock-promo__link {
+  color: var(--vd-brand);
+}
