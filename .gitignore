@@ -4,3 +4,6 @@ node_modules/
 discord-bot/.env
 discord-bot/value-overrides.json
 discord-bot/welcome-config.json
+auto-mm/.env
+auto-mm/data/
+auto-mm/node_modules/
