@@ -199,7 +199,8 @@ async function refreshTradesFromServer() {
 function ensureTradesSynced() {
   if (!tradesSyncPromise) {
     tradesSyncPromise = refreshTradesFromServer().catch(() => {
-      if (!usesTradeApi()) return;
+      // Keep the last good server data; local storage is only the offline (file://) store.
+      if (usesTradeApi()) return;
       postedTradesCache = readLocalPostedTrades();
       acceptedTradesCache = readLocalAcceptedTrades();
     }).finally(() => {
@@ -211,6 +212,15 @@ function ensureTradesSynced() {
 
 function getPostedTrades() {
   return postedTradesCache;
+}
+
+function rememberPostedTrades(trades) {
+  if (!Array.isArray(trades) || !trades.length) return;
+  const incoming = new Map(trades.filter((trade) => trade && trade.id != null).map((trade) => [trade.id, trade]));
+  postedTradesCache = [
+    ...incoming.values(),
+    ...postedTradesCache.filter((trade) => !incoming.has(trade.id)),
+  ];
 }
 
 function getPostedTradeById(id) {
@@ -481,7 +491,7 @@ async function deletePostedTrade(tradeId) {
 
   if (usesTradeApi()) {
     try {
-      await tradeApiRequest(`/posted/${tradeId}?userId=${encodeURIComponent(userId)}`, {
+      await tradeApiRequest(`/posted/${tradeId}`, {
         method: 'DELETE',
       });
       postedTradesCache = postedTradesCache.filter((item) => item.id !== tradeId);
@@ -587,7 +597,6 @@ function consumeViewTradeSession() {
   try {
     const raw = sessionStorage.getItem(VIEW_TRADE_SESSION_KEY);
     if (!raw) return null;
-    sessionStorage.removeItem(VIEW_TRADE_SESSION_KEY);
     const data = JSON.parse(raw);
     if (!data || typeof data !== 'object') return null;
     return data;
@@ -649,7 +658,7 @@ function buildTradeSlotHTML(item) {
   const networkAttr = item.network ? ` data-network="${escapeHtml(item.network)}"` : '';
   return `<div class="trade-slot trade-slot--filled${signClass}"${usdAttr}${networkAttr}>
     <div class="trade-slot__card">
-      <img class="trade-slot__img" src="${item.image}" alt="${name}">
+      <img class="trade-slot__img" src="${escapeHtml(item.image || '')}" alt="${name}">
       ${buildTradeSlotBadgesHTML(item.potions)}
       ${networkBadge}
       ${usdTag}
@@ -669,8 +678,14 @@ function getViewTradeGridCapacity(itemCount) {
   return capacity;
 }
 
+function sanitizeTradeItems(items) {
+  return Array.isArray(items)
+    ? items.filter((item) => item && typeof item === 'object')
+    : [];
+}
+
 function buildReadOnlyTradeGridHTML(items) {
-  const safeItems = Array.isArray(items) ? items : [];
+  const safeItems = sanitizeTradeItems(items);
   const capacity = getViewTradeGridCapacity(safeItems.length);
   const filled = safeItems.map(buildTradeSlotHTML).join('');
   const emptySlots = Array.from({ length: capacity - safeItems.length }, () => '<div class="trade-slot"></div>').join('');
@@ -701,7 +716,7 @@ function getPostedTradeGridMeta(itemCount) {
 
 function buildPostedTradeSideHTML(items, label, options = {}) {
   const { showLabel = true, usdClass = '' } = options;
-  const safeItems = Array.isArray(items) ? items : [];
+  const safeItems = sanitizeTradeItems(items);
   const hasUsdHelpers = typeof sumTradeSideUsd === 'function' && typeof formatUsdValue === 'function';
   const usdDisplay = hasUsdHelpers ? formatUsdValue(sumTradeSideUsd(safeItems)) : null;
   const itemCount = safeItems.length;
@@ -756,12 +771,8 @@ function buildPostedTradeHTML(trade, options = {}) {
 
   // Posted feed / accepter view: sides are swapped to the viewer's perspective.
   // Poster viewing an accepted trade: keep original offer sides (Your = offered, Their = requested).
-  const viewerYourSide = (accepted && isPoster)
-    ? (trade.yourSide || [])
-    : (trade.theirSide || []);
-  const viewerTheirSide = (accepted && isPoster)
-    ? (trade.theirSide || [])
-    : (trade.yourSide || []);
+  const viewerYourSide = sanitizeTradeItems((accepted && isPoster) ? trade.yourSide : trade.theirSide);
+  const viewerTheirSide = sanitizeTradeItems((accepted && isPoster) ? trade.theirSide : trade.yourSide);
 
   let personName;
   let personAvatar;
@@ -824,7 +835,7 @@ function buildPostedTradeHTML(trade, options = {}) {
   const hasUsdHelpers = typeof sumTradeSideUsd === 'function' && typeof formatUsdValue === 'function';
   const yoursUsd = hasUsdHelpers ? sumTradeSideUsd(viewerYourSide) : 0;
   const theirsUsd = hasUsdHelpers ? sumTradeSideUsd(viewerTheirSide) : 0;
-  const valueDiff = theirsUsd - yoursUsd;
+  const valueDiff = Math.round((theirsUsd - yoursUsd) * 1e6) / 1e6;
   let valueDeltaHtml = '';
   let yoursUsdClass = '';
   let theirsUsdClass = '';
@@ -918,11 +929,12 @@ function buildAcceptedTradeHTML(trade) {
 }
 
 function escapeHtml(text) {
-  return String(text)
+  return String(text == null ? '' : text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 if (typeof window !== 'undefined') {

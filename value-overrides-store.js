@@ -324,7 +324,10 @@ async function writeToGitHub(data) {
       body: JSON.stringify(body),
     }
   );
-  if (!response.ok) return false;
+  if (!response.ok) {
+    if (response.status === 409 || response.status === 422) githubSha = null;
+    return false;
+  }
   const payload = await response.json().catch(() => null);
   if (payload && payload.content && payload.content.sha) {
     githubSha = payload.content.sha;
@@ -384,11 +387,10 @@ async function writeValueOverrides(nextRaw) {
     updatedAt: Date.now(),
   });
 
-  writeQueue = writeQueue.then(async () => {
-    setMemory(next);
-
+  const task = async () => {
     if (!usesRemoteStore() && !process.env.VERCEL) {
       writeLocalFile(LOCAL_FILE, next);
+      setMemory(next);
       return next;
     }
 
@@ -413,10 +415,13 @@ async function writeValueOverrides(nextRaw) {
       throw err;
     }
 
+    setMemory(next);
     return next;
-  });
+  };
 
-  return writeQueue;
+  const run = writeQueue.then(task, task);
+  writeQueue = run.catch(() => undefined);
+  return run;
 }
 
 module.exports = {

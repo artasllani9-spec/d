@@ -503,7 +503,7 @@ function assertSafeWrite(previous, next, { allowWipe = false } = {}) {
   if (allowWipe) return;
   if (!isEmptyStore(previous) && isEmptyStore(next)) {
     const error = new Error('Refusing to overwrite trade data with an empty store.');
-    error.status = 509;
+    error.status = 409;
     error.code = 'STORE_WIPE_REFUSED';
     throw error;
   }
@@ -513,7 +513,14 @@ async function persistStore(store, { allowWipe = false } = {}) {
   const next = normalizeStore(store);
   const previous = memoryStore ? normalizeStore(memoryStore) : emptyStore();
   assertSafeWrite(previous, next, { allowWipe });
+  const memoryBeforeWrite = memoryStore;
   setMemory(next);
+  const memoryForWrite = memoryStore;
+  const rollbackMemory = () => {
+    if (memoryStore !== memoryForWrite) return;
+    memoryStore = memoryBeforeWrite;
+    memoryStoreAt = 0;
+  };
 
   const persist = async () => {
     if (process.env.VERCEL && !hasDurableBackend()) {
@@ -565,7 +572,16 @@ async function persistStore(store, { allowWipe = false } = {}) {
     return { ok: true, conflict: false };
   };
 
-  const run = writeQueue.then(persist, persist);
+  const run = writeQueue.then(persist, persist).then(
+    (result) => {
+      if (!result || !result.ok) rollbackMemory();
+      return result;
+    },
+    (error) => {
+      rollbackMemory();
+      throw error;
+    },
+  );
   writeQueue = run.then(
     () => undefined,
     () => undefined,
@@ -632,6 +648,7 @@ async function updateStore(mutator, { allowWipe = false } = {}) {
 
 function isValidTradeSide(items) {
   if (!Array.isArray(items) || items.length === 0) return false;
+  if (!items.every((item) => item && typeof item === 'object' && !Array.isArray(item))) return false;
   return items.some((item) => !item.isSign);
 }
 
@@ -675,8 +692,12 @@ function findRecentDuplicatePostedTrade(store, userId, yourSide, theirSide, with
   );
 }
 
+let lastTradeId = 0;
+
 function createTradeId() {
-  return Date.now() + Math.floor(Math.random() * 1000);
+  const candidate = Date.now() + Math.floor(Math.random() * 1000);
+  lastTradeId = Math.max(candidate, lastTradeId + 1);
+  return lastTradeId;
 }
 
 function isTradeParticipant(trade, userId) {

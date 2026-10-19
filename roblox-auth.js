@@ -121,6 +121,10 @@ function verifySession(token) {
   const [body, signature] = token.split('.');
   if (!body || !signature) return null;
 
+  if (process.env.VERCEL && !process.env.SESSION_SECRET && !process.env.DISCORD_CLIENT_SECRET) {
+    return null;
+  }
+
   const expected = base64UrlEncode(
     crypto.createHmac('sha256', getSessionSecret()).update(body).digest(),
   );
@@ -315,7 +319,18 @@ async function fetchDiscordUser(userId) {
   }
 }
 
-function htmlErrorPage(title, message) {
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function htmlErrorPage(rawTitle, rawMessage) {
+  const title = escapeHtml(rawTitle);
+  const message = escapeHtml(rawMessage);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

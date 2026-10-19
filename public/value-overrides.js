@@ -139,34 +139,42 @@
     rebuildPetsByUsd();
   }
 
+  const CACHE_KEY = 'valuedex-overrides-cache-v1';
+  const CACHE_TTL_MS = 30000;
+
+  function readSessionCache() {
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.data || !parsed.savedAt) return null;
+      if (Date.now() - parsed.savedAt > CACHE_TTL_MS) return null;
+      return parsed.data;
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  function writeSessionCache(data) {
+    try {
+      sessionStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({ savedAt: Date.now(), data })
+      );
+    } catch (_err) {
+      /* quota / private mode */
+    }
+  }
+
+  /** Apply a fresh overrides payload (e.g. after an editor save) and notify listeners. */
+  window.applyValueOverrides = function applyValueOverrides(data) {
+    if (!data || typeof data !== 'object') return;
+    writeSessionCache(data);
+    applyOverrides(data);
+    window.dispatchEvent(new Event('valueoverridesready'));
+  };
+
   window.valueOverridesReady = (async function loadValueOverrides() {
-    const CACHE_KEY = 'valuedex-overrides-cache-v1';
-    const CACHE_TTL_MS = 30000;
-
-    function readSessionCache() {
-      try {
-        const raw = sessionStorage.getItem(CACHE_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || !parsed.data || !parsed.savedAt) return null;
-        if (Date.now() - parsed.savedAt > CACHE_TTL_MS) return null;
-        return parsed.data;
-      } catch (_err) {
-        return null;
-      }
-    }
-
-    function writeSessionCache(data) {
-      try {
-        sessionStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({ savedAt: Date.now(), data })
-        );
-      } catch (_err) {
-        /* quota / private mode */
-      }
-    }
-
     try {
       const cached = readSessionCache();
       if (cached) {

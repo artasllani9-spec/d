@@ -917,5 +917,6 @@
   window.addEventListener('valueoverridesready', () => {
     CATEGORY_ITEMS.pets = typeof petsByUsd !== 'undefined' ? petsByUsd : CATEGORY_ITEMS.pets;
     if (filterPicker && !filterPicker.hidden) renderFilterItems();
+    renderFeed(true);
   });
 })();

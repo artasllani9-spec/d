@@ -376,9 +376,9 @@
 
   <script src="pets-data.js?v=20261007items"></script>
   <script src="amvgg-usd-values.js?v=20261007prefs"></script>
-  <script src="value-overrides.js?v=20261007sync"></script>
-  <script src="trade-value-compare.js?v=20260917perf"></script>
-  <script src="trades.js?v=20261007prefs"></script>
+  <script src="value-overrides.js?v=20261018fixes"></script>
+  <script src="trade-value-compare.js?v=20261018fixes"></script>
+  <script src="trades.js?v=20261018fixes"></script>
   <script>
     const tradePicker = document.getElementById('trade-picker');
     const tradePickerPanel = tradePicker.querySelector('.trade-picker__panel');
@@ -885,7 +885,7 @@
         : '';
       filled.innerHTML = `
         <div class="trade-slot__card">
-          <img class="trade-slot__img" src="${item.image}" alt="${item.name}">
+          <img class="trade-slot__img" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}">
           ${buildPotionBadgesHTML(item.potions)}
           ${buildNetworkBadgeHTML(item.network)}
           ${usdTag}
@@ -1042,8 +1042,8 @@
     }
 
     function renderPickerItem(item) {
-      return `<button type="button" class="trade-picker__item" data-item-name="${item.name}" aria-label="${item.name}">
-        <img src="${item.image}" alt="" loading="lazy" decoding="async" width="72" height="72">
+      return `<button type="button" class="trade-picker__item" data-item-name="${escapeHtml(item.name)}" aria-label="${escapeHtml(item.name)}">
+        <img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async" width="72" height="72">
       </button>`;
     }
 
@@ -1262,6 +1262,7 @@
 
     window.addEventListener('valueoverridesready', () => {
       if (!tradePicker.hidden) renderActiveCategory();
+      updateTradeSideTotals();
     });
 
     function openPicker(side) {
@@ -1500,6 +1501,9 @@
     });
 
     syncCryptoValueLabel();
+    // Exact USD behind the last auto-converted amount, so toggling currencies back and forth doesn't drift.
+    let cryptoConvertedUsd = null;
+    let cryptoConvertedText = null;
     window.addEventListener('vd-currency-change', (event) => {
       const previous = event.detail && event.detail.previous;
       const prefs = globalThis.ValueDexPrefs;
@@ -1507,8 +1511,15 @@
         const raw = String(cryptoUsdInput.value || '').trim().replace(/,/g, '');
         const typed = Number(raw);
         if (raw && Number.isFinite(typed)) {
-          const shown = prefs.present(prefs.toUsd(typed, previous));
-          if (shown && Number.isFinite(shown.shown)) cryptoUsdInput.value = String(shown.shown);
+          const usd = cryptoConvertedUsd != null && raw === cryptoConvertedText
+            ? cryptoConvertedUsd
+            : prefs.toUsd(typed, previous);
+          const shown = prefs.present(usd);
+          if (shown && Number.isFinite(shown.shown)) {
+            cryptoUsdInput.value = String(shown.shown);
+            cryptoConvertedUsd = usd;
+            cryptoConvertedText = String(shown.shown);
+          }
         }
       }
       syncCryptoValueLabel();

@@ -20,13 +20,6 @@ const {
 } = require('./trade-store');
 const { readValueOverrides, writeValueOverrides } = require('./value-overrides-store');
 
-function resolveUserId(req, fallbackId) {
-  const sessionUser = getSessionUser(req);
-  if (sessionUser && sessionUser.id) return String(sessionUser.id);
-  if (fallbackId == null || fallbackId === '') return null;
-  return String(fallbackId);
-}
-
 function normalizeRobloxId(value) {
   const id = String(value || '').trim();
   if (!id || !/^\d+$/.test(id)) return null;
@@ -260,7 +253,7 @@ function createTradeApp() {
       }
 
       const { result: ban } = await updateStore((draft) => {
-        if (!isSiteModerator(draft, sessionUser.id)) {
+        if (!isSiteModerator(draft, sessionUser.id) || isBannedUser(draft, sessionUser.id)) {
           throw httpError(403, 'Only site moderators can ban users.');
         }
         if (isSiteModerator(draft, userId) && !isSiteOwner(sessionUser.id)) {
@@ -300,7 +293,7 @@ function createTradeApp() {
       }
 
       await updateStore((draft) => {
-        if (!isSiteModerator(draft, sessionUser.id)) {
+        if (!isSiteModerator(draft, sessionUser.id) || isBannedUser(draft, sessionUser.id)) {
           throw httpError(403, 'Only site moderators can unban users.');
         }
         if (!isBannedUser(draft, userId)) {
@@ -408,7 +401,7 @@ function createTradeApp() {
       }
 
       const store = await readStore();
-      if (!isSiteModerator(store, sessionUser.id)) {
+      if (!isSiteModerator(store, sessionUser.id) || isBannedUser(store, sessionUser.id)) {
         res.status(403).json({ message: 'Only site moderators can view reports.' });
         return;
       }
@@ -452,7 +445,8 @@ function createTradeApp() {
         ? String(req.body.username).trim()
         : null;
       if (!reportedUsername) {
-        reportedUsername = await fetchRobloxUsername(reportedId);
+        const discordUser = await fetchDiscordUser(reportedId);
+        reportedUsername = (discordUser && (discordUser.username || discordUser.name)) || null;
       }
 
       const { result: report } = await updateStore((draft) => {
@@ -545,16 +539,13 @@ function createTradeApp() {
       const access = await rejectIfBanned(req, res);
       if (access.banned) return;
 
-      const tradeId = Number(req.params.id);
-      const sessionUser = access.sessionUser || getSessionUser(req);
-      const userId = sessionUser && sessionUser.id
-        ? String(sessionUser.id)
-        : resolveUserId(req, req.query.userId);
-
-      if (!userId) {
-        res.status(400).json({ message: 'Missing user id.' });
+      if (!access.sessionUser) {
+        res.status(401).json({ message: 'Log in with Discord to delete a trade.' });
         return;
       }
+
+      const tradeId = Number(req.params.id);
+      const userId = String(access.sessionUser.id);
 
       await updateStore((draft) => {
         const trade = draft.posted.find((item) => item.id === tradeId);
@@ -631,11 +622,12 @@ function createTradeApp() {
 
   app.get('/api/trades/accepted', async (req, res) => {
     try {
-      const userId = resolveUserId(req, req.query.userId);
-      if (!userId) {
-        res.status(400).json({ message: 'Missing user id.' });
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser || !sessionUser.id) {
+        res.status(401).json({ message: 'Log in to view accepted trades.' });
         return;
       }
+      const userId = String(sessionUser.id);
 
       const store = await readStore();
       const trades = store.accepted.filter((trade) => isTradeParticipant(trade, userId));
@@ -663,14 +655,14 @@ function createTradeApp() {
       const access = await rejectIfBanned(req, res);
       if (access.banned) return;
 
-      const tradeId = Number(req.params.id);
-      const { failedAt, completedAt } = req.body || {};
-      const userId = resolveUserId(req, req.body && req.body.userId);
-
-      if (!userId) {
-        res.status(400).json({ message: 'Missing user id.' });
+      if (!access.sessionUser) {
+        res.status(401).json({ message: 'Log in with Discord to update a trade.' });
         return;
       }
+
+      const tradeId = Number(req.params.id);
+      const { failedAt, completedAt } = req.body || {};
+      const userId = String(access.sessionUser.id);
 
       if (!failedAt && !completedAt) {
         res.status(400).json({ message: 'No update specified.' });
@@ -817,7 +809,7 @@ function createTradeApp() {
       }
 
       const store = await readStore();
-      if (!isValueEditor(store, sessionUser.id)) {
+      if (!isValueEditor(store, sessionUser.id) || isBannedUser(store, sessionUser.id)) {
         res.status(403).json({ message: 'You are not a value editor.' });
         return;
       }
@@ -847,7 +839,8 @@ function createTradeApp() {
         const keys = ['', 'f', 'r', 'fr', 'n', 'nf', 'nr', 'nfr', 'm', 'mf', 'mr', 'mfr'];
         for (const key of keys) {
           if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
-          const amount = Number(source[key]);
+          const raw = source[key];
+          const amount = raw === null || String(raw).trim() === '' ? NaN : Number(raw);
           if (!Number.isFinite(amount) || amount < 0) {
             res.status(400).json({
               message: `Invalid value for ${key === '' ? 'NoPot' : key.toUpperCase()}.`,

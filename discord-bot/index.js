@@ -476,7 +476,7 @@ for (const [name, entry] of Object.entries(overrides.customPets)) {
   overrides.pets[name] = { ...values };
 }
 for (const [name, entry] of Object.entries(overrides.customItems)) {
-  overrides.items[name] = entry.value;
+  if (entry && entry.value != null) overrides.items[name] = entry.value;
 }
 syncAmvggOverrides();
 lastAppliedUpdatedAt = Number(overrides.updatedAt) || 0;
@@ -540,6 +540,12 @@ async function postSyncedPetChange(petName, lines) {
   } catch (err) {
     console.error('Failed to post synced pet value update:', err.message || err);
   }
+}
+
+function adoptRemoteValueChangesWithin(ms) {
+  const sync = adoptRemoteValueChanges();
+  sync.catch((err) => console.warn('Value sync failed:', err.message || err));
+  return Promise.race([sync, new Promise((resolve) => setTimeout(resolve, ms))]);
 }
 
 async function adoptRemoteValueChanges() {
@@ -685,6 +691,24 @@ function removeAcronymsForItem(itemName) {
   for (const [acro, mapped] of Object.entries(overrides.acronyms)) {
     if (mapped === itemName) delete overrides.acronyms[acro];
   }
+}
+
+function setItemValueOverride(itemName, amount) {
+  overrides.items[itemName] = amount;
+  if (overrides.customItems && overrides.customItems[itemName]) {
+    overrides.customItems[itemName] = { ...overrides.customItems[itemName], value: amount };
+  }
+}
+
+const MAX_CUSTOM_NAME_LENGTH = 80;
+
+/** Existing name that only differs by case/spacing/punctuation (e.g. "frost dragon" vs "Frost Dragon"). */
+function findNameVariantConflict(name) {
+  const key = normalizeItemKey(name);
+  if (!key) return null;
+  return getAllItemNames().find(
+    (existing) => existing !== name && normalizeItemKey(existing) === key
+  ) || null;
 }
 
 function deleteCustomPet(name) {
@@ -1188,6 +1212,12 @@ async function setStickyForChannel(channel, content) {
   });
 
   await runStickyRefresh(channel);
+  const state = stickyByChannel.get(channelId);
+  if (state && state.content === content && !state.messageId) {
+    stickyByChannel.delete(channelId);
+    return false;
+  }
+  return true;
 }
 
 async function clearStickyForChannel(channel) {
@@ -2022,7 +2052,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   if (VALUE_SYNC_COMMANDS.has(interaction.commandName)) {
     try {
-      await adoptRemoteValueChanges();
+      // Discord drops interactions not acknowledged within 3s; never let sync block that.
+      await adoptRemoteValueChangesWithin(1500);
     } catch (err) {
       console.warn('Value sync before command failed:', err.message || err);
     }
@@ -2220,7 +2251,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const amount = interaction.options.getNumber('value', true);
       const oldValue = itemUsd(itemName);
 
-      overrides.items[itemName] = amount;
+      setItemValueOverride(itemName, amount);
 
       await interaction.reply({
         content: `Value of **${itemName}** has been changed.`,
@@ -2352,7 +2383,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       // DMs / user-install / fallback: reply with the message itself.
-      await interaction.reply({ content: message });
+      await interaction.reply({
+        content: message,
+        allowedMentions: inGuild ? undefined : { parse: [] },
+      });
       return;
     }
 
@@ -2374,9 +2408,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       const message = interaction.options.getString('message', true);
-      await setStickyForChannel(interaction.channel, message);
+      const stuck = await setStickyForChannel(interaction.channel, message);
       await interaction.editReply({
-        content: 'Sticky set. It will stay as the newest message in this channel.',
+        content: stuck
+          ? 'Sticky set. It will stay as the newest message in this channel.'
+          : 'Could not post the sticky. Check that I can send messages in this channel.',
       });
       return;
     }
@@ -2522,10 +2558,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
         updatedBy: interaction.user.id,
       };
 
-      welcomeByGuild[String(interaction.guild.id)] = config;
+      const guildKey = String(interaction.guild.id);
+      const previousConfig = welcomeByGuild[guildKey];
+      welcomeByGuild[guildKey] = config;
       try {
         saveWelcomeConfig();
       } catch (err) {
+        if (previousConfig) welcomeByGuild[guildKey] = previousConfig;
+        else delete welcomeByGuild[guildKey];
         console.error('Failed to save welcome config:', err.message || err);
         await interaction.reply({
           content: 'Could not save welcome setup to disk. Try again.',
@@ -2571,6 +2611,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       if (!name) {
         await interaction.reply({ content: 'Pet name cannot be empty.', ephemeral: true });
+        return;
+      }
+      if (name.length > MAX_CUSTOM_NAME_LENGTH) {
+        await interaction.reply({
+          content: `Pet name must be ${MAX_CUSTOM_NAME_LENGTH} characters or fewer.`,
+          ephemeral: true,
+        });
+        return;
+      }
+      const petConflict = findNameVariantConflict(name);
+      if (petConflict) {
+        await interaction.reply({
+          content: `**${petConflict}** already exists. Use that exact name instead of **${name}**.`,
+          ephemeral: true,
+        });
         return;
       }
       if (!isValidImageUrl(image)) {
@@ -2620,6 +2675,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       if (!name) {
         await interaction.reply({ content: 'Item name cannot be empty.', ephemeral: true });
+        return;
+      }
+      if (name.length > MAX_CUSTOM_NAME_LENGTH) {
+        await interaction.reply({
+          content: `Item name must be ${MAX_CUSTOM_NAME_LENGTH} characters or fewer.`,
+          ephemeral: true,
+        });
+        return;
+      }
+      const itemConflict = findNameVariantConflict(name);
+      if (itemConflict) {
+        await interaction.reply({
+          content: `**${itemConflict}** already exists. Use that exact name instead of **${name}**.`,
+          ephemeral: true,
+        });
         return;
       }
       if (!isValidImageUrl(image)) {
@@ -2805,17 +2875,49 @@ function splitPipeArgs(args, expectedMin) {
   return parts;
 }
 
-function peelTrailingNumbers(args, maxCount) {
+function parseNonNegativeNumber(text) {
+  const raw = String(text == null ? '' : text).trim();
+  if (!/^\d+(\.\d+)?$/.test(raw)) return NaN;
+  return Number(raw);
+}
+
+/**
+ * Split "Name With 2023 67 114" into a name and up to maxCount trailing numbers.
+ * Names can end in numbers (Birthday Butterfly 2023), so prefer the split whose
+ * name part exactly matches a known name.
+ */
+function peelTrailingNumbers(args, maxCount, resolveName) {
   const parts = String(args || '').trim().split(/\s+/).filter(Boolean);
-  const numbers = [];
+  let trailing = 0;
   while (
-    parts.length &&
-    numbers.length < maxCount &&
-    /^-?\d+(\.\d+)?$/.test(parts[parts.length - 1])
+    trailing < parts.length &&
+    trailing < maxCount &&
+    /^-?\d+(\.\d+)?$/.test(parts[parts.length - 1 - trailing])
   ) {
-    numbers.unshift(Number(parts.pop()));
+    trailing += 1;
   }
-  return { nameQuery: parts.join(' ').trim(), numbers };
+
+  const splitAt = (take) => ({
+    nameQuery: parts.slice(0, parts.length - take).join(' ').trim(),
+    numbers: parts.slice(parts.length - take).map(Number),
+  });
+
+  if (typeof resolveName === 'function') {
+    let fallback = null;
+    for (let take = trailing; take >= 1; take -= 1) {
+      const candidate = splitAt(take);
+      if (!candidate.nameQuery) continue;
+      const resolved = resolveName(candidate.nameQuery);
+      if (!resolved) continue;
+      if (normalizeItemKey(resolved) === normalizeItemKey(candidate.nameQuery)) {
+        return { ...candidate, resolved };
+      }
+      if (!fallback) fallback = { ...candidate, resolved };
+    }
+    if (fallback) return fallback;
+  }
+
+  return { ...splitAt(trailing), resolved: null };
 }
 
 const PREFIX_COMMAND_NAMES = [
@@ -2889,7 +2991,7 @@ async function handlePrefixCommand(message) {
 
   if (VALUE_SYNC_COMMANDS.has(name)) {
     try {
-      await adoptRemoteValueChanges();
+      await adoptRemoteValueChangesWithin(4000);
     } catch (err) {
       console.warn('Value sync before prefix command failed:', err.message || err);
     }
@@ -2980,9 +3082,11 @@ async function handlePrefixCommand(message) {
       await prefixReply(message, { content: 'Usage: `-stick message to keep at the bottom`' });
       return true;
     }
-    await setStickyForChannel(message.channel, args);
+    const stuck = await setStickyForChannel(message.channel, args);
     await prefixReply(message, {
-      content: 'Sticky set. It will stay as the newest message in this channel.',
+      content: stuck
+        ? 'Sticky set. It will stay as the newest message in this channel.'
+        : 'Could not post the sticky. Check that I can send messages in this channel.',
     });
     return true;
   }
@@ -3178,14 +3282,18 @@ async function handlePrefixCommand(message) {
       await prefixReply(message, { content: 'You need the editor role to use this command.' });
       return true;
     }
-    const { nameQuery, numbers } = peelTrailingNumbers(args, 3);
+    const { nameQuery, numbers, resolved } = peelTrailingNumbers(args, 3, resolvePetOnly);
     if (!nameQuery || !numbers.length) {
       await prefixReply(message, {
         content: 'Usage: `-editpetvalue Frost Dragon 67` or `-editpetvalue Frost Dragon 67 114 285`',
       });
       return true;
     }
-    const petName = resolvePetOnly(nameQuery);
+    if (!numbers.every((n) => Number.isFinite(n) && n >= 0)) {
+      await prefixReply(message, { content: 'FR / NFR / MFR must be numbers ≥ 0.' });
+      return true;
+    }
+    const petName = resolved || resolvePetOnly(nameQuery);
     if (!petName) {
       await prefixReply(message, { content: `Could not find a pet named **${nameQuery}**.` });
       return true;
@@ -3215,12 +3323,16 @@ async function handlePrefixCommand(message) {
       await prefixReply(message, { content: 'You need the editor role to use this command.' });
       return true;
     }
-    const { nameQuery, numbers } = peelTrailingNumbers(args, 1);
+    const { nameQuery, numbers, resolved } = peelTrailingNumbers(args, 1, resolveNonPetItem);
     if (!nameQuery || numbers.length !== 1) {
       await prefixReply(message, { content: 'Usage: `-edititemvalue Rainbow Rattle 356`' });
       return true;
     }
-    const itemName = resolveNonPetItem(nameQuery);
+    if (!Number.isFinite(numbers[0]) || numbers[0] < 0) {
+      await prefixReply(message, { content: 'Value must be a number ≥ 0.' });
+      return true;
+    }
+    const itemName = resolved || resolveNonPetItem(nameQuery);
     if (!itemName) {
       await prefixReply(message, {
         content: `Could not find a non-pet item named **${nameQuery}**. Use \`-editpetvalue\` for pets.`,
@@ -3229,7 +3341,7 @@ async function handlePrefixCommand(message) {
     }
     const amount = numbers[0];
     const oldValue = itemUsd(itemName);
-    overrides.items[itemName] = amount;
+    setItemValueOverride(itemName, amount);
     await prefixReply(message, {
       content: `Value of **${itemName}** has been changed.`,
       embeds: [buildValueEmbed(itemName)],
@@ -3323,11 +3435,22 @@ async function handlePrefixCommand(message) {
     }
     const petName = parts[0].trim();
     const image = parts[1].trim();
-    const fr = Number(parts[2]);
-    const nfr = Number(parts[3]);
-    const mfr = Number(parts[4]);
+    const fr = parseNonNegativeNumber(parts[2]);
+    const nfr = parseNonNegativeNumber(parts[3]);
+    const mfr = parseNonNegativeNumber(parts[4]);
     if (!petName) {
       await prefixReply(message, { content: 'Pet name cannot be empty.' });
+      return true;
+    }
+    if (petName.length > MAX_CUSTOM_NAME_LENGTH) {
+      await prefixReply(message, { content: `Pet name must be ${MAX_CUSTOM_NAME_LENGTH} characters or fewer.` });
+      return true;
+    }
+    const petConflict = findNameVariantConflict(petName);
+    if (petConflict) {
+      await prefixReply(message, {
+        content: `**${petConflict}** already exists. Use that exact name instead of **${petName}**.`,
+      });
       return true;
     }
     if (!isValidImageUrl(image)) {
@@ -3375,10 +3498,21 @@ async function handlePrefixCommand(message) {
     const itemName = parts[0].trim();
     const image = parts[1].trim();
     const category = parts[2].trim().toLowerCase();
-    const value = Number(parts[3]);
+    const value = parseNonNegativeNumber(parts[3]);
     const validCategories = new Set(ITEM_CATEGORY_CHOICES.map((c) => c.value));
     if (!itemName) {
       await prefixReply(message, { content: 'Item name cannot be empty.' });
+      return true;
+    }
+    if (itemName.length > MAX_CUSTOM_NAME_LENGTH) {
+      await prefixReply(message, { content: `Item name must be ${MAX_CUSTOM_NAME_LENGTH} characters or fewer.` });
+      return true;
+    }
+    const itemConflict = findNameVariantConflict(itemName);
+    if (itemConflict) {
+      await prefixReply(message, {
+        content: `**${itemConflict}** already exists. Use that exact name instead of **${itemName}**.`,
+      });
       return true;
     }
     if (!isValidImageUrl(image)) {
@@ -3436,8 +3570,8 @@ async function handlePrefixCommand(message) {
       });
       return true;
     }
-    const result = deleteCustomPet(exact);
-    if (!result.ok) {
+    const deleted = deleteCustomPet(exact);
+    if (!deleted) {
       await prefixReply(message, { content: `Could not delete **${exact}**.` });
       return true;
     }

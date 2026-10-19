@@ -23,7 +23,8 @@
     const yours = Math.max(0, Number.isFinite(yoursUsd) ? yoursUsd : 0);
     const theirs = Math.max(0, Number.isFinite(theirsUsd) ? theirsUsd : 0);
     const total = yours + theirs;
-    const diff = theirs - yours;
+    // Float sums (0.1 + 0.2) leave dust that would show "+$0.00" instead of Fair.
+    const diff = Math.round((theirs - yours) * 1e6) / 1e6;
 
     const yoursAmount = document.getElementById('trade-value-yours-amount');
     const theirsAmount = document.getElementById('trade-value-theirs-amount');

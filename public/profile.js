@@ -5,6 +5,7 @@
   const tradesSection = document.querySelector('.profile-trades');
   const tradesFeed = document.getElementById('profile-trades-feed');
   const tradesEmpty = document.getElementById('profile-trades-empty');
+  const tradesEmptyDefaultText = tradesEmpty ? tradesEmpty.textContent : '';
   const banBtn = document.getElementById('profile-ban-btn');
   const blockBtn = document.getElementById('profile-block-btn');
   const reportBtn = document.getElementById('profile-report-btn');
@@ -200,6 +201,7 @@
     tradesSection.hidden = false;
     tradesFeed.innerHTML = '';
     tradesEmpty.hidden = true;
+    tradesEmpty.textContent = tradesEmptyDefaultText;
 
     try {
       await ensureAuthUser();
@@ -209,6 +211,7 @@
       if (!response.ok) throw new Error('Could not load trades.');
       const trades = await response.json();
       const list = Array.isArray(trades) ? trades : [];
+      if (typeof rememberPostedTrades === 'function') rememberPostedTrades(list);
 
       if (!list.length) {
         tradesEmpty.hidden = false;
@@ -555,6 +558,9 @@
     : loadOwnProfile();
 
   window.addEventListener('vd-currency-change', () => {
+    if (shownProfileId) renderPublishedTrades(shownProfileId);
+  });
+  window.addEventListener('valueoverridesready', () => {
     if (shownProfileId) renderPublishedTrades(shownProfileId);
   });
 

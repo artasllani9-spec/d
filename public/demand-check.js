@@ -1,4 +1,13 @@
 (function () {
+  function escapeHtml(text) {
+    return String(text == null ? '' : text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   const searchInput = document.getElementById('demand-check-search');
   const grid = document.getElementById('demand-check-grid');
   const hint = document.getElementById('demand-check-hint');
@@ -171,11 +180,12 @@
     card.className = 'demand-check-pet-card trade-picker__pet-popout-card';
     card.dataset.petName = item.name;
     card.dataset.itemKind = isPetCard ? 'pet' : 'item';
+    const safeName = escapeHtml(item.name);
     card.innerHTML = `
-      ${canEditValues ? `<button type="button" class="demand-check-pet-card__edit" aria-label="Edit value of ${item.name}">${EDIT_PENCIL_SVG}</button>` : ''}
+      ${canEditValues ? `<button type="button" class="demand-check-pet-card__edit" aria-label="Edit value of ${safeName}">${EDIT_PENCIL_SVG}</button>` : ''}
       <div class="trade-picker__pet-bar-media demand-check-pet-card__media">
         <div class="trade-picker__pet-bar-preview">
-          <img class="trade-picker__pet-bar-img" src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" width="88" height="88">
+          <img class="trade-picker__pet-bar-img" src="${escapeHtml(item.image)}" alt="${safeName}" loading="lazy" decoding="async" width="88" height="88">
           <div class="trade-picker__pet-bar-badges trade-slot__badges" hidden></div>
         </div>
         <div class="trade-picker__potions demand-check-pet-card__potions"${noPotions ? ' hidden' : ''}>
@@ -186,7 +196,7 @@
         </div>
       </div>
       <div class="trade-picker__pet-bar-info">
-        <span class="trade-picker__pet-bar-name">${item.name}</span>
+        <span class="trade-picker__pet-bar-name">${safeName}</span>
         <div class="demand-check-pet-card__stats">
           <div class="demand-check-value">
             <span class="demand-check-value__label">${valueLabel} Value:</span>
@@ -306,7 +316,7 @@
       const inputs = editFields.querySelectorAll('input[data-variant-key]');
       for (const input of inputs) {
         const key = input.getAttribute('data-variant-key');
-        const amount = Number(input.value);
+        const amount = String(input.value).trim() === '' ? NaN : Number(input.value);
         if (!Number.isFinite(amount) || amount < 0) {
           const label = key === '' ? 'NoPot' : String(key).toUpperCase();
           setEditStatus(`Enter a valid ${label} value.`, true);
@@ -320,7 +330,8 @@
       }
       body = { name: editTarget.name, kind: 'pet', values };
     } else {
-      const value = Number(document.getElementById('value-edit-flat')?.value);
+      const rawValue = String(document.getElementById('value-edit-flat')?.value ?? '').trim();
+      const value = rawValue === '' ? NaN : Number(rawValue);
       if (!Number.isFinite(value) || value < 0) {
         setEditStatus('Enter a valid USD value.', true);
         return;
@@ -340,16 +351,9 @@
         throw new Error(data.message || 'Could not save value.');
       }
 
-      if (typeof globalThis !== 'undefined') {
-        globalThis.__VALUE_OVERRIDES = {
-          pets: data.pets || {},
-          items: data.items || {},
-          customPets: data.customPets || {},
-          customItems: data.customItems || {},
-          acronyms: data.acronyms || {},
-        };
-      }
-      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      if (typeof window.applyValueOverrides === 'function') {
+        window.applyValueOverrides(data);
+      } else {
         window.dispatchEvent(new Event('valueoverridesready'));
       }
 
