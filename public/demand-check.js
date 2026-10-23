@@ -144,26 +144,40 @@
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   }
 
-  function wirePotionButtons(card) {
+  function togglePotion(card, button) {
     const neonPotion = card.querySelector('[data-potion="neon"]');
     const megaPotion = card.querySelector('[data-potion="mega"]');
+    const isActive = !button.classList.contains('trade-picker__potion--active');
+    setPotionActive(button, isActive);
 
-    card.querySelectorAll('.trade-picker__potion').forEach((button) => {
-      button.addEventListener('click', () => {
-        const isActive = !button.classList.contains('trade-picker__potion--active');
-        setPotionActive(button, isActive);
+    if (isActive && button === neonPotion) {
+      setPotionActive(megaPotion, false);
+    } else if (isActive && button === megaPotion) {
+      setPotionActive(neonPotion, false);
+    }
 
-        if (isActive && button === neonPotion) {
-          setPotionActive(megaPotion, false);
-        } else if (isActive && button === megaPotion) {
-          setPotionActive(neonPotion, false);
-        }
-
-        updateCardBadges(card);
-        updateCardUsd(card);
-      });
-    });
+    updateCardBadges(card);
+    updateCardUsd(card);
   }
+
+  // One delegated listener instead of 4–5 per card (the value list renders 800+ cards).
+  grid.addEventListener('click', (event) => {
+    const card = event.target.closest('.demand-check-pet-card');
+    if (!card || !grid.contains(card)) return;
+
+    const editBtn = event.target.closest('.demand-check-pet-card__edit');
+    if (editBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      openValueEditor(card.dataset.petName, card.dataset.itemKind === 'pet' ? 'pet' : 'item');
+      return;
+    }
+
+    const potionBtn = event.target.closest('.trade-picker__potion');
+    if (potionBtn && !potionBtn.closest('[hidden]')) {
+      togglePotion(card, potionBtn);
+    }
+  });
 
   function createItemCard(item) {
     const isPetCard = activeCategory === 'pets';
@@ -207,19 +221,7 @@
     `;
 
     if (!noPotions) {
-      wirePotionButtons(card);
       updateCardBadges(card);
-    }
-
-    if (canEditValues) {
-      const editBtn = card.querySelector('.demand-check-pet-card__edit');
-      if (editBtn) {
-        editBtn.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          openValueEditor(item.name, isPetCard ? 'pet' : 'item');
-        });
-      }
     }
 
     return card;

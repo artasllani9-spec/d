@@ -210,6 +210,7 @@
   })();
 
   window.setInterval(() => {
+    if (document.hidden) return;
     fetch('/api/values/overrides', { cache: 'no-store', credentials: 'same-origin' })
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {

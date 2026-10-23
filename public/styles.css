@@ -7770,10 +7770,11 @@ body.home-page .home-hero__beam {
     rgba(var(--vd-beam-deep), 0.05) 42%,
     transparent 78%
   );
-  filter: blur(28px);
+  filter: blur(31px);
   transform-origin: top center;
   opacity: 0.85;
   animation: home-beam-sway 12s ease-in-out infinite alternate;
+  will-change: opacity;
 }
 
 body.home-page .home-hero__beam--a {
@@ -7950,9 +7951,10 @@ body.home-page .home-cta:active {
   to { transform: scale(1.12) translate3d(-1.5%, 1%, 0); }
 }
 
+/* Opacity only: animating the blur radius repainted both full-height beams every frame. */
 @keyframes home-beam-sway {
-  from { opacity: 0.55; filter: blur(28px); }
-  to { opacity: 0.9; filter: blur(34px); }
+  from { opacity: 0.55; }
+  to { opacity: 0.9; }
 }
 
 @keyframes home-copy-rise {
@@ -9353,4 +9355,22 @@ html[data-theme="beige"] body.home-page .home-hero__copy .acestock-promo {
 html[data-theme="light"] .acestock-promo__link,
 html[data-theme="beige"] .acestock-promo__link {
   color: var(--vd-brand);
+}
+
+/* ── Scroll performance ──
+   These repeated cards sit on a flat backdrop (or inside an already-blurred / opaque panel),
+   so their backdrop blur looked the same as no blur but was recomputed every scroll frame. */
+.demand-check-pet-card.trade-picker__pet-popout-card {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+    var(--vd-canvas);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.demand-check-value,
+.trade-picker__item,
+.posted-trade__bar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
