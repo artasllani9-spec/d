@@ -62,7 +62,6 @@ const VALUE_UPDATE_CHANNEL_ID = String(
   process.env.DISCORD_VALUE_UPDATE_CHANNEL_ID || '1548371067679023178'
 ).trim();
 let lastAppliedUpdatedAt = 0;
-let watchRemoteOverrides = false;
 let adoptInFlight = null;
 const VALUE_SYNC_COMMANDS = new Set([
   'value',
@@ -75,7 +74,6 @@ const VALUE_SYNC_COMMANDS = new Set([
   'acronymadd',
   'acronymremove',
 ]);
-const PET_VARIANT_ANNOUNCE_ORDER = ['fr', 'nfr', 'mfr', '', 'f', 'r', 'n', 'nf', 'nr', 'm', 'mf', 'mr'];
 /** guildId -> welcome embed config */
 let welcomeByGuild = {};
 
@@ -491,22 +489,6 @@ function potionsFromVariantKey(key) {
   };
 }
 
-function variantAnnounceLabel(key) {
-  if (key === 'fr') return `${EMOJI.fly}${EMOJI.ride}`;
-  if (key === 'nfr') return `${EMOJI.neon}${EMOJI.fly}${EMOJI.ride}`;
-  if (key === 'mfr') return `${EMOJI.mega}${EMOJI.fly}${EMOJI.ride}`;
-  if (key === '') return 'No Potion';
-  if (key === 'f') return EMOJI.fly;
-  if (key === 'r') return EMOJI.ride;
-  if (key === 'n') return EMOJI.neon;
-  if (key === 'nf') return `${EMOJI.neon}${EMOJI.fly}`;
-  if (key === 'nr') return `${EMOJI.neon}${EMOJI.ride}`;
-  if (key === 'm') return EMOJI.mega;
-  if (key === 'mf') return `${EMOJI.mega}${EMOJI.fly}`;
-  if (key === 'mr') return `${EMOJI.mega}${EMOJI.ride}`;
-  return String(key || '').toUpperCase();
-}
-
 function applyRemoteOverridePayload(remote) {
   overrides = {
     pets: { ...(remote.pets || {}) },
@@ -524,22 +506,6 @@ function applyRemoteOverridePayload(remote) {
     if (entry && entry.value != null) overrides.items[name] = entry.value;
   }
   syncAmvggOverrides();
-}
-
-async function postSyncedPetChange(petName, lines) {
-  const description = ['**USD Value:**', ...lines].join('\n');
-  const embed = new EmbedBuilder()
-    .setColor(0x1e64c8)
-    .setTitle(petName)
-    .setDescription(description)
-    .setThumbnail(getItemImage(petName))
-    .setFooter({ text: 'ValueDex' });
-  try {
-    const channel = await getValueUpdateChannel();
-    await channel.send({ embeds: [embed] });
-  } catch (err) {
-    console.error('Failed to post synced pet value update:', err.message || err);
-  }
 }
 
 function adoptRemoteValueChangesWithin(ms) {
@@ -565,59 +531,11 @@ async function adoptRemoteValueChanges() {
     const remoteAt = Number(remote.updatedAt) || 0;
     if (remoteAt && remoteAt <= lastAppliedUpdatedAt) return;
 
-    const pendingPets = [];
-    const pendingItems = [];
-    if (watchRemoteOverrides) {
-      const prevPets = overrides.pets || {};
-      const nextPets = remote.pets || {};
-      const petNames = new Set([...Object.keys(prevPets), ...Object.keys(nextPets)]);
-      for (const name of petNames) {
-        if (JSON.stringify(prevPets[name] ?? null) === JSON.stringify(nextPets[name] ?? null)) continue;
-        const keys = new Set([
-          ...Object.keys(prevPets[name] || {}),
-          ...Object.keys(nextPets[name] || {}),
-          'fr',
-          'nfr',
-          'mfr',
-        ]);
-        const olds = {};
-        for (const key of keys) olds[key] = petUsd(name, potionsFromVariantKey(key));
-        pendingPets.push({ name, keys: [...keys], olds });
-      }
-      const prevItems = overrides.items || {};
-      const nextItems = remote.items || {};
-      const itemNames = new Set([...Object.keys(prevItems), ...Object.keys(nextItems)]);
-      for (const name of itemNames) {
-        if (JSON.stringify(prevItems[name] ?? null) === JSON.stringify(nextItems[name] ?? null)) continue;
-        pendingItems.push({ name, old: itemUsd(name) });
-      }
-    }
-
     applyRemoteOverridePayload(remote);
     lastAppliedUpdatedAt = remoteAt || Date.now();
     console.log(
       `Adopted value overrides (${Object.keys(overrides.pets || {}).length} pets, ${Object.keys(overrides.items || {}).length} items)`
     );
-
-    if (!watchRemoteOverrides) return;
-
-    for (const change of pendingPets) {
-      const lines = [];
-      const ordered = PET_VARIANT_ANNOUNCE_ORDER.filter((key) => change.keys.includes(key));
-      for (const key of change.keys) {
-        if (!ordered.includes(key)) ordered.push(key);
-      }
-      for (const key of ordered) {
-        const next = petUsd(change.name, potionsFromVariantKey(key));
-        if (next === change.olds[key]) continue;
-        lines.push(`${variantAnnounceLabel(key)} ${formatValueChange(change.olds[key], next)}`);
-      }
-      if (lines.length) await postSyncedPetChange(change.name, lines);
-    }
-    for (const change of pendingItems) {
-      const next = itemUsd(change.name);
-      if (next !== change.old) await postItemValueUpdate(change.name, change.old, next);
-    }
   })().finally(() => {
     adoptInFlight = null;
   });
@@ -2011,7 +1929,6 @@ client.once(Events.ClientReady, async (readyClient) => {
   } catch (err) {
     console.error('Failed to refresh overrides on startup:', err.message);
   }
-  watchRemoteOverrides = true;
   setInterval(() => {
     adoptRemoteValueChanges().catch((err) => {
       console.warn('Value sync failed:', err.message || err);
