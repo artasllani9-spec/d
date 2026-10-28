@@ -17,7 +17,7 @@
       "m": 1616,
       "mf": 1512,
       "mr": 1508,
-      "mfr": 1500
+      "mfr": 1400
     },
     "Shadow Dragon": {
       "": 173,
@@ -41,5 +41,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1793189725975
+  "updatedAt": 1793189744006
 }
