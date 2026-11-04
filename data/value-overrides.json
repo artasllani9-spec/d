@@ -87,7 +87,7 @@
       "m": 300,
       "mf": 294,
       "mr": 294,
-      "mfr": 215
+      "mfr": 250
     },
     "Strawberry Shortcake Bat Dragon": {
       "": 10.5,
@@ -142,5 +142,5 @@
   },
   "customPets": {},
   "customItems": {},
-  "updatedAt": 1793795240786
+  "updatedAt": 1793795301236
 }
