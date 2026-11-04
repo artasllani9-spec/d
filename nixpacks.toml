@@ -1,8 +1,0 @@
-[phases.setup]
-aptPkgs = ["python3", "make", "g++"]
-
-[phases.install]
-cmds = ["npm ci --omit=dev", "npm ci --omit=dev --prefix auto-mm"]
-
-[start]
-cmd = "node scripts/start-bots.js"

@@ -2,13 +2,13 @@
   "name": "auto-mm",
   "version": "1.0.0",
   "private": true,
-  "main": "src/index.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node index.js",
     "test": "node src/selftest.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "overrides": {
     "rpc-websockets": "7.11.0"
@@ -17,7 +17,6 @@
     "@bitcoinerlab/secp256k1": "^1.2.0",
     "@solana/spl-token": "0.4.0",
     "@solana/web3.js": "1.91.8",
-    "better-sqlite3": "^11.8.1",
     "bip32": "^4.0.0",
     "bip39": "^3.1.0",
     "bitcoinjs-lib": "^6.1.7",

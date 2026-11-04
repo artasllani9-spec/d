@@ -12,7 +12,7 @@ function first(...names) {
 function must(...names) {
   const value = first(...names);
   if (!value) {
-    const error = new Error(`Missing ${names.join(' or ')} in .env`);
+    const error = new Error(`Missing ${names.join(' or ')} in environment / .env`);
     error.public = true;
     throw error;
   }
@@ -33,8 +33,9 @@ function optional(...args) {
 }
 
 module.exports = {
-  token: must('AUTO_MM_DISCORD_BOT_TOKEN', 'DISCORD_BOT_TOKEN'),
-  clientId: must('AUTO_MM_DISCORD_CLIENT_ID', 'DISCORD_CLIENT_ID'),
+  // Wispbyte often uses DISCORD_TOKEN; dedicated AUTO_MM_* names also work.
+  token: must('AUTO_MM_DISCORD_BOT_TOKEN', 'DISCORD_BOT_TOKEN', 'DISCORD_TOKEN'),
+  clientId: must('AUTO_MM_DISCORD_CLIENT_ID', 'DISCORD_CLIENT_ID', 'CLIENT_ID'),
   mnemonic: must('AUTO_MM_WALLET_MNEMONIC', 'WALLET_MNEMONIC'),
   staffRoleId: optional('AUTO_MM_STAFF_ROLE_ID', 'STAFF_ROLE_ID'),
   categoryId: optional('AUTO_MM_ESCROW_CATEGORY_ID', 'ESCROW_CATEGORY_ID'),

@@ -1,14 +1,14 @@
 const fs = require('fs');
 const path = require('path');
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 
 let database;
 
 function open(dbPath) {
   if (database) return database;
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  database = new Database(dbPath);
-  database.pragma('journal_mode = WAL');
+  database = new DatabaseSync(dbPath);
+  database.exec('PRAGMA journal_mode = WAL');
   database.exec(`
     CREATE TABLE IF NOT EXISTS escrows (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,7 +97,19 @@ function open(dbPath) {
 }
 
 function tx(fn) {
-  return database.transaction(fn)();
+  database.exec('BEGIN');
+  try {
+    const result = fn();
+    database.exec('COMMIT');
+    return result;
+  } catch (error) {
+    try {
+      database.exec('ROLLBACK');
+    } catch {
+      // ignore rollback errors when the connection already aborted
+    }
+    throw error;
+  }
 }
 
 function get(sql, ...params) {
