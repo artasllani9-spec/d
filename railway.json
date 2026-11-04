@@ -2,17 +2,21 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
+    "buildCommand": "npm ci --omit=dev && npm ci --omit=dev --prefix auto-mm",
     "watchPatterns": [
       "discord-bot/**",
+      "auto-mm/**",
+      "scripts/start-bots.js",
       "local-server.js",
       "package.json",
       "package-lock.json",
       "railway.json",
+      "nixpacks.toml",
       "Dockerfile"
     ]
   },
   "deploy": {
-    "startCommand": "node discord-bot/index.js",
+    "startCommand": "node scripts/start-bots.js",
     "restartPolicyType": "ALWAYS",
     "restartPolicyMaxRetries": 100
   }

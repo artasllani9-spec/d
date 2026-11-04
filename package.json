@@ -6,9 +6,10 @@
     "node": "22.x"
   },
   "scripts": {
-    "start": "node discord-bot/index.js",
+    "start": "node scripts/start-bots.js",
     "start:site": "node local-server.js",
     "start:bot": "node discord-bot/index.js",
+    "start:auto-mm": "node auto-mm/src/index.js",
     "dev": "node local-server.js"
   },
   "dependencies": {
