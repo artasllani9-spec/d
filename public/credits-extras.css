@@ -223,3 +223,274 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Light / beige: keep Credits surfaces readable on pale themes ── */
+html[data-theme="light"] .credits-overlay,
+html[data-theme="beige"] .credits-overlay {
+  opacity: 0.08;
+  mix-blend-mode: multiply;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(var(--vd-accent), 0.04) 0,
+    rgba(var(--vd-accent), 0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+html[data-theme="light"] .credits-bar,
+html[data-theme="beige"] .credits-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.5) 100%),
+    rgba(var(--vd-menu), 0.92);
+  border-color: rgba(var(--vd-accent), 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 14px 36px rgba(var(--vd-accent), 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+html[data-theme="light"] .credits-bar__title,
+html[data-theme="beige"] .credits-bar__title {
+  color: var(--vd-brand);
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-slot,
+html[data-theme="beige"] .credits-slot {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(var(--vd-accent), 0.12);
+  box-shadow: 0 6px 16px rgba(var(--vd-accent), 0.04);
+}
+
+html[data-theme="light"] .credits-name,
+html[data-theme="beige"] .credits-name {
+  color: var(--vd-brand);
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-profile-link,
+html[data-theme="beige"] .credits-profile-link {
+  color: rgba(var(--vd-accent), 0.78);
+  border-color: rgba(var(--vd-accent), 0.18);
+  background: rgba(var(--vd-accent), 0.05);
+}
+
+html[data-theme="light"] .credits-avatar,
+html[data-theme="beige"] .credits-avatar {
+  border-color: rgba(var(--vd-accent), 0.18);
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.7) 0%, transparent 42%),
+    rgba(var(--vd-accent), 0.05);
+  box-shadow:
+    0 8px 18px rgba(var(--vd-accent), 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme="light"] .credits-role,
+html[data-theme="beige"] .credits-role {
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 4px 12px rgba(var(--vd-accent), 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  text-shadow: none;
+}
+
+/* Founder / admin badges on light */
+html[data-theme="light"] .credits-slot--shade .credits-role,
+html[data-theme="beige"] .credits-slot--shade .credits-role,
+html[data-theme="light"] .credits-slot--rayn .credits-role,
+html[data-theme="beige"] .credits-slot--rayn .credits-role,
+html[data-theme="light"] .credits-slot--ace .credits-role,
+html[data-theme="beige"] .credits-slot--ace .credits-role {
+  color: #b8860b;
+  border-color: rgba(184, 134, 11, 0.38);
+}
+
+html[data-theme="light"] .credits-role--blue,
+html[data-theme="beige"] .credits-role--blue {
+  color: #c23030;
+  border-color: rgba(194, 48, 48, 0.35);
+}
+
+/* Value team badges — deeper hues, no neon glow */
+html[data-theme="light"] .credits-role--head-value,
+html[data-theme="beige"] .credits-role--head-value {
+  color: #0891b2;
+  border-color: rgba(8, 145, 178, 0.4);
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-role--senior-value,
+html[data-theme="beige"] .credits-role--senior-value {
+  color: #7c3aed;
+  border-color: rgba(124, 58, 237, 0.38);
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-role--value,
+html[data-theme="beige"] .credits-role--value {
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.38);
+  text-shadow: none;
+}
+
+/* Soften founder/admin hovers on light */
+html[data-theme="light"] .credits-slot--shade:hover,
+html[data-theme="beige"] .credits-slot--shade:hover,
+html[data-theme="light"] .credits-slot--rayn:hover,
+html[data-theme="beige"] .credits-slot--rayn:hover,
+html[data-theme="light"] .credits-slot--ace:hover,
+html[data-theme="beige"] .credits-slot--ace:hover {
+  background: rgba(184, 134, 11, 0.08);
+  border-color: rgba(184, 134, 11, 0.28);
+  box-shadow: 0 10px 22px rgba(var(--vd-accent), 0.08);
+}
+
+html[data-theme="light"] .credits-slot--bankai:hover,
+html[data-theme="beige"] .credits-slot--bankai:hover {
+  background: rgba(194, 48, 48, 0.07);
+  border-color: rgba(194, 48, 48, 0.28);
+  box-shadow: 0 10px 22px rgba(var(--vd-accent), 0.08);
+}
+
+html[data-theme="light"] .credits-slot--shade:hover .credits-name,
+html[data-theme="beige"] .credits-slot--shade:hover .credits-name,
+html[data-theme="light"] .credits-slot--rayn:hover .credits-name,
+html[data-theme="beige"] .credits-slot--rayn:hover .credits-name,
+html[data-theme="light"] .credits-slot--ace:hover .credits-name,
+html[data-theme="beige"] .credits-slot--ace:hover .credits-name {
+  color: #9a7209;
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-slot--bankai:hover .credits-name,
+html[data-theme="beige"] .credits-slot--bankai:hover .credits-name {
+  color: #c23030;
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-slot--hassan:hover,
+html[data-theme="beige"] .credits-slot--hassan:hover {
+  background: rgba(8, 145, 178, 0.08);
+  border-color: rgba(8, 145, 178, 0.28);
+  box-shadow: 0 10px 22px rgba(var(--vd-accent), 0.08);
+}
+
+html[data-theme="light"] .credits-slot--sora:hover,
+html[data-theme="beige"] .credits-slot--sora:hover {
+  background: rgba(124, 58, 237, 0.07);
+  border-color: rgba(124, 58, 237, 0.28);
+  box-shadow: 0 10px 22px rgba(var(--vd-accent), 0.08);
+}
+
+html[data-theme="light"] .credits-slot--m7:hover,
+html[data-theme="beige"] .credits-slot--m7:hover,
+html[data-theme="light"] .credits-slot--alvi:hover,
+html[data-theme="beige"] .credits-slot--alvi:hover,
+html[data-theme="light"] .credits-slot--vedu:hover,
+html[data-theme="beige"] .credits-slot--vedu:hover {
+  background: rgba(5, 150, 105, 0.07);
+  border-color: rgba(5, 150, 105, 0.28);
+  box-shadow: 0 10px 22px rgba(var(--vd-accent), 0.08);
+}
+
+html[data-theme="light"] .credits-slot--hassan:hover .credits-name,
+html[data-theme="beige"] .credits-slot--hassan:hover .credits-name {
+  color: #0e7490;
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-slot--sora:hover .credits-name,
+html[data-theme="beige"] .credits-slot--sora:hover .credits-name {
+  color: #6d28d9;
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-slot--m7:hover .credits-name,
+html[data-theme="beige"] .credits-slot--m7:hover .credits-name,
+html[data-theme="light"] .credits-slot--alvi:hover .credits-name,
+html[data-theme="beige"] .credits-slot--alvi:hover .credits-name,
+html[data-theme="light"] .credits-slot--vedu:hover .credits-name,
+html[data-theme="beige"] .credits-slot--vedu:hover .credits-name {
+  color: #047857;
+  text-shadow: none;
+}
+
+html[data-theme="light"] .credits-slot--hassan:hover .credits-profile-link,
+html[data-theme="beige"] .credits-slot--hassan:hover .credits-profile-link {
+  color: #0e7490;
+  border-color: rgba(8, 145, 178, 0.4);
+  background: rgba(8, 145, 178, 0.08);
+}
+
+html[data-theme="light"] .credits-slot--sora:hover .credits-profile-link,
+html[data-theme="beige"] .credits-slot--sora:hover .credits-profile-link {
+  color: #6d28d9;
+  border-color: rgba(124, 58, 237, 0.4);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+html[data-theme="light"] .credits-slot--m7:hover .credits-profile-link,
+html[data-theme="beige"] .credits-slot--m7:hover .credits-profile-link,
+html[data-theme="light"] .credits-slot--alvi:hover .credits-profile-link,
+html[data-theme="beige"] .credits-slot--alvi:hover .credits-profile-link,
+html[data-theme="light"] .credits-slot--vedu:hover .credits-profile-link,
+html[data-theme="beige"] .credits-slot--vedu:hover .credits-profile-link {
+  color: #047857;
+  border-color: rgba(5, 150, 105, 0.4);
+  background: rgba(5, 150, 105, 0.08);
+}
+
+html[data-theme="light"] .credits-slot--hassan:hover .credits-avatar,
+html[data-theme="beige"] .credits-slot--hassan:hover .credits-avatar {
+  border-color: rgba(8, 145, 178, 0.45);
+  box-shadow:
+    0 0 0 2px rgba(8, 145, 178, 0.12),
+    0 10px 20px rgba(var(--vd-accent), 0.08);
+}
+
+html[data-theme="light"] .credits-slot--sora:hover .credits-avatar,
+html[data-theme="beige"] .credits-slot--sora:hover .credits-avatar {
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow:
+    0 0 0 2px rgba(124, 58, 237, 0.12),
+    0 10px 20px rgba(var(--vd-accent), 0.08);
+}
+
+html[data-theme="light"] .credits-slot--m7:hover .credits-avatar,
+html[data-theme="beige"] .credits-slot--m7:hover .credits-avatar,
+html[data-theme="light"] .credits-slot--alvi:hover .credits-avatar,
+html[data-theme="beige"] .credits-slot--alvi:hover .credits-avatar,
+html[data-theme="light"] .credits-slot--vedu:hover .credits-avatar,
+html[data-theme="beige"] .credits-slot--vedu:hover .credits-avatar {
+  border-color: rgba(5, 150, 105, 0.45);
+  box-shadow:
+    0 0 0 2px rgba(5, 150, 105, 0.12),
+    0 10px 20px rgba(var(--vd-accent), 0.08);
+}
+
+html[data-theme="light"] .credits-slot--hassan:hover .credits-role--head-value,
+html[data-theme="beige"] .credits-slot--hassan:hover .credits-role--head-value,
+html[data-theme="light"] .credits-slot--sora:hover .credits-role--senior-value,
+html[data-theme="beige"] .credits-slot--sora:hover .credits-role--senior-value,
+html[data-theme="light"] .credits-slot--m7:hover .credits-role--value,
+html[data-theme="beige"] .credits-slot--m7:hover .credits-role--value,
+html[data-theme="light"] .credits-slot--alvi:hover .credits-role--value,
+html[data-theme="beige"] .credits-slot--alvi:hover .credits-role--value,
+html[data-theme="light"] .credits-slot--vedu:hover .credits-role--value,
+html[data-theme="beige"] .credits-slot--vedu:hover .credits-role--value,
+html[data-theme="light"] .credits-slot--shade:hover .credits-role,
+html[data-theme="beige"] .credits-slot--shade:hover .credits-role,
+html[data-theme="light"] .credits-slot--rayn:hover .credits-role,
+html[data-theme="beige"] .credits-slot--rayn:hover .credits-role,
+html[data-theme="light"] .credits-slot--ace:hover .credits-role,
+html[data-theme="beige"] .credits-slot--ace:hover .credits-role,
+html[data-theme="light"] .credits-slot--bankai:hover .credits-role--blue,
+html[data-theme="beige"] .credits-slot--bankai:hover .credits-role--blue {
+  box-shadow:
+    0 4px 14px rgba(var(--vd-accent), 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  text-shadow: none;
+}
