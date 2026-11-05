@@ -5882,6 +5882,20 @@ a.trade-action-btn {
   grid-column: 2;
 }
 
+.info-guide__link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.info-guide__link:hover,
+.info-guide__link:focus-visible {
+  color: rgba(var(--vd-accent), 1);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  outline: none;
+}
+
 .info-guide__text {
   margin: 0;
   grid-column: 2;
@@ -5989,7 +6003,11 @@ html[data-theme="beige"] .info-jump__link:hover,
 html[data-theme="light"] .info-jump__link:focus-visible,
 html[data-theme="beige"] .info-jump__link:focus-visible,
 html[data-theme="light"] .info-qa__q:hover,
-html[data-theme="beige"] .info-qa__q:hover {
+html[data-theme="beige"] .info-qa__q:hover,
+html[data-theme="light"] .info-guide__link:hover,
+html[data-theme="beige"] .info-guide__link:hover,
+html[data-theme="light"] .info-guide__link:focus-visible,
+html[data-theme="beige"] .info-guide__link:focus-visible {
   color: rgba(var(--vd-accent), 1);
 }
 
