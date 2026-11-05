@@ -1,5 +1,16 @@
 /* Credits-only extras — Value Team bar and badge colors */
 
+/* Title underline flash — follow active theme accent (was hardcoded blue) */
+.credits-title-card::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--vd-accent), 0.9) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 16px rgba(var(--vd-glow), 0.45);
+}
+
 .credits-content {
   gap: clamp(1.75rem, 4.5vh, 2.85rem);
 }
