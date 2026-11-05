@@ -1,5 +1,6 @@
 {
-  "posted": [
+  "posted": [],
+  "accepted": [
     {
       "id": 1793919859488,
       "postedAt": 1793919858931,
@@ -110,10 +111,13 @@
           "isSign": false,
           "usdValue": 1
         }
-      ]
-    }
-  ],
-  "accepted": [
+      ],
+      "acceptedAt": 1793919868139,
+      "acceptedBy": "688787015646445648",
+      "accepterUsername": "cursedartt",
+      "accepterAvatar": "https://cdn.discordapp.com/embed/avatars/0.png",
+      "accepterProfile": "https://discord.com/users/688787015646445648"
+    },
     {
       "id": 1791585867704,
       "postedAt": 1791585867283,
