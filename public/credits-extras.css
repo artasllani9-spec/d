@@ -1,0 +1,201 @@
+/* Credits-only extras — Value Team bar and badge colors */
+
+.credits-bar + .credits-bar {
+  margin-top: 0.15rem;
+  animation-delay: 0.16s;
+}
+
+.credits-bar__people--value {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.credits-slot--value {
+  cursor: pointer;
+}
+
+.credits-slot--value:hover {
+  transform: translateY(-3px);
+}
+
+.credits-slot--hassan:hover {
+  background: rgba(34, 211, 238, 0.08);
+  border-color: rgba(34, 211, 238, 0.3);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    inset 0 0 36px rgba(34, 211, 238, 0.12);
+}
+
+.credits-slot--sora:hover {
+  background: rgba(192, 132, 252, 0.08);
+  border-color: rgba(192, 132, 252, 0.3);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    inset 0 0 36px rgba(192, 132, 252, 0.12);
+}
+
+.credits-slot--m7:hover,
+.credits-slot--alvi:hover,
+.credits-slot--vedu:hover {
+  background: rgba(52, 211, 153, 0.08);
+  border-color: rgba(52, 211, 153, 0.3);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    inset 0 0 36px rgba(52, 211, 153, 0.12);
+}
+
+.credits-slot--hassan:hover .credits-name {
+  color: #67e8f9;
+  text-shadow:
+    0 0 12px rgba(34, 211, 238, 0.75),
+    0 0 24px rgba(34, 211, 238, 0.35);
+}
+
+.credits-slot--sora:hover .credits-name {
+  color: #d8b4fe;
+  text-shadow:
+    0 0 12px rgba(192, 132, 252, 0.75),
+    0 0 24px rgba(192, 132, 252, 0.35);
+}
+
+.credits-slot--m7:hover .credits-name,
+.credits-slot--alvi:hover .credits-name,
+.credits-slot--vedu:hover .credits-name {
+  color: #6ee7b7;
+  text-shadow:
+    0 0 12px rgba(52, 211, 153, 0.75),
+    0 0 24px rgba(52, 211, 153, 0.35);
+}
+
+.credits-slot--hassan:hover .credits-profile-link {
+  color: #67e8f9;
+  border-color: rgba(34, 211, 238, 0.45);
+  background: rgba(34, 211, 238, 0.1);
+}
+
+.credits-slot--sora:hover .credits-profile-link {
+  color: #d8b4fe;
+  border-color: rgba(192, 132, 252, 0.45);
+  background: rgba(192, 132, 252, 0.1);
+}
+
+.credits-slot--m7:hover .credits-profile-link,
+.credits-slot--alvi:hover .credits-profile-link,
+.credits-slot--vedu:hover .credits-profile-link {
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.45);
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.credits-slot--hassan:hover .credits-avatar {
+  border-color: rgba(34, 211, 238, 0.65);
+  box-shadow:
+    0 0 0 2px rgba(34, 211, 238, 0.2),
+    0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.credits-slot--sora:hover .credits-avatar {
+  border-color: rgba(192, 132, 252, 0.65);
+  box-shadow:
+    0 0 0 2px rgba(192, 132, 252, 0.2),
+    0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.credits-slot--m7:hover .credits-avatar,
+.credits-slot--alvi:hover .credits-avatar,
+.credits-slot--vedu:hover .credits-avatar {
+  border-color: rgba(52, 211, 153, 0.65);
+  box-shadow:
+    0 0 0 2px rgba(52, 211, 153, 0.2),
+    0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+/* Head Value Analyst — cyan */
+.credits-role--head-value {
+  min-width: 0;
+  padding-inline: 0.7rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  color: #22d3ee;
+  border-color: rgba(34, 211, 238, 0.42);
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+}
+
+/* Senior Value Analyst — violet */
+.credits-role--senior-value {
+  min-width: 0;
+  padding-inline: 0.7rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.42);
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.4);
+}
+
+/* Value Analyst — mint */
+.credits-role--value {
+  min-width: 0;
+  padding-inline: 0.75rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.42);
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.35);
+}
+
+.credits-slot--hassan:hover .credits-role--head-value {
+  border-color: rgba(34, 211, 238, 0.7);
+  box-shadow:
+    0 0 20px rgba(34, 211, 238, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  text-shadow:
+    0 0 16px rgba(34, 211, 238, 0.85),
+    0 0 30px rgba(34, 211, 238, 0.45);
+}
+
+.credits-slot--sora:hover .credits-role--senior-value {
+  border-color: rgba(192, 132, 252, 0.7);
+  box-shadow:
+    0 0 20px rgba(192, 132, 252, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  text-shadow:
+    0 0 16px rgba(192, 132, 252, 0.85),
+    0 0 30px rgba(192, 132, 252, 0.45);
+}
+
+.credits-slot--m7:hover .credits-role--value,
+.credits-slot--alvi:hover .credits-role--value,
+.credits-slot--vedu:hover .credits-role--value {
+  border-color: rgba(52, 211, 153, 0.7);
+  box-shadow:
+    0 0 20px rgba(52, 211, 153, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  text-shadow:
+    0 0 16px rgba(52, 211, 153, 0.85),
+    0 0 30px rgba(52, 211, 153, 0.45);
+}
+
+@media (max-width: 1100px) {
+  .credits-bar__people--value {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .credits-bar__people--value {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .credits-role--head-value,
+  .credits-role--senior-value,
+  .credits-role--value {
+    font-size: 0.72rem;
+    min-height: 2.1rem;
+    padding: 0.3rem 0.55rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .credits-bar__people--value {
+    grid-template-columns: 1fr;
+  }
+}
