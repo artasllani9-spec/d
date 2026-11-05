@@ -1,12 +1,23 @@
 /* Credits-only extras — Value Team bar and badge colors */
 
+.credits-content {
+  gap: clamp(1.75rem, 4.5vh, 2.85rem);
+}
+
+.credits-bar {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
 .credits-bar + .credits-bar {
-  margin-top: 0.15rem;
+  margin-top: 0.35rem;
   animation-delay: 0.16s;
 }
 
+/* Match Management: 4 people per row; 5th wraps to the next row */
 .credits-bar__people--value {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .credits-slot--value {
@@ -174,13 +185,15 @@
     0 0 30px rgba(52, 211, 153, 0.45);
 }
 
-@media (max-width: 1100px) {
-  .credits-bar__people--value {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 768px) {
+  .credits-content {
+    gap: 1.5rem;
+  }
+
+  .credits-bar + .credits-bar {
+    margin-top: 0.25rem;
+  }
+
   .credits-bar__people--value {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
