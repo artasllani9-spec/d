@@ -3799,9 +3799,12 @@ body.view-trade-page .trade-slot--add {
   }
 }
 
+/* Must beat shared .trade-picker__pet-bar-media (width/min-width: 11rem) or names get clipped. */
+.demand-check-pet-card.trade-picker__pet-popout-card .trade-picker__pet-bar-media,
+.demand-check-pet-card.trade-picker__pet-popout-card .demand-check-pet-card__media,
 .demand-check-pet-card__media {
-  flex: 0 0 38%;
-  width: auto;
+  flex: 0 0 auto;
+  width: min(38%, 7.25rem);
   min-width: 0;
   max-width: 7.25rem;
   display: flex;
@@ -3839,8 +3842,10 @@ body.view-trade-page .trade-slot--add {
 }
 
 .demand-check-pet-card .trade-picker__pet-bar-info {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   gap: 0.65rem;
   padding-top: 0.15rem;
   justify-content: center;
