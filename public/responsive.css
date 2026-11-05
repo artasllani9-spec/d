@@ -20,8 +20,8 @@
 @media (min-width: 1200px) {
   .trading-page,
   .demand-check-body,
-  .info-stack {
-    max-width: var(--content-max);
+  .info-page {
+    max-width: min(760px, var(--content-max));
     margin-inline: auto;
   }
 }
@@ -1541,8 +1541,7 @@
   }
 
   .info-content {
-    align-items: stretch;
-    padding: 1rem;
+    padding: 1rem 1rem calc(1.5rem + var(--safe-bottom));
   }
 
   .tos-content {
@@ -1564,27 +1563,19 @@
     font-size: 0.88rem;
   }
 
-  .info-stack,
-  .info-stack--faq {
+  .info-page {
     width: 100%;
-    max-width: none;
+    gap: 1.4rem;
   }
 
-  .info-glass-bar,
-  .info-glass-bar--scroll {
-    max-height: calc(100dvh - var(--header-h) - 7rem);
-    padding: 1.35rem 1.15rem;
+  .info-jump__link {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.88rem;
   }
 
-  .info-nav {
-    gap: 0.75rem;
-  }
-
-  .info-nav-btn {
-    width: var(--touch-target);
-    height: var(--touch-target);
-    min-width: var(--touch-target);
-    min-height: var(--touch-target);
+  .info-guide__item {
+    grid-template-columns: 1.85rem minmax(0, 1fr);
+    column-gap: 0.65rem;
   }
 
   .demand-check-grid {

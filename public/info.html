@@ -27,10 +27,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="favicon.png?v=20261023vdthick" type="image/png">
   <script src="site-prefs.js?v=20261007palettes14"></script>
-  <link rel="stylesheet" href="styles.css?v=20261019perf">
-  <link rel="stylesheet" href="responsive.css?v=20261007adminred">
+  <link rel="stylesheet" href="styles.css?v=20261105infolayout">
+  <link rel="stylesheet" href="responsive.css?v=20261105infolayout">
 </head>
-<body class="credits-page">
+<body class="credits-page info-page-body">
   <div class="credits-background" aria-hidden="true"></div>
   <div class="credits-overlay" aria-hidden="true"></div>
 
@@ -60,24 +60,115 @@
   </header>
 
   <main class="info-content">
-    <div class="info-stack">
-      <div class="info-glass-bar">
-        <h2 class="info-intro-title">Welcome to ValueDex</h2>
-        <p class="info-text">ValueDex is built for Adopt Me! traders who want clear USD values, fair trade checks, and a simple place to post offers. Browse the value list, compare sides in the calculator, list trades with other players, and use our Discord bot for quick lookups. Continue to the next page to learn how the site works.</p>
-      </div>
-      <div class="info-nav">
-        <button type="button" class="info-nav-btn" aria-label="Previous" disabled>
-          <svg class="info-nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 6l-7 6 7 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <a href="info-2.html" class="info-nav-btn" aria-label="Next">
-          <svg class="info-nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M9 6l7 6-7 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-      </div>
-    </div>
+    <article class="info-page">
+      <header class="info-hero info-reveal">
+        <p class="info-kicker">About</p>
+        <h1 class="info-hero__title">Welcome to ValueDex</h1>
+        <p class="info-hero__text">Clear USD values, fair trade checks, and a simple place to post Adopt Me! offers — all in one spot.</p>
+      </header>
+
+      <nav class="info-jump info-reveal" aria-label="On this page">
+        <a href="#overview" class="info-jump__link">Overview</a>
+        <a href="#faq" class="info-jump__link">FAQ</a>
+        <a href="#guide" class="info-jump__link">Guide</a>
+      </nav>
+
+      <section id="overview" class="info-section info-reveal" aria-labelledby="overview-title">
+        <div class="info-section__head">
+          <h2 id="overview-title" class="info-section__title">What you can do</h2>
+          <p class="info-section__lede">Jump into the tools traders use most.</p>
+        </div>
+        <div class="info-dests" role="list">
+          <a href="demand-check.html" class="info-dest" role="listitem">
+            <span class="info-dest__label">Value List</span>
+            <span class="info-dest__hint">Look up pets and items in USD, including FR, NFR, and MFR.</span>
+            <span class="info-dest__arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l7 6-7 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+          <a href="trade-calculator.html" class="info-dest" role="listitem">
+            <span class="info-dest__label">Calculator</span>
+            <span class="info-dest__hint">Compare both sides of a deal before you accept in-game.</span>
+            <span class="info-dest__arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l7 6-7 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+          <a href="trading.html" class="info-dest" role="listitem">
+            <span class="info-dest__label">Trading</span>
+            <span class="info-dest__hint">Browse live offers or post your own after Discord login.</span>
+            <span class="info-dest__arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l7 6-7 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+          <a href="https://discord.gg/QmQgcTkvTE" class="info-dest" role="listitem" target="_blank" rel="noopener noreferrer">
+            <span class="info-dest__label">Discord</span>
+            <span class="info-dest__hint">Bot lookups, value updates, and community support.</span>
+            <span class="info-dest__arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l7 6-7 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+        </div>
+      </section>
+
+      <section id="faq" class="info-section info-reveal" aria-labelledby="faq-title">
+        <div class="info-section__head">
+          <h2 id="faq-title" class="info-section__title">Frequently asked questions</h2>
+          <p class="info-section__lede">How values work and what you need to trade.</p>
+        </div>
+        <div class="info-qa-list">
+          <details class="info-qa">
+            <summary class="info-qa__q">How are ValueDex values calculated?</summary>
+            <p class="info-qa__a">Values are shown in USD and maintained by the ValueDex team. Editors watch active trading and update pets and items through the site and Discord bot so the list stays close to what people are actually trading for.</p>
+          </details>
+          <details class="info-qa">
+            <summary class="info-qa__q">What do Fly, Ride, Neon, and Mega mean on the value list?</summary>
+            <p class="info-qa__a">Those are Adopt Me! potion and neon states. Pets can have different USD values for FR, NFR, and MFR. The value list and calculator use the state you select so you are comparing the right version of the pet.</p>
+          </details>
+          <details class="info-qa">
+            <summary class="info-qa__q">How often are values updated?</summary>
+            <p class="info-qa__a">The market moves quickly. The team updates values regularly, and bigger swings during events or demand spikes can be pushed the same day through Discord editor commands that sync to the website.</p>
+          </details>
+          <details class="info-qa">
+            <summary class="info-qa__q">Is ValueDex affiliated with Roblox or Adopt Me!?</summary>
+            <p class="info-qa__a">No. ValueDex is an independent community tool. Values and trades are for guidance only and do not guarantee what you will get in-game.</p>
+          </details>
+          <details class="info-qa">
+            <summary class="info-qa__q">Do I need to log in?</summary>
+            <p class="info-qa__a">You can browse values and use the calculator without an account. Logging in with Discord is required to post trades, accept offers, and use profile-linked trading features.</p>
+          </details>
+        </div>
+      </section>
+
+      <section id="guide" class="info-section info-reveal" aria-labelledby="guide-title">
+        <div class="info-section__head">
+          <h2 id="guide-title" class="info-section__title">The guide</h2>
+          <p class="info-section__lede">A quick tour of each part of the site.</p>
+        </div>
+        <ol class="info-guide">
+          <li class="info-guide__item">
+            <h3 class="info-guide__name">Trading</h3>
+            <p class="info-guide__text">Browse open offers or post your own. Build each side of a trade, accept listings from other players, and manage your active trades after you log in with Discord.</p>
+          </li>
+          <li class="info-guide__item">
+            <h3 class="info-guide__name">Value List</h3>
+            <p class="info-guide__text">Search pets and items to see current USD values, including FR, NFR, and MFR for pets. Use it when you want a quick check before you offer or accept a trade.</p>
+          </li>
+          <li class="info-guide__item">
+            <h3 class="info-guide__name">Calculator</h3>
+            <p class="info-guide__text">Add pets or items to both sides of a deal and compare total USD value so you can see whether an offer looks fair before you take it in-game.</p>
+          </li>
+          <li class="info-guide__item">
+            <h3 class="info-guide__name">Discord</h3>
+            <p class="info-guide__text">Join the ValueDex Discord for updates and bot commands like value lookups. Editors on the team can also push value changes that sync to the website.</p>
+          </li>
+          <li class="info-guide__item">
+            <h3 class="info-guide__name">Credits</h3>
+            <p class="info-guide__text">Credits lists the founders and staff who build and run ValueDex. You can open it from the site footer or <a href="credits.html">here</a>.</p>
+          </li>
+        </ol>
+        <p class="info-outro">Thanks for using ValueDex. Happy trading.</p>
+      </section>
+    </article>
   </main>
   <script src="nav.js"></script>
   <script src="auth.js"></script>
