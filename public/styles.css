@@ -8087,6 +8087,13 @@ body.home-page .home-stats__lede {
   color: rgba(var(--vd-accent), 0.72);
 }
 
+@media (min-width: 769px) {
+  body.home-page .home-stats__lede {
+    max-width: none;
+    white-space: nowrap;
+  }
+}
+
 body.home-page .home-stats__grid {
   position: relative;
   z-index: 1;
@@ -8380,6 +8387,13 @@ body.home-page .home-community__body {
   font-size: 1rem;
   line-height: 1.5;
   color: rgba(var(--vd-accent), 0.72);
+}
+
+@media (min-width: 769px) {
+  body.home-page .home-community__body {
+    max-width: none;
+    white-space: nowrap;
+  }
 }
 
 body.home-page .home-community__btn {

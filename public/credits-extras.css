@@ -56,7 +56,6 @@
 }
 
 .credits-slot--m7:hover,
-.credits-slot--alvi:hover,
 .credits-slot--vedu:hover {
   background: rgba(52, 211, 153, 0.08);
   border-color: rgba(52, 211, 153, 0.3);
@@ -80,7 +79,6 @@
 }
 
 .credits-slot--m7:hover .credits-name,
-.credits-slot--alvi:hover .credits-name,
 .credits-slot--vedu:hover .credits-name {
   color: #6ee7b7;
   text-shadow:
@@ -101,7 +99,6 @@
 }
 
 .credits-slot--m7:hover .credits-profile-link,
-.credits-slot--alvi:hover .credits-profile-link,
 .credits-slot--vedu:hover .credits-profile-link {
   color: #6ee7b7;
   border-color: rgba(52, 211, 153, 0.45);
@@ -123,7 +120,6 @@
 }
 
 .credits-slot--m7:hover .credits-avatar,
-.credits-slot--alvi:hover .credits-avatar,
 .credits-slot--vedu:hover .credits-avatar {
   border-color: rgba(52, 211, 153, 0.65);
   box-shadow:
@@ -185,7 +181,6 @@
 }
 
 .credits-slot--m7:hover .credits-role--value,
-.credits-slot--alvi:hover .credits-role--value,
 .credits-slot--vedu:hover .credits-role--value {
   border-color: rgba(52, 211, 153, 0.7);
   box-shadow:
@@ -387,8 +382,6 @@ html[data-theme="beige"] .credits-slot--sora:hover {
 
 html[data-theme="light"] .credits-slot--m7:hover,
 html[data-theme="beige"] .credits-slot--m7:hover,
-html[data-theme="light"] .credits-slot--alvi:hover,
-html[data-theme="beige"] .credits-slot--alvi:hover,
 html[data-theme="light"] .credits-slot--vedu:hover,
 html[data-theme="beige"] .credits-slot--vedu:hover {
   background: rgba(5, 150, 105, 0.07);
@@ -410,8 +403,6 @@ html[data-theme="beige"] .credits-slot--sora:hover .credits-name {
 
 html[data-theme="light"] .credits-slot--m7:hover .credits-name,
 html[data-theme="beige"] .credits-slot--m7:hover .credits-name,
-html[data-theme="light"] .credits-slot--alvi:hover .credits-name,
-html[data-theme="beige"] .credits-slot--alvi:hover .credits-name,
 html[data-theme="light"] .credits-slot--vedu:hover .credits-name,
 html[data-theme="beige"] .credits-slot--vedu:hover .credits-name {
   color: #047857;
@@ -434,8 +425,6 @@ html[data-theme="beige"] .credits-slot--sora:hover .credits-profile-link {
 
 html[data-theme="light"] .credits-slot--m7:hover .credits-profile-link,
 html[data-theme="beige"] .credits-slot--m7:hover .credits-profile-link,
-html[data-theme="light"] .credits-slot--alvi:hover .credits-profile-link,
-html[data-theme="beige"] .credits-slot--alvi:hover .credits-profile-link,
 html[data-theme="light"] .credits-slot--vedu:hover .credits-profile-link,
 html[data-theme="beige"] .credits-slot--vedu:hover .credits-profile-link {
   color: #047857;
@@ -461,8 +450,6 @@ html[data-theme="beige"] .credits-slot--sora:hover .credits-avatar {
 
 html[data-theme="light"] .credits-slot--m7:hover .credits-avatar,
 html[data-theme="beige"] .credits-slot--m7:hover .credits-avatar,
-html[data-theme="light"] .credits-slot--alvi:hover .credits-avatar,
-html[data-theme="beige"] .credits-slot--alvi:hover .credits-avatar,
 html[data-theme="light"] .credits-slot--vedu:hover .credits-avatar,
 html[data-theme="beige"] .credits-slot--vedu:hover .credits-avatar {
   border-color: rgba(5, 150, 105, 0.45);
@@ -477,8 +464,6 @@ html[data-theme="light"] .credits-slot--sora:hover .credits-role--senior-value,
 html[data-theme="beige"] .credits-slot--sora:hover .credits-role--senior-value,
 html[data-theme="light"] .credits-slot--m7:hover .credits-role--value,
 html[data-theme="beige"] .credits-slot--m7:hover .credits-role--value,
-html[data-theme="light"] .credits-slot--alvi:hover .credits-role--value,
-html[data-theme="beige"] .credits-slot--alvi:hover .credits-role--value,
 html[data-theme="light"] .credits-slot--vedu:hover .credits-role--value,
 html[data-theme="beige"] .credits-slot--vedu:hover .credits-role--value,
 html[data-theme="light"] .credits-slot--shade:hover .credits-role,
