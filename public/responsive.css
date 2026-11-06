@@ -256,11 +256,13 @@
     align-items: center;
   }
 
-  .login-btn--avatar {
+  .login-btn.login-btn--avatar {
     width: 2.55rem;
     height: 2.55rem;
+    min-width: 2.55rem;
     min-height: 2.55rem;
     padding: 0.16rem;
+    font-size: 0;
   }
 
   .admin-tools-btn {
@@ -957,6 +959,7 @@
   body.trade-calculator-page .trade-center__icon {
     width: clamp(2.35rem, 10vw, 3.25rem);
     transform: translateY(clamp(-0.35rem, -1.5vh, -0.7rem));
+    pointer-events: none;
   }
 
   body.view-trade-page .trade-center__icon {
@@ -979,9 +982,65 @@
     border-radius: 8px;
   }
 
+  /* Post Trade: move actions under both sides so the CTA is tappable on phones */
+  body.post-trade-page .trade-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "yours theirs"
+      "center center";
+    align-items: end;
+    justify-content: stretch;
+    column-gap: clamp(0.35rem, 1.8vw, 0.7rem);
+    row-gap: clamp(0.55rem, 1.8vh, 0.85rem);
+  }
+
+  body.post-trade-page .trade-side[data-trade-side="yours"] {
+    grid-area: yours;
+  }
+
+  body.post-trade-page .trade-side[data-trade-side="theirs"] {
+    grid-area: theirs;
+  }
+
+  body.post-trade-page .trade-center {
+    grid-area: center;
+    flex: none;
+    width: 100%;
+    max-width: none;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: stretch;
+    align-self: stretch;
+    gap: 0.55rem;
+  }
+
+  body.post-trade-page .trade-center__icon {
+    display: none;
+  }
+
+  body.post-trade-page .trade-center__actions {
+    flex: 1 1 auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.45rem;
+    width: 100%;
+  }
+
+  body.post-trade-page .trade-action-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-height: 2.75rem;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    white-space: normal;
+  }
+
   body.post-trade-page .trade-post-error {
-    font-size: 0.52rem;
-    padding: 0.3rem 0.35rem;
+    flex: 1 1 100%;
+    font-size: 0.68rem;
+    padding: 0.45rem 0.55rem;
   }
 
   body.post-trade-page .trade-add-btn,
@@ -1845,18 +1904,26 @@
     font-size: clamp(0.46rem, 2.4vw, 0.62rem);
   }
 
-  body.post-trade-page .trade-center,
   body.trade-calculator-page .trade-center,
   body.view-trade-page .trade-center {
     flex-basis: clamp(3.85rem, 16vw, 4.75rem);
     width: clamp(3.85rem, 16vw, 4.75rem);
   }
 
-  body.post-trade-page .trade-action-btn,
+  body.post-trade-page .trade-center {
+    flex-basis: auto;
+    width: 100%;
+  }
+
   body.trade-calculator-page .trade-action-btn,
   body.view-trade-page .trade-action-btn {
     font-size: clamp(0.42rem, 1.95vw, 0.55rem);
     min-height: clamp(1.65rem, 6vh, 2rem);
+  }
+
+  body.post-trade-page .trade-action-btn {
+    font-size: 0.72rem;
+    min-height: 2.75rem;
   }
 }
 
@@ -1866,11 +1933,13 @@
     font-size: 0.62rem;
   }
 
-  .login-btn--avatar {
+  .login-btn.login-btn--avatar {
     width: 2.4rem;
     height: 2.4rem;
+    min-width: 2.4rem;
     min-height: 2.4rem;
     padding: 0.14rem;
+    font-size: 0;
   }
 
   .profile-card {
@@ -2106,7 +2175,6 @@
     padding: clamp(1.15rem, 4vh, 1.55rem) clamp(0.5rem, 2vw, 0.75rem) 0.45rem;
   }
 
-  body.post-trade-page .trade-board,
   body.trade-calculator-page .trade-board,
   body.view-trade-page .trade-board {
     flex-direction: row;
@@ -2114,28 +2182,56 @@
     gap: clamp(0.35rem, 2vw, 0.65rem);
   }
 
-  body.post-trade-page .trade-center,
+  body.post-trade-page .trade-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "yours theirs"
+      "center center";
+    align-items: end;
+    column-gap: clamp(0.35rem, 2vw, 0.65rem);
+    row-gap: 0.55rem;
+  }
+
   body.trade-calculator-page .trade-center,
   body.view-trade-page .trade-center {
     flex: 0 0 clamp(4.5rem, 14vw, 6rem);
     width: clamp(4.5rem, 14vw, 6rem);
   }
 
-  body.post-trade-page .trade-center__icon,
+  body.post-trade-page .trade-center {
+    grid-area: center;
+    flex: none;
+    width: 100%;
+    flex-direction: row;
+    align-self: stretch;
+  }
+
   body.trade-calculator-page .trade-center__icon {
     width: clamp(2rem, 8vw, 2.75rem);
     transform: translateY(clamp(-0.25rem, -1vh, -0.5rem));
+    pointer-events: none;
+  }
+
+  body.post-trade-page .trade-center__icon {
+    display: none;
   }
 
   body.view-trade-page .trade-center__icon {
     width: clamp(2rem, 8vw, 2.75rem);
   }
 
-  body.post-trade-page .trade-action-btn,
   body.trade-calculator-page .trade-action-btn,
   body.view-trade-page .trade-action-btn {
     min-height: clamp(1.6rem, 10vh, 2rem);
     font-size: clamp(0.44rem, 1.8vw, 0.56rem);
+  }
+
+  body.post-trade-page .trade-action-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-height: 2.6rem;
+    font-size: 0.7rem;
+    padding: 0.5rem 0.65rem;
   }
 
   body.post-trade-page .trade-picker__panel,

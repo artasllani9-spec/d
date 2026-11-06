@@ -27,8 +27,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Montserrat:wght@700;800&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="favicon.png?v=20261023vdthick" type="image/png">
   <script src="site-prefs.js?v=20261007palettes14"></script>
-  <link rel="stylesheet" href="styles.css?v=20261019perf">
-  <link rel="stylesheet" href="responsive.css?v=20261007adminred">
+  <link rel="stylesheet" href="styles.css?v=20261106postfix">
+  <link rel="stylesheet" href="responsive.css?v=20261106postfix">
 </head>
 <body class="tos-page post-trade-page">
   <div class="tos-background" aria-hidden="true"></div>
@@ -378,7 +378,7 @@
   <script src="amvgg-usd-values.js?v=20261007prefs"></script>
   <script src="value-overrides.js?v=20261019perf"></script>
   <script src="trade-value-compare.js?v=20261018fixes"></script>
-  <script src="trades.js?v=20261018fixes"></script>
+  <script src="trades.js?v=20261106postfix"></script>
   <script>
     const tradePicker = document.getElementById('trade-picker');
     const tradePickerPanel = tradePicker.querySelector('.trade-picker__panel');
@@ -1467,8 +1467,10 @@
       isPostingTrade = true;
       postTradeBtn.disabled = true;
       postTradeBtn.setAttribute('aria-busy', 'true');
-      const originalPostLabel = postTradeBtn.textContent;
-      postTradeBtn.textContent = 'Posting...';
+      const postLabelEl = postTradeBtn.querySelector('.trade-action-btn__label');
+      const originalPostLabel = postLabelEl ? postLabelEl.textContent : postTradeBtn.textContent;
+      if (postLabelEl) postLabelEl.textContent = 'Posting...';
+      else postTradeBtn.textContent = 'Posting...';
 
       try {
         const saved = await savePostedTrade({ yourSide, theirSide });
@@ -1495,7 +1497,8 @@
           isPostingTrade = false;
           postTradeBtn.disabled = false;
           postTradeBtn.removeAttribute('aria-busy');
-          postTradeBtn.textContent = originalPostLabel || 'Post Trade';
+          if (postLabelEl) postLabelEl.textContent = originalPostLabel || 'Post Trade';
+          else postTradeBtn.textContent = originalPostLabel || 'Post Trade';
         }
       }
     });
@@ -1527,6 +1530,6 @@
     });
   </script>
   <script src="nav.js"></script>
-  <script src="auth.js"></script>
+  <script src="auth.js?v=20261106avatar"></script>
 </body>
 </html>

@@ -151,24 +151,31 @@ function writeLocalAcceptedTrades(trades) {
 }
 
 async function tradeApiRequest(path, options = {}) {
+  const { headers: optionHeaders, ...restOptions } = options;
   const response = await fetch(`${TRADES_API_BASE}${path}`, {
     credentials: 'same-origin',
+    ...restOptions,
     headers: {
       'Content-Type': 'application/json',
-      ...(options.headers || {}),
+      ...(optionHeaders || {}),
     },
-    ...options,
   });
 
   if (!response.ok) {
     let message = 'Trade request failed.';
+    let code = null;
     try {
       const data = await response.json();
       if (data?.message) message = data.message;
+      if (data?.code) code = data.code;
     } catch {
       // ignore parse errors
     }
-    throw new Error(message);
+    if (!code && response.status === 401) code = 'AUTH_REQUIRED';
+    const error = new Error(message);
+    error.status = response.status;
+    if (code) error.code = code;
+    throw error;
   }
 
   if (response.status === 204) return null;
@@ -508,9 +515,13 @@ async function deletePostedTrade(tradeId) {
 }
 
 async function savePostedTrade(trade) {
-  const yourSide = trade.yourSide || [];
-  const theirSide = trade.theirSide || [];
-  if (!canPostTrade(yourSide, theirSide)) return false;
+  const yourSide = Array.isArray(trade.yourSide) ? trade.yourSide : [];
+  const theirSide = Array.isArray(trade.theirSide) ? trade.theirSide : [];
+  if (!canPostTrade(yourSide, theirSide)) {
+    const error = new Error(getPostTradeValidationError(yourSide, theirSide) || 'Invalid trade sides.');
+    error.code = 'INVALID_TRADE';
+    throw error;
+  }
 
   const authUser = await ensureAuthUser();
   if (!authUser || !authUser.id) {
@@ -525,19 +536,20 @@ async function savePostedTrade(trade) {
   const offererProfile = authUser.profile || null;
 
   if (usesTradeApi()) {
-    try {
-      const savedTrade = await tradeApiRequest('/posted', {
-        method: 'POST',
-        body: JSON.stringify({
-          yourSide,
-          theirSide,
-        }),
-      });
-      postedTradesCache = [savedTrade, ...postedTradesCache.filter((item) => item.id !== savedTrade.id)];
-      return true;
-    } catch (error) {
+    const savedTrade = await tradeApiRequest('/posted', {
+      method: 'POST',
+      body: JSON.stringify({
+        yourSide,
+        theirSide,
+      }),
+    });
+    if (!savedTrade || savedTrade.id == null) {
+      const error = new Error('Could not post trade. Try again.');
+      error.code = 'POST_FAILED';
       throw error;
     }
+    postedTradesCache = [savedTrade, ...postedTradesCache.filter((item) => item.id !== savedTrade.id)];
+    return true;
   }
 
   const savedTrade = {
@@ -556,9 +568,13 @@ async function savePostedTrade(trade) {
   return true;
 }
 
+function isSignFlag(value) {
+  return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+}
+
 function isValidTradeSide(items) {
   if (!Array.isArray(items) || items.length === 0) return false;
-  return items.some((item) => !item.isSign);
+  return items.some((item) => item && typeof item === 'object' && !isSignFlag(item.isSign));
 }
 
 function canPostTrade(yourSide, theirSide) {
@@ -568,8 +584,8 @@ function canPostTrade(yourSide, theirSide) {
 function getPostTradeValidationError(yourSide, theirSide) {
   if (!yourSide.length) return 'Add at least one item to your side.';
   if (!theirSide.length) return 'Add at least one item to their side.';
-  if (yourSide.every((item) => item.isSign)) return "Your side can't include only Signs.";
-  if (theirSide.every((item) => item.isSign)) return "Their side can't include only Signs.";
+  if (yourSide.every((item) => isSignFlag(item.isSign))) return "Your side can't include only Signs.";
+  if (theirSide.every((item) => isSignFlag(item.isSign))) return "Their side can't include only Signs.";
   return null;
 }
 
