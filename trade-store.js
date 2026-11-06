@@ -9,6 +9,7 @@ const VERCEL_DATA_FILE = '/tmp/demandgg-trades.json';
 const GITHUB_REPO = process.env.GITHUB_REPO || 'artasllani9-spec/d';
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
 const GITHUB_PATH = process.env.TRADES_GITHUB_PATH || 'data/trades.json';
+const PERSIST_ENDPOINT_PATH = process.env.TRADES_PERSIST_ENDPOINT_PATH || 'data/trades-persist-endpoint.json';
 const BLOB_PATHNAME = 'demandgg-trades.json';
 
 let memoryStore = null;
@@ -16,6 +17,10 @@ let memoryStoreAt = 0;
 let githubSha = null;
 let blobReadUrl = process.env.TRADES_BLOB_URL || null;
 let writeQueue = Promise.resolve();
+let githubTokenRejected = false;
+let githubTokenRejectReason = '';
+let cachedPersistEndpoint = null;
+let cachedPersistEndpointAt = 0;
 
 const SITE_OWNER_ID = String(process.env.SITE_OWNER_ID || '3519737769').trim();
 
@@ -165,7 +170,26 @@ function getBlockedIdsForUser(store, blockerId) {
 }
 
 function getGitHubToken() {
-  return process.env.TRADES_GITHUB_TOKEN || process.env.GITHUB_TOKEN || '';
+  if (githubTokenRejected) return '';
+  // Prefer an explicit trades token. Vercel often has a stale/invalid GITHUB_TOKEN.
+  const dedicated = String(process.env.TRADES_GITHUB_TOKEN || '').trim();
+  if (dedicated) return dedicated;
+  return String(process.env.GITHUB_TOKEN || '').trim();
+}
+
+function markGitHubTokenRejected(reason) {
+  githubTokenRejected = true;
+  githubTokenRejectReason = String(reason || 'Bad credentials');
+  githubSha = null;
+}
+
+function getPersistRelaySecret() {
+  return String(
+    process.env.TRADES_PERSIST_SECRET ||
+      process.env.VALUES_EDIT_TOKEN ||
+      process.env.DISCORD_VALUES_TOKEN ||
+      '',
+  ).trim();
 }
 
 function getUpstashConfig() {
@@ -180,11 +204,24 @@ function getBlobToken() {
 }
 
 function usesRemoteStore() {
-  return Boolean(process.env.VERCEL || getGitHubToken() || getUpstashConfig() || getBlobToken());
+  return Boolean(
+    process.env.VERCEL ||
+      getGitHubToken() ||
+      getUpstashConfig() ||
+      getBlobToken() ||
+      getPersistRelaySecret(),
+  );
 }
 
 function hasDurableBackend() {
-  return Boolean(getGitHubToken() || getUpstashConfig() || getBlobToken());
+  return Boolean(
+    getGitHubToken() ||
+      getUpstashConfig() ||
+      getBlobToken() ||
+      // Relay may still work after a rejected GitHub token (Discord bot writes for us).
+      getPersistRelaySecret() ||
+      process.env.TRADES_PERSIST_URL,
+  );
 }
 
 function setMemory(store) {
@@ -392,15 +429,104 @@ async function writeToGitHub(store, { allowConflictRetry = true } = {}) {
     const message =
       (payload && (payload.message || payload.error)) ||
       `GitHub trade store write failed (${response.status}).`;
+    const text = String(message);
+    if (
+      response.status === 401 ||
+      response.status === 403 ||
+      /bad credentials/i.test(text) ||
+      /requires authentication/i.test(text)
+    ) {
+      markGitHubTokenRejected(text);
+    }
     return {
       ok: false,
       conflict: false,
       status: response.status,
-      message: String(message),
+      message: text,
     };
   }
 
   githubSha = payload && payload.content ? payload.content.sha : githubSha;
+  return { ok: true, conflict: false, status: response.status, message: null };
+}
+
+function normalizePersistBaseUrl(value) {
+  const raw = String(value || '').trim().replace(/\/$/, '');
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://${raw}`;
+}
+
+async function resolvePersistEndpoint() {
+  const fromEnv = normalizePersistBaseUrl(process.env.TRADES_PERSIST_URL);
+  if (fromEnv) return fromEnv;
+
+  if (cachedPersistEndpoint && Date.now() - cachedPersistEndpointAt < 60_000) {
+    return cachedPersistEndpoint;
+  }
+
+  const rawUrl =
+    `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${PERSIST_ENDPOINT_PATH}` +
+    `?t=${Date.now()}`;
+  try {
+    const response = await fetch(rawUrl, { cache: 'no-store' });
+    if (!response.ok) return '';
+    const data = await response.json();
+    const url = normalizePersistBaseUrl(data && (data.url || data.persistUrl || data.baseUrl));
+    cachedPersistEndpoint = url;
+    cachedPersistEndpointAt = Date.now();
+    return url;
+  } catch {
+    return '';
+  }
+}
+
+async function writeToPersistRelay(store) {
+  const secret = getPersistRelaySecret();
+  if (!secret) {
+    return {
+      ok: false,
+      conflict: false,
+      status: 0,
+      message: 'Trade persist relay secret is not configured.',
+    };
+  }
+
+  const endpoint = await resolvePersistEndpoint();
+  if (!endpoint) {
+    return {
+      ok: false,
+      conflict: false,
+      status: 0,
+      message: 'Trade persist relay URL is not configured.',
+    };
+  }
+
+  const response = await fetch(`${endpoint}/internal/trades-store`, {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${secret}`,
+      'X-Values-Token': secret,
+      'User-Agent': 'demandgg-trades',
+    },
+    body: JSON.stringify(normalizeStore(store)),
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    return {
+      ok: false,
+      conflict: response.status === 409,
+      status: response.status,
+      message:
+        (payload && payload.message) ||
+        `Trade persist relay failed (${response.status}).`,
+    };
+  }
+
+  if (payload && payload.sha) githubSha = payload.sha;
   return { ok: true, conflict: false, status: response.status, message: null };
 }
 
@@ -575,6 +701,7 @@ async function persistStore(store, { allowWipe = false } = {}) {
       upstash: null,
       blob: null,
       github: null,
+      relay: null,
       conflict: false,
       message: null,
       status: null,
@@ -596,14 +723,44 @@ async function persistStore(store, { allowWipe = false } = {}) {
       }
     }
 
-    const remoteAttempted = results.upstash !== null || results.blob !== null || results.github !== null;
-    const remoteSaved = Boolean(results.upstash || results.blob || results.github);
+    const needRelay =
+      !results.upstash &&
+      !results.blob &&
+      !results.github &&
+      (Boolean(getPersistRelaySecret()) || Boolean(process.env.TRADES_PERSIST_URL) || githubTokenRejected);
+
+    if (needRelay) {
+      const relayResult = await writeToPersistRelay(next);
+      results.relay = relayResult.ok;
+      if (!relayResult.ok) {
+        results.conflict = results.conflict || Boolean(relayResult.conflict);
+        // Prefer relay details when GitHub failed with Bad credentials.
+        results.message = relayResult.message || results.message;
+        results.status = relayResult.status || results.status;
+      } else {
+        results.message = null;
+        results.status = null;
+        results.conflict = false;
+      }
+    }
+
+    const remoteAttempted =
+      results.upstash !== null ||
+      results.blob !== null ||
+      results.github !== null ||
+      results.relay !== null;
+    const remoteSaved = Boolean(results.upstash || results.blob || results.github || results.relay);
 
     if (remoteAttempted && !remoteSaved) {
+      let message = results.message;
+      if (githubTokenRejected && /bad credentials/i.test(String(message || ''))) {
+        message =
+          'Server GitHub token is invalid (Bad credentials). Trade saves should use the Discord bot relay — redeploy the bot, or set TRADES_GITHUB_TOKEN on Vercel.';
+      }
       return {
         ok: false,
         conflict: results.conflict,
-        message: results.message,
+        message,
         status: results.status,
       };
     }
@@ -612,7 +769,9 @@ async function persistStore(store, { allowWipe = false } = {}) {
       return {
         ok: false,
         conflict: false,
-        message: 'No durable trade backend accepted the write.',
+        message: githubTokenRejectReason
+          ? `Trade storage token rejected (${githubTokenRejectReason}). Set TRADES_GITHUB_TOKEN or deploy the Discord bot persist relay.`
+          : 'No durable trade backend accepted the write.',
         status: 503,
       };
     }
@@ -652,7 +811,12 @@ function storeWriteError(result) {
     error.code = 'STORE_CONFLICT';
     return error;
   }
-  const error = new Error(result && result.message ? String(result.message) : 'Could not persist trade data.');
+  let message = result && result.message ? String(result.message) : 'Could not persist trade data.';
+  if (/bad credentials/i.test(message)) {
+    message =
+      'Trade save failed because the server GitHub token is invalid. Retry shortly after the bot redeploys, or set TRADES_GITHUB_TOKEN on Vercel.';
+  }
+  const error = new Error(message);
   error.status = 503;
   error.code = 'STORE_WRITE_FAILED';
   if (result && result.status) error.upstreamStatus = result.status;
@@ -718,8 +882,12 @@ function getStoreBackendStatus() {
     vercel: Boolean(process.env.VERCEL),
     durable: hasDurableBackend(),
     github: Boolean(getGitHubToken()),
+    githubRejected: Boolean(githubTokenRejected),
+    githubRejectReason: githubTokenRejectReason || null,
     upstash: Boolean(getUpstashConfig()),
     blob: Boolean(getBlobToken()),
+    persistRelaySecret: Boolean(getPersistRelaySecret()),
+    persistRelayUrlEnv: Boolean(process.env.TRADES_PERSIST_URL),
   };
 }
 
