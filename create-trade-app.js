@@ -7,6 +7,7 @@ const {
   updateStore,
   httpError,
   canPostTrade,
+  normalizeTradeSide,
   createTradeId,
   findRecentDuplicatePostedTrade,
   isTradeParticipant,
@@ -497,14 +498,15 @@ function createTradeApp() {
       const access = await rejectIfBanned(req, res);
       if (access.banned) return;
       if (!access.sessionUser) {
-        res.status(401).json({ message: 'Log in with Discord to post a trade.' });
+        res.status(401).json({ message: 'Log in with Discord to post a trade.', code: 'AUTH_REQUIRED' });
         return;
       }
 
-      const { yourSide = [], theirSide = [] } = req.body || {};
+      const yourSide = normalizeTradeSide(req.body && req.body.yourSide);
+      const theirSide = normalizeTradeSide(req.body && req.body.theirSide);
 
       if (!canPostTrade(yourSide, theirSide)) {
-        res.status(400).json({ message: 'Invalid trade sides.' });
+        res.status(400).json({ message: 'Invalid trade sides. Add at least one non-sign item on each side.', code: 'INVALID_TRADE' });
         return;
       }
 

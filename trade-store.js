@@ -646,10 +646,34 @@ async function updateStore(mutator, { allowWipe = false } = {}) {
   throw lastError || Object.assign(new Error('Could not save trade data after retries.'), { status: 503 });
 }
 
+function isSignFlag(value) {
+  return value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
+}
+
+function normalizeTradeSide(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((item) => item && typeof item === 'object' && !Array.isArray(item))
+    .map((item) => ({
+      ...item,
+      name: item.name != null ? String(item.name) : '',
+      image: item.image != null ? String(item.image) : '',
+      isSign: isSignFlag(item.isSign),
+      potions: {
+        fly: Boolean(item.potions && item.potions.fly),
+        ride: Boolean(item.potions && item.potions.ride),
+        neon: Boolean(item.potions && item.potions.neon),
+        mega: Boolean(item.potions && item.potions.mega),
+      },
+      usdValue: typeof item.usdValue === 'number' && Number.isFinite(item.usdValue) ? item.usdValue : undefined,
+      network: item.network != null && item.network !== '' ? String(item.network) : undefined,
+    }));
+}
+
 function isValidTradeSide(items) {
   if (!Array.isArray(items) || items.length === 0) return false;
   if (!items.every((item) => item && typeof item === 'object' && !Array.isArray(item))) return false;
-  return items.some((item) => !item.isSign);
+  return items.some((item) => !isSignFlag(item.isSign));
 }
 
 function canPostTrade(yourSide, theirSide) {
@@ -662,7 +686,7 @@ function stableTradeSideFingerprint(side) {
     side.map((item) => ({
       name: item && item.name != null ? String(item.name) : '',
       image: item && item.image != null ? String(item.image) : '',
-      isSign: Boolean(item && item.isSign),
+      isSign: isSignFlag(item && item.isSign),
       usdValue: typeof item?.usdValue === 'number' && Number.isFinite(item.usdValue) ? item.usdValue : null,
       network: item && item.network != null ? String(item.network) : null,
       potions: {
@@ -721,6 +745,7 @@ module.exports = {
   updateStore,
   httpError,
   canPostTrade,
+  normalizeTradeSide,
   createTradeId,
   findRecentDuplicatePostedTrade,
   isTradeParticipant,

@@ -194,8 +194,8 @@ function discordDefaultAvatar(userId) {
 function discordAvatarUrl(user) {
   if (!user) return discordDefaultAvatar('');
   if (user.avatar && user.id) {
-    const ext = String(user.avatar).startsWith('a_') ? 'gif' : 'png';
-    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
+    // Prefer static PNG even for animated avatars — GIF CDN URLs fail more often on mobile.
+    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
   }
   return discordDefaultAvatar(user.id);
 }

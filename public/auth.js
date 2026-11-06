@@ -9,18 +9,37 @@
   let adminToolsBtn = null;
   let reportsBtn = null;
 
-  function avatarUrlFor(user) {
-    if (user.avatarUrl) return user.avatarUrl;
-    if (user.picture) return user.picture;
-    if (user.id) {
+  function defaultAvatarUrl(userId) {
+    if (userId) {
       try {
-        const index = Number((BigInt(String(user.id)) >> 22n) % 6n);
+        const index = Number((BigInt(String(userId)) >> 22n) % 6n);
         return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
       } catch {
-        return 'https://cdn.discordapp.com/embed/avatars/0.png';
+        // fall through
       }
     }
-    return '';
+    return 'https://cdn.discordapp.com/embed/avatars/0.png';
+  }
+
+  function preferStaticDiscordAvatar(url) {
+    if (!url) return '';
+    try {
+      const parsed = new URL(String(url), window.location.origin);
+      if (parsed.hostname === 'cdn.discordapp.com' && /\.gif$/i.test(parsed.pathname)) {
+        parsed.pathname = parsed.pathname.replace(/\.gif$/i, '.png');
+        return parsed.toString();
+      }
+    } catch {
+      return String(url).replace(/\.gif(?=($|\?))/i, '.png');
+    }
+    return String(url);
+  }
+
+  function avatarUrlFor(user) {
+    const raw = user.avatarUrl || user.picture || '';
+    const staticUrl = preferStaticDiscordAvatar(raw);
+    if (staticUrl) return staticUrl;
+    return defaultAvatarUrl(user.id);
   }
 
   function ensureMenuWrap() {
@@ -212,6 +231,7 @@
     currentRoles = roles || { isOwner: false, isModerator: false };
     const label = user.username || user.name || 'Account';
     const avatarUrl = avatarUrlFor(user);
+    const fallbackAvatarUrl = defaultAvatarUrl(user.id);
 
     ensureMenuWrap();
     buildDropdown(user);
@@ -226,25 +246,22 @@
     loginBtn.classList.add('login-btn--user', 'login-btn--avatar');
     loginBtn.onclick = toggleDropdown;
 
-    if (avatarUrl) {
-      const img = document.createElement('img');
-      img.className = 'login-btn__avatar';
-      img.src = avatarUrl;
-      img.alt = '';
-      img.width = 40;
-      img.height = 40;
-      img.decoding = 'async';
-      img.fetchPriority = 'low';
-      img.referrerPolicy = 'no-referrer';
-      img.onerror = () => {
-        loginBtn.classList.remove('login-btn--avatar');
-        loginBtn.textContent = label;
-      };
-      loginBtn.appendChild(img);
-    } else {
-      loginBtn.classList.remove('login-btn--avatar');
-      loginBtn.textContent = label;
-    }
+    const img = document.createElement('img');
+    img.className = 'login-btn__avatar';
+    img.src = avatarUrl || fallbackAvatarUrl;
+    img.alt = '';
+    img.width = 40;
+    img.height = 40;
+    img.decoding = 'async';
+    img.fetchPriority = 'low';
+    img.referrerPolicy = 'no-referrer';
+    img.onerror = () => {
+      // Keep the circular avatar control — never fall back to username text in the header.
+      if (img.dataset.fallbackApplied === '1') return;
+      img.dataset.fallbackApplied = '1';
+      img.src = fallbackAvatarUrl;
+    };
+    loginBtn.appendChild(img);
   }
 
   document.addEventListener('click', (event) => {
