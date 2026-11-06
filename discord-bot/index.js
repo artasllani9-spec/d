@@ -1936,22 +1936,24 @@ client.once(Events.ClientReady, async (readyClient) => {
     });
   }, 8000);
 
-  try {
-    await publishTradesPersistEndpoint();
-  } catch (err) {
-    console.warn(
-      'Could not publish HTTP trades persist endpoint:',
-      err && err.message ? err.message : err
-    );
-  }
-  try {
-    await publishTradesPersistWebhook();
-  } catch (err) {
-    console.warn(
-      'Could not publish Discord trades persist webhook:',
-      err && err.message ? err.message : err
-    );
-  }
+  const publishPersist = () => {
+    publishTradesPersistEndpoint().catch((err) => {
+      console.warn(
+        'Could not publish HTTP trades persist endpoint:',
+        err && err.message ? err.message : err
+      );
+    });
+    publishTradesPersistWebhook().catch((err) => {
+      console.warn(
+        'Could not publish Discord trades persist webhook:',
+        err && err.message ? err.message : err
+      );
+    });
+  };
+  publishPersist();
+  // Retry in case the first attempt raced guild/channel cache or permissions.
+  setTimeout(publishPersist, 15000);
+  setInterval(publishPersist, 5 * 60 * 1000);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
