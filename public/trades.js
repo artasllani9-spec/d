@@ -172,6 +172,10 @@ async function tradeApiRequest(path, options = {}) {
       // ignore parse errors
     }
     if (!code && response.status === 401) code = 'AUTH_REQUIRED';
+    if (/bad credentials/i.test(String(message))) {
+      message = 'Trade save failed (server storage token is invalid). Please try again in a minute.';
+      code = code || 'STORE_WRITE_FAILED';
+    }
     const error = new Error(message);
     error.status = response.status;
     if (code) error.code = code;

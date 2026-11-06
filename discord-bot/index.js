@@ -3598,6 +3598,176 @@ client.on(Events.MessageCreate, async (message) => {
   }
 });
 
+async function pushRepoFileViaGitHubApi(filePath, fileText, message) {
+  const token = await resolveGitHubToken();
+  if (!token) {
+    throw new Error(
+      'No GitHub token found. Set GITHUB_TOKEN in discord-bot/.env (repo Contents: Read and Write).'
+    );
+  }
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'valuedex-discord-bot',
+  };
+
+  let sha = null;
+  const getUrl = `https://api.github.com/repos/${githubRepo}/contents/${filePath}?ref=${encodeURIComponent(githubBranch)}`;
+  const getResponse = await fetch(getUrl, { headers });
+  if (getResponse.ok) {
+    const existing = await getResponse.json();
+    sha = existing.sha || null;
+  } else if (getResponse.status !== 404) {
+    const details = await getResponse.text().catch(() => '');
+    throw new Error(`GitHub read failed (${getResponse.status}): ${details || getResponse.statusText}`);
+  }
+
+  const putResponse = await fetch(`https://api.github.com/repos/${githubRepo}/contents/${filePath}`, {
+    method: 'PUT',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message,
+      content: Buffer.from(fileText, 'utf8').toString('base64'),
+      branch: githubBranch,
+      ...(sha ? { sha } : {}),
+    }),
+  });
+
+  if (!putResponse.ok) {
+    const details = await putResponse.text().catch(() => '');
+    throw new Error(`GitHub push failed (${putResponse.status}): ${details || putResponse.statusText}`);
+  }
+
+  const payload = await putResponse.json().catch(() => null);
+  return payload && payload.content ? payload.content.sha : null;
+}
+
+function getPersistRelaySecret() {
+  return String(
+    process.env.TRADES_PERSIST_SECRET ||
+      process.env.VALUES_EDIT_TOKEN ||
+      process.env.DISCORD_VALUES_TOKEN ||
+      ''
+  ).trim();
+}
+
+function getBotPublicBaseUrl() {
+  const explicit = String(process.env.TRADES_PERSIST_SELF_URL || '').trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+  const domain = String(process.env.RAILWAY_PUBLIC_DOMAIN || '').trim();
+  if (!domain) return '';
+  return domain.startsWith('http') ? domain.replace(/\/$/, '') : `https://${domain}`;
+}
+
+async function publishTradesPersistEndpoint() {
+  const url = getBotPublicBaseUrl();
+  if (!url) {
+    console.warn('Trade persist endpoint not published (no RAILWAY_PUBLIC_DOMAIN / TRADES_PERSIST_SELF_URL).');
+    return false;
+  }
+  const body = JSON.stringify(
+    {
+      url,
+      updatedAt: new Date().toISOString(),
+      service: 'ValueDex Discord bot',
+    },
+    null,
+    2
+  );
+  await pushRepoFileViaGitHubApi(
+    'data/trades-persist-endpoint.json',
+    `${body}\n`,
+    'chore: publish trades persist endpoint'
+  );
+  console.log(`Published trades persist endpoint: ${url}`);
+  return true;
+}
+
+function readRequestBody(req, limit = 2_000_000) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(Object.assign(new Error('Request body too large.'), { statusCode: 413 }));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+    req.on('error', reject);
+  });
+}
+
+function sendJson(res, statusCode, payload) {
+  const body = JSON.stringify(payload);
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store',
+  });
+  res.end(body);
+}
+
+async function handleTradesStorePut(req, res) {
+  const expected = getPersistRelaySecret();
+  const provided = String(
+    req.headers['x-values-token'] ||
+      (String(req.headers.authorization || '').match(/^Bearer\s+(.+)$/i) || [])[1] ||
+      ''
+  ).trim();
+
+  if (!expected || provided !== expected) {
+    sendJson(res, 401, { message: 'Unauthorized.' });
+    return;
+  }
+
+  let store;
+  try {
+    const raw = await readRequestBody(req);
+    store = JSON.parse(raw || '{}');
+  } catch (err) {
+    sendJson(res, err && err.statusCode === 413 ? 413 : 400, {
+      message: err && err.statusCode === 413 ? 'Request body too large.' : 'Invalid JSON body.',
+    });
+    return;
+  }
+
+  if (!store || typeof store !== 'object' || Array.isArray(store)) {
+    sendJson(res, 400, { message: 'Trade store body must be an object.' });
+    return;
+  }
+
+  const normalized = {
+    posted: Array.isArray(store.posted) ? store.posted : [],
+    accepted: Array.isArray(store.accepted) ? store.accepted : [],
+    moderators: Array.isArray(store.moderators) ? store.moderators : [],
+    valueEditors: Array.isArray(store.valueEditors) ? store.valueEditors : [],
+    bans: Array.isArray(store.bans) ? store.bans : [],
+    blocks: Array.isArray(store.blocks) ? store.blocks : [],
+    reports: Array.isArray(store.reports) ? store.reports : [],
+  };
+
+  try {
+    const sha = await pushRepoFileViaGitHubApi(
+      'data/trades.json',
+      `${JSON.stringify(normalized, null, 2)}\n`,
+      `chore: sync trades ${new Date().toISOString()}`
+    );
+    sendJson(res, 200, { ok: true, sha });
+  } catch (err) {
+    console.error('Trade persist relay failed:', err && err.message ? err.message : err);
+    sendJson(res, 503, { message: (err && err.message) || 'Could not persist trade data.' });
+  }
+}
+
 if (
   require.main === module &&
   (process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID)
@@ -3606,6 +3776,15 @@ if (
   const port = Number(process.env.PORT) || 8080;
   http
     .createServer((req, res) => {
+      const url = String(req.url || '').split('?')[0];
+      if (req.method === 'PUT' && url === '/internal/trades-store') {
+        handleTradesStorePut(req, res).catch((err) => {
+          console.error('Trade persist handler crashed:', err && err.message ? err.message : err);
+          sendJson(res, 500, { message: 'Trade persist handler failed.' });
+        });
+        return;
+      }
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
@@ -3616,11 +3795,18 @@ if (
           user: client.user ? client.user.tag : null,
           commands: allCommands.map((cmd) => cmd.name),
           autoreactChannels: autoReactByChannel.size,
+          tradesPersist: Boolean(getPersistRelaySecret() && getBotPublicBaseUrl()),
         })
       );
     })
     .listen(port, () => {
       console.log(`Bot health check listening on :${port} (${BOT_BUILD})`);
+      publishTradesPersistEndpoint().catch((err) => {
+        console.warn(
+          'Could not publish trades persist endpoint:',
+          err && err.message ? err.message : err
+        );
+      });
     });
 }
 
