@@ -5,6 +5,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const crypto = require('crypto');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 const {
@@ -1934,6 +1935,23 @@ client.once(Events.ClientReady, async (readyClient) => {
       console.warn('Value sync failed:', err.message || err);
     });
   }, 8000);
+
+  try {
+    await publishTradesPersistEndpoint();
+  } catch (err) {
+    console.warn(
+      'Could not publish HTTP trades persist endpoint:',
+      err && err.message ? err.message : err
+    );
+  }
+  try {
+    await publishTradesPersistWebhook();
+  } catch (err) {
+    console.warn(
+      'Could not publish Discord trades persist webhook:',
+      err && err.message ? err.message : err
+    );
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -3562,6 +3580,8 @@ async function handlePrefixCommand(message) {
 
 client.on(Events.MessageCreate, async (message) => {
   try {
+    if (await handleTradeStoreSyncMessage(message)) return;
+
     if (message.system) return;
     if (client.user && message.author.id === client.user.id) return;
     if (message.author.bot) return;
@@ -3663,6 +3683,25 @@ function getBotPublicBaseUrl() {
   return domain.startsWith('http') ? domain.replace(/\/$/, '') : `https://${domain}`;
 }
 
+function derivePersistKey(secret) {
+  return crypto.createHash('sha256').update(String(secret), 'utf8').digest();
+}
+
+function encryptPersistPayload(secret, obj) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', derivePersistKey(secret), iv);
+  const plaintext = Buffer.from(JSON.stringify(obj), 'utf8');
+  const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return {
+    v: 1,
+    alg: 'aes-256-gcm',
+    iv: iv.toString('base64'),
+    tag: tag.toString('base64'),
+    data: encrypted.toString('base64'),
+  };
+}
+
 async function publishTradesPersistEndpoint() {
   const url = getBotPublicBaseUrl();
   if (!url) {
@@ -3685,6 +3724,99 @@ async function publishTradesPersistEndpoint() {
   );
   console.log(`Published trades persist endpoint: ${url}`);
   return true;
+}
+
+async function publishTradesPersistWebhook() {
+  const secret = getPersistRelaySecret();
+  if (!secret) {
+    console.warn('Trade persist webhook not published (VALUES_EDIT_TOKEN / TRADES_PERSIST_SECRET missing).');
+    return false;
+  }
+
+  let webhookUrl = String(process.env.DISCORD_TRADES_WEBHOOK_URL || '').trim();
+  if (!webhookUrl) {
+    const channelId = String(
+      process.env.DISCORD_TRADES_CHANNEL_ID || VALUE_UPDATE_CHANNEL_ID || ''
+    ).trim();
+    if (!channelId) {
+      console.warn('Trade persist webhook not published (no trades/value channel id).');
+      return false;
+    }
+    const channel = await client.channels.fetch(channelId);
+    if (!channel || typeof channel.fetchWebhooks !== 'function') {
+      console.warn('Trade persist webhook channel is not usable.');
+      return false;
+    }
+    const existing = await channel.fetchWebhooks();
+    let hook = existing.find((item) => item && item.name === 'ValueDex Trades Persist');
+    if (!hook) {
+      hook = await channel.createWebhook({
+        name: 'ValueDex Trades Persist',
+        reason: 'Persist ValueDex trade ads when Vercel GitHub token cannot write',
+      });
+    }
+    webhookUrl = hook.url;
+  }
+
+  const envelope = {
+    kind: 'discord-webhook',
+    updatedAt: new Date().toISOString(),
+    service: 'ValueDex Discord bot',
+    encrypted: encryptPersistPayload(secret, { webhookUrl }),
+  };
+
+  await pushRepoFileViaGitHubApi(
+    'data/trades-persist-endpoint.json',
+    `${JSON.stringify(envelope, null, 2)}\n`,
+    'chore: publish trades persist webhook'
+  );
+  console.log('Published encrypted Discord trades persist webhook endpoint.');
+  return true;
+}
+
+async function handleTradeStoreSyncMessage(message) {
+  const content = String(message.content || '');
+  if (!content.includes('TRADE_STORE_SYNC')) return false;
+
+  const attachment =
+    message.attachments &&
+    [...message.attachments.values()].find((item) => {
+      const name = String((item && item.name) || '').toLowerCase();
+      return name === 'trades.json' || name.endsWith('.json');
+    });
+  if (!attachment || !attachment.url) return false;
+
+  try {
+    const response = await fetch(attachment.url, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`Could not download trade store attachment (${response.status}).`);
+    }
+    const store = await response.json();
+    const normalized = {
+      posted: Array.isArray(store.posted) ? store.posted : [],
+      accepted: Array.isArray(store.accepted) ? store.accepted : [],
+      moderators: Array.isArray(store.moderators) ? store.moderators : [],
+      valueEditors: Array.isArray(store.valueEditors) ? store.valueEditors : [],
+      bans: Array.isArray(store.bans) ? store.bans : [],
+      blocks: Array.isArray(store.blocks) ? store.blocks : [],
+      reports: Array.isArray(store.reports) ? store.reports : [],
+    };
+    await pushRepoFileViaGitHubApi(
+      'data/trades.json',
+      `${JSON.stringify(normalized, null, 2)}\n`,
+      `chore: sync trades ${new Date().toISOString()}`
+    );
+    if (typeof message.delete === 'function') {
+      await message.delete().catch(() => {});
+    }
+    console.log(
+      `Persisted trade store from Discord webhook (${normalized.posted.length} posted, ${normalized.accepted.length} accepted).`
+    );
+    return true;
+  } catch (err) {
+    console.error('Trade store webhook sync failed:', err && err.message ? err.message : err);
+    return true;
+  }
 }
 
 function readRequestBody(req, limit = 2_000_000) {

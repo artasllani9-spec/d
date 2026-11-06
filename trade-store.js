@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const MAX_STORED_TRADES = 2000;
 const MEMORY_CACHE_TTL_MS = 2500;
@@ -457,9 +458,26 @@ function normalizePersistBaseUrl(value) {
   return `https://${raw}`;
 }
 
-async function resolvePersistEndpoint() {
+function derivePersistKey(secret) {
+  return crypto.createHash('sha256').update(String(secret), 'utf8').digest();
+}
+
+function decryptPersistPayload(secret, envelope) {
+  if (!envelope || envelope.alg !== 'aes-256-gcm') {
+    throw new Error('Unsupported persist envelope.');
+  }
+  const iv = Buffer.from(String(envelope.iv || ''), 'base64');
+  const tag = Buffer.from(String(envelope.tag || ''), 'base64');
+  const data = Buffer.from(String(envelope.data || ''), 'base64');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', derivePersistKey(secret), iv);
+  decipher.setAuthTag(tag);
+  const plaintext = Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
+  return JSON.parse(plaintext);
+}
+
+async function resolvePersistEndpointConfig() {
   const fromEnv = normalizePersistBaseUrl(process.env.TRADES_PERSIST_URL);
-  if (fromEnv) return fromEnv;
+  if (fromEnv) return { kind: 'http', url: fromEnv };
 
   if (cachedPersistEndpoint && Date.now() - cachedPersistEndpointAt < 60_000) {
     return cachedPersistEndpoint;
@@ -470,15 +488,52 @@ async function resolvePersistEndpoint() {
     `?t=${Date.now()}`;
   try {
     const response = await fetch(rawUrl, { cache: 'no-store' });
-    if (!response.ok) return '';
+    if (!response.ok) return null;
     const data = await response.json();
-    const url = normalizePersistBaseUrl(data && (data.url || data.persistUrl || data.baseUrl));
-    cachedPersistEndpoint = url;
+    let config = null;
+    if (data && data.kind === 'discord-webhook' && data.encrypted) {
+      config = { kind: 'discord-webhook', encrypted: data.encrypted };
+    } else {
+      const url = normalizePersistBaseUrl(data && (data.url || data.persistUrl || data.baseUrl));
+      if (url) config = { kind: 'http', url };
+    }
+    cachedPersistEndpoint = config;
     cachedPersistEndpointAt = Date.now();
-    return url;
+    return config;
   } catch {
-    return '';
+    return null;
   }
+}
+
+async function writeToDiscordWebhookRelay(store, webhookUrl) {
+  const body = JSON.stringify(normalizeStore(store));
+  const form = new FormData();
+  form.append(
+    'payload_json',
+    JSON.stringify({
+      content: 'TRADE_STORE_SYNC',
+      allowed_mentions: { parse: [] },
+    }),
+  );
+  form.append('files[0]', new Blob([body], { type: 'application/json' }), 'trades.json');
+
+  const response = await fetch(webhookUrl, {
+    method: 'POST',
+    body: form,
+    headers: { 'User-Agent': 'demandgg-trades' },
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    return {
+      ok: false,
+      conflict: false,
+      status: response.status,
+      message: text || `Discord trade persist webhook failed (${response.status}).`,
+    };
+  }
+
+  return { ok: true, conflict: false, status: response.status, message: null };
 }
 
 async function writeToPersistRelay(store) {
@@ -492,17 +547,40 @@ async function writeToPersistRelay(store) {
     };
   }
 
-  const endpoint = await resolvePersistEndpoint();
+  const endpoint = await resolvePersistEndpointConfig();
   if (!endpoint) {
     return {
       ok: false,
       conflict: false,
       status: 0,
-      message: 'Trade persist relay URL is not configured.',
+      message: 'Trade persist relay is not published yet. Wait for the Discord bot to redeploy.',
     };
   }
 
-  const response = await fetch(`${endpoint}/internal/trades-store`, {
+  if (endpoint.kind === 'discord-webhook') {
+    try {
+      const decoded = decryptPersistPayload(secret, endpoint.encrypted);
+      const webhookUrl = String((decoded && decoded.webhookUrl) || '').trim();
+      if (!webhookUrl) {
+        return {
+          ok: false,
+          conflict: false,
+          status: 0,
+          message: 'Trade persist webhook URL missing from encrypted endpoint.',
+        };
+      }
+      return writeToDiscordWebhookRelay(store, webhookUrl);
+    } catch (err) {
+      return {
+        ok: false,
+        conflict: false,
+        status: 0,
+        message: (err && err.message) || 'Could not decrypt trade persist webhook.',
+      };
+    }
+  }
+
+  const response = await fetch(`${endpoint.url}/internal/trades-store`, {
     method: 'PUT',
     headers: {
       Accept: 'application/json',
