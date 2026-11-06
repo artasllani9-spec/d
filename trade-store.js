@@ -329,40 +329,79 @@ async function readFromGitHub() {
   }
 }
 
+async function ensureGitHubSha() {
+  if (githubSha) return githubSha;
+  await readFromGitHub();
+  return githubSha;
+}
+
 async function writeToGitHub(store, { allowConflictRetry = true } = {}) {
   const token = getGitHubToken();
-  if (!token) return { ok: false, conflict: false };
+  if (!token) {
+    return { ok: false, conflict: false, status: 0, message: 'GITHUB_TOKEN is not set.' };
+  }
 
-  const body = {
-    message: `chore: sync trades ${new Date().toISOString()}`,
-    content: Buffer.from(JSON.stringify(normalizeStore(store), null, 2)).toString('base64'),
-    branch: GITHUB_BRANCH,
+  // Updating an existing file requires the current blob SHA. Cold starts that only
+  // hydrated from raw.githubusercontent.com leave githubSha null and then 422.
+  await ensureGitHubSha();
+
+  const putOnce = async (sha) => {
+    const body = {
+      message: `chore: sync trades ${new Date().toISOString()}`,
+      content: Buffer.from(JSON.stringify(normalizeStore(store), null, 2)).toString('base64'),
+      branch: GITHUB_BRANCH,
+    };
+    if (sha) body.sha = sha;
+
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'demandgg-trades',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const payload = await response.json().catch(() => null);
+    return { response, payload };
   };
-  if (githubSha) body.sha = githubSha;
 
-  const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
-    method: 'PUT',
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'demandgg-trades',
-    },
-    body: JSON.stringify(body),
-  });
+  let { response, payload } = await putOnce(githubSha);
+
+  // Missing/stale sha → refresh and retry once before giving up.
+  if ((response.status === 409 || response.status === 422) && allowConflictRetry) {
+    githubSha = null;
+    await readFromGitHub();
+    ({ response, payload } = await putOnce(githubSha));
+  }
 
   if (response.status === 409) {
     githubSha = null;
-    if (allowConflictRetry) {
-      await readFromGitHub();
-    }
-    return { ok: false, conflict: true };
+    return {
+      ok: false,
+      conflict: true,
+      status: 409,
+      message: 'Trade store write conflict. Retry the request.',
+    };
   }
 
-  if (!response.ok) return { ok: false, conflict: false };
-  const data = await response.json().catch(() => null);
-  githubSha = data && data.content ? data.content.sha : githubSha;
-  return { ok: true, conflict: false };
+  if (!response.ok) {
+    const message =
+      (payload && (payload.message || payload.error)) ||
+      `GitHub trade store write failed (${response.status}).`;
+    return {
+      ok: false,
+      conflict: false,
+      status: response.status,
+      message: String(message),
+    };
+  }
+
+  githubSha = payload && payload.content ? payload.content.sha : githubSha;
+  return { ok: true, conflict: false, status: response.status, message: null };
 }
 
 function mergeStores(...stores) {
@@ -525,7 +564,7 @@ async function persistStore(store, { allowWipe = false } = {}) {
   const persist = async () => {
     if (process.env.VERCEL && !hasDurableBackend()) {
       const error = new Error(
-        'Trade storage is not configured. Set GITHUB_TOKEN (or Upstash/Blob) so data survives across serverless instances.',
+        'Trade storage is not configured. Set GITHUB_TOKEN or TRADES_GITHUB_TOKEN (repo Contents read/write) — or Upstash/Blob — so posts survive across serverless instances.',
       );
       error.status = 503;
       error.code = 'STORE_NOT_CONFIGURED';
@@ -537,6 +576,8 @@ async function persistStore(store, { allowWipe = false } = {}) {
       blob: null,
       github: null,
       conflict: false,
+      message: null,
+      status: null,
     };
 
     if (getUpstashConfig()) {
@@ -548,25 +589,40 @@ async function persistStore(store, { allowWipe = false } = {}) {
     if (getGitHubToken()) {
       const githubResult = await writeToGitHub(next);
       results.github = githubResult.ok;
-      results.conflict = githubResult.conflict;
-    }
-
-    const backupFile = process.env.VERCEL ? VERCEL_DATA_FILE : LOCAL_DATA_FILE;
-    try {
-      writeLocalFile(backupFile, next);
-    } catch {
-      // /tmp can fail; durable backends matter more on Vercel
+      results.conflict = Boolean(githubResult.conflict);
+      if (!githubResult.ok) {
+        results.message = githubResult.message || results.message;
+        results.status = githubResult.status || results.status;
+      }
     }
 
     const remoteAttempted = results.upstash !== null || results.blob !== null || results.github !== null;
     const remoteSaved = Boolean(results.upstash || results.blob || results.github);
 
     if (remoteAttempted && !remoteSaved) {
-      return { ok: false, conflict: results.conflict };
+      return {
+        ok: false,
+        conflict: results.conflict,
+        message: results.message,
+        status: results.status,
+      };
     }
 
     if (process.env.VERCEL && !remoteSaved && !hasDurableBackend()) {
-      return { ok: false, conflict: false };
+      return {
+        ok: false,
+        conflict: false,
+        message: 'No durable trade backend accepted the write.',
+        status: 503,
+      };
+    }
+
+    // Only mirror to /tmp after a durable save so failed writes cannot ghost into later reads.
+    const backupFile = process.env.VERCEL ? VERCEL_DATA_FILE : LOCAL_DATA_FILE;
+    try {
+      writeLocalFile(backupFile, next);
+    } catch {
+      // /tmp can fail; durable backends matter more on Vercel
     }
 
     return { ok: true, conflict: false };
@@ -589,20 +645,23 @@ async function persistStore(store, { allowWipe = false } = {}) {
   return run;
 }
 
-async function writeStore(store, options = {}) {
-  const result = await persistStore(store, options);
-  if (!result.ok && result.conflict) {
-    const error = new Error('Trade store write conflict. Retry the request.');
+function storeWriteError(result) {
+  if (result && result.conflict) {
+    const error = new Error(result.message || 'Trade store write conflict. Retry the request.');
     error.status = 409;
     error.code = 'STORE_CONFLICT';
-    throw error;
+    return error;
   }
-  if (!result.ok) {
-    const error = new Error('Could not persist trade data.');
-    error.status = 503;
-    error.code = 'STORE_WRITE_FAILED';
-    throw error;
-  }
+  const error = new Error(result && result.message ? String(result.message) : 'Could not persist trade data.');
+  error.status = 503;
+  error.code = 'STORE_WRITE_FAILED';
+  if (result && result.status) error.upstreamStatus = result.status;
+  return error;
+}
+
+async function writeStore(store, options = {}) {
+  const result = await persistStore(store, options);
+  if (!result.ok) throw storeWriteError(result);
   return cloneStore(memoryStore);
 }
 
@@ -628,22 +687,40 @@ async function updateStore(mutator, { allowWipe = false } = {}) {
           result: mutatorResult,
         };
       }
-      if (persistResult.conflict) {
-        lastError = new Error('Trade store write conflict.');
-        lastError.status = 409;
+      lastError = storeWriteError(persistResult);
+      if (persistResult.conflict || (persistResult.status && Number(persistResult.status) >= 500)) {
+        githubSha = null;
         continue;
       }
-      lastError = new Error('Could not persist trade data.');
-      lastError.status = 503;
+      // Auth / permission failures will not recover by retrying the same token.
+      if (persistResult.status === 401 || persistResult.status === 403) {
+        throw lastError;
+      }
+      githubSha = null;
+      continue;
     } catch (error) {
       if (error && error.code === 'STORE_WIPE_REFUSED') throw error;
       if (error && error.code === 'STORE_NOT_CONFIGURED') throw error;
+      if (error && error.code === 'STORE_WRITE_FAILED' && (error.upstreamStatus === 401 || error.upstreamStatus === 403)) {
+        throw error;
+      }
       lastError = error;
       if (error && error.status && error.status < 500 && error.status !== 409) throw error;
+      githubSha = null;
     }
   }
 
   throw lastError || Object.assign(new Error('Could not save trade data after retries.'), { status: 503 });
+}
+
+function getStoreBackendStatus() {
+  return {
+    vercel: Boolean(process.env.VERCEL),
+    durable: hasDurableBackend(),
+    github: Boolean(getGitHubToken()),
+    upstash: Boolean(getUpstashConfig()),
+    blob: Boolean(getBlobToken()),
+  };
 }
 
 function isSignFlag(value) {
@@ -743,6 +820,7 @@ module.exports = {
   readStore,
   writeStore,
   updateStore,
+  getStoreBackendStatus,
   httpError,
   canPostTrade,
   normalizeTradeSide,

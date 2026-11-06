@@ -10,6 +10,7 @@ const {
   normalizeTradeSide,
   createTradeId,
   findRecentDuplicatePostedTrade,
+  getStoreBackendStatus,
   isTradeParticipant,
   isSiteOwner,
   isSiteModerator,
@@ -470,6 +471,27 @@ function createTradeApp() {
     }
   });
 
+  app.get('/api/trades/health', async (_req, res) => {
+    try {
+      const backends = getStoreBackendStatus();
+      let postedCount = null;
+      try {
+        const store = await readStore({ force: true });
+        postedCount = Array.isArray(store.posted) ? store.posted.length : 0;
+      } catch {
+        postedCount = null;
+      }
+      res.json({
+        ok: true,
+        backends,
+        postedCount,
+        canPersist: Boolean(backends.durable),
+      });
+    } catch (error) {
+      sendError(res, error, 'Could not check trade store health.');
+    }
+  });
+
   app.get('/api/trades/posted', async (req, res) => {
     try {
       const store = await readStore();
@@ -530,7 +552,11 @@ function createTradeApp() {
         return { trade: nextTrade, created: true };
       });
 
-      res.status(result && result.created ? 201 : 200).json(result && result.trade ? result.trade : result);
+      if (!result || !result.trade) {
+        res.status(503).json({ message: 'Could not post trade.', code: 'POST_FAILED' });
+        return;
+      }
+      res.status(result.created ? 201 : 200).json(result.trade);
     } catch (error) {
       sendError(res, error, 'Could not post trade.');
     }
