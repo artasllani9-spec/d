@@ -219,8 +219,7 @@ function hasDurableBackend() {
     getGitHubToken() ||
       getUpstashConfig() ||
       getBlobToken() ||
-      // Relay may still work after a rejected GitHub token (Discord bot writes for us).
-      getPersistRelaySecret() ||
+      // Only count an explicit persist URL — a shared edit token alone is not a store.
       process.env.TRADES_PERSIST_URL,
   );
 }
@@ -768,10 +767,12 @@ async function persistStore(store, { allowWipe = false } = {}) {
   const persist = async () => {
     if (process.env.VERCEL && !hasDurableBackend()) {
       const error = new Error(
-        'Trade storage is not configured. Set GITHUB_TOKEN or TRADES_GITHUB_TOKEN (repo Contents read/write) — or Upstash/Blob — so posts survive across serverless instances.',
+        githubTokenRejected
+          ? `GitHub token rejected (${githubTokenRejectReason || 'Bad credentials'}). In Vercel set TRADES_GITHUB_TOKEN to a PAT with Contents: Read and write on this repo, then Redeploy.`
+          : 'Trade storage is not configured. Set TRADES_GITHUB_TOKEN in Vercel (repo Contents: Read and write) and Redeploy — or configure Upstash/Blob.',
       );
       error.status = 503;
-      error.code = 'STORE_NOT_CONFIGURED';
+      error.code = githubTokenRejected ? 'STORE_WRITE_FAILED' : 'STORE_NOT_CONFIGURED';
       throw error;
     }
 
@@ -801,57 +802,58 @@ async function persistStore(store, { allowWipe = false } = {}) {
       }
     }
 
-    const needRelay =
-      !results.upstash &&
-      !results.blob &&
-      !results.github &&
-      (Boolean(getPersistRelaySecret()) || Boolean(process.env.TRADES_PERSIST_URL) || githubTokenRejected);
-
-    if (needRelay) {
-      const relayResult = await writeToPersistRelay(next);
-      results.relay = relayResult.ok;
-      if (!relayResult.ok) {
-        results.conflict = results.conflict || Boolean(relayResult.conflict);
-        // Prefer relay details when GitHub failed with Bad credentials.
-        results.message = relayResult.message || results.message;
-        results.status = relayResult.status || results.status;
-      } else {
-        results.message = null;
-        results.status = null;
-        results.conflict = false;
+    // Optional relay only when an endpoint is actually published — never required.
+    if (!results.upstash && !results.blob && !results.github && getPersistRelaySecret()) {
+      const relayConfig = await resolvePersistEndpointConfig();
+      if (relayConfig) {
+        const relayResult = await writeToPersistRelay(next);
+        results.relay = relayResult.ok;
+        if (!relayResult.ok) {
+          results.conflict = results.conflict || Boolean(relayResult.conflict);
+          results.message = relayResult.message || results.message;
+          results.status = relayResult.status || results.status;
+        } else {
+          results.message = null;
+          results.status = null;
+          results.conflict = false;
+        }
       }
     }
 
-    const remoteAttempted =
-      results.upstash !== null ||
-      results.blob !== null ||
-      results.github !== null ||
-      results.relay !== null;
     const remoteSaved = Boolean(results.upstash || results.blob || results.github || results.relay);
 
-    if (remoteAttempted && !remoteSaved) {
+    // On Vercel a local /tmp write is not durable — never report success without a remote save.
+    if (process.env.VERCEL && !remoteSaved) {
       let message = results.message;
-      if (githubTokenRejected && /bad credentials/i.test(String(message || ''))) {
+      if (githubTokenRejected || /bad credentials/i.test(String(message || ''))) {
         message =
-          'Server GitHub token is invalid (Bad credentials). Trade saves should use the Discord bot relay — redeploy the bot, or set TRADES_GITHUB_TOKEN on Vercel.';
+          'GitHub token is invalid (Bad credentials). In Vercel set TRADES_GITHUB_TOKEN to a PAT with Contents: Read and write on this repo, then Redeploy.';
+      } else if (!message) {
+        message =
+          'No durable trade backend accepted the write. Set TRADES_GITHUB_TOKEN in Vercel (Contents: Read and write) and Redeploy.';
       }
       return {
         ok: false,
         conflict: results.conflict,
         message,
-        status: results.status,
+        status: results.status || 503,
       };
     }
 
-    if (process.env.VERCEL && !remoteSaved && !hasDurableBackend()) {
-      return {
-        ok: false,
-        conflict: false,
-        message: githubTokenRejectReason
-          ? `Trade storage token rejected (${githubTokenRejectReason}). Set TRADES_GITHUB_TOKEN or deploy the Discord bot persist relay.`
-          : 'No durable trade backend accepted the write.',
-        status: 503,
-      };
+    if (!process.env.VERCEL && !remoteSaved) {
+      const remoteAttempted =
+        results.upstash !== null ||
+        results.blob !== null ||
+        results.github !== null ||
+        results.relay !== null;
+      if (remoteAttempted) {
+        return {
+          ok: false,
+          conflict: results.conflict,
+          message: results.message || 'Could not persist trade data.',
+          status: results.status || 503,
+        };
+      }
     }
 
     // Only mirror to /tmp after a durable save so failed writes cannot ghost into later reads.
@@ -890,9 +892,9 @@ function storeWriteError(result) {
     return error;
   }
   let message = result && result.message ? String(result.message) : 'Could not persist trade data.';
-  if (/bad credentials/i.test(message)) {
+  if (/bad credentials/i.test(message) || /github token is invalid/i.test(message)) {
     message =
-      'Trade save failed because the server GitHub token is invalid. Retry shortly after the bot redeploys, or set TRADES_GITHUB_TOKEN on Vercel.';
+      'GitHub token is invalid (Bad credentials). In Vercel set TRADES_GITHUB_TOKEN to a PAT with Contents: Read and write on this repo, then Redeploy.';
   }
   const error = new Error(message);
   error.status = 503;

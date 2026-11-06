@@ -172,8 +172,9 @@ async function tradeApiRequest(path, options = {}) {
       // ignore parse errors
     }
     if (!code && response.status === 401) code = 'AUTH_REQUIRED';
-    if (/bad credentials/i.test(String(message))) {
-      message = 'Trade save failed (server storage token is invalid). Please try again in a minute.';
+    if (/bad credentials/i.test(String(message)) || /github token is invalid/i.test(String(message))) {
+      message =
+        'GitHub token is invalid. In Vercel set TRADES_GITHUB_TOKEN (Contents: Read and write), then Redeploy.';
       code = code || 'STORE_WRITE_FAILED';
     }
     const error = new Error(message);
